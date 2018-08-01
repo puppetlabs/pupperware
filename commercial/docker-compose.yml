@@ -1,0 +1,78 @@
+version: '2'
+
+services:
+  puppet:
+    image: puppet/puppetserver
+    depends_on:
+      - puppetdb
+      - gobetween-puppetserver
+    ports:
+      - 8140
+    volumes:
+      - ./code:/etc/puppetlabs/code/
+      - ./puppet/ssl:/etc/puppetlabs/puppet/ssl/
+      - ./puppet/serverdata:/opt/puppetlabs/server/data/puppetserver/
+    labels:
+      # This label tells gobetween to look for multiple instances of this and balance them.
+      - puppetserver=true
+    # In some cases unqualified hostnames can have the .local suffix
+    # added, I've seen this under Docker of Mac Beta for instance.
+    # Due to needing to access PuppetDB on same hostame as signed in the # certificate you may need to uncommant the following lines
+    #environment:
+    #  - PUPPETDB_SERVER_URLS=https://puppetdb.local:8081
+    #links:
+    #  - puppetdb:puppetdb.local
+
+  puppetdbpostgres:
+    container_name: postgres
+    image: puppet/puppetdb-postgres
+    environment:
+      - POSTGRES_PASSWORD=puppetdb
+      - POSTGRES_USER=puppetdb
+    expose:
+      - 5432
+    volumes:
+      - ./puppetdb-postgres/data:/var/lib/postgresql/data/
+
+  puppetdb:
+    hostname: puppetdb
+    image: puppet/puppetdb
+    ports:
+      - 8080
+      - 8081
+    depends_on:
+      - puppetdbpostgres
+    volumes:
+      - ./puppetdb/ssl:/etc/puppetlabs/puppet/ssl/
+
+  ## summary doesn't work without editing puppet.conf on the server.
+  ##   This is here mostly as an expirement right now.
+  #puppet-summary:
+  #  hostname: puppet-summary
+  #  image: stahnma/puppet-summary
+  #  ports:
+  #   - "3001:3001"
+  #  volumes:
+  #   - ./app:/app
+  #  expose:
+  #  - 3001
+
+  puppetexplorer:
+    image: puppet/puppetexplorer
+    ports:
+      - "80:80"
+    read_only: true
+
+  puppetboard:
+    image: puppet/puppetboard
+    ports:
+      - "8000:8000"
+
+  gobetween-puppetserver:
+    image: stahnma/gobetween-puppetserver
+    network_mode: host
+    # API is not exposed via this container currently
+    ports:
+     - "8140:8140"
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
