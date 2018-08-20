@@ -5,9 +5,11 @@ Run a container-based deployment of Puppet Infrastructure.
 
 # DNS Stuff
 
-You should make the host where docker-compose is running respond to a CNAME of
-puppet, or put that in /etc/hosts on your clients. This is a known setup
-requirement at this time.
+Change the environment variable `DNS_ALT_NAMES` to list all the names under
+which agents will try to reach the puppet master, for example, set it to
+`DNS_ALT_NAMES=puppet,myhost.example.com`. Note that this setting only has
+an effect when the Puppet Infrastructure is run for the first time, i.e.,
+when it will generate a certificate for the puppetserver.
 
 
 # Examples
@@ -25,4 +27,3 @@ To scale down
 
 
 Tada!
-
