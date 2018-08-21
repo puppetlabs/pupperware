@@ -7,10 +7,24 @@ To get started, you will need an installation of
 [Docker Compose](https://docs.docker.com/compose/install/) on the host on
 which you will run your Puppet Infrastructure.
 
-When you first start the Puppet Infrastructure with `docker-compose up`,
-the stack will create a number of directories to store the persistent data
-that should survive the restart of your infrastructure. These directories
-are created right next to the Docker Compose file:
+Once you have Docker Compose installed, you can start the stack with
+```
+    DNS_ALT_NAMES=puppet,host.exmple.com docker-compose up -d
+```
+
+The value of `DNS_ALT_NAMES` must list all the names, as a comma-separated
+list, under which the Puppet server in the stack can be reached from
+agents. It must include `puppet` as that is used by PuppetDB to communicate
+with the Puppet server. The value of `DNS_ALT_NAMES` only has an effect the
+first time you start the stack, as it is placed into the server's SSL
+certificate. If you need to change it after that, you will need to properly
+revoke the server's certificate and restart the stack with the changed
+`DNS_ALT_NAMES` value.
+
+When you first start the Puppet Infrastructure, the stack will create a
+number of directories to store the persistent data that should survive the
+restart of your infrastructure. These directories are created right next to
+the Docker Compose file:
 
 * `code/`: the Puppet code directory.
 * `puppet/`: Puppet configuration files, including `puppet/ssl/` containing
@@ -23,28 +37,3 @@ this directory and restarting the stack.
 * `puppetdb-postgres/`: the data files for the PostgreSQL instance used by
 PuppetDB
 * `serverdata/`: persistent data for Puppet Server
-
-# DNS Stuff
-
-Change the environment variable `DNS_ALT_NAMES` to list all the names under
-which agents will try to reach the puppet master, for example, set it to
-`DNS_ALT_NAMES=puppet,myhost.example.com`. Note that this setting only has
-an effect when the Puppet Infrastructure is run for the first time, i.e.,
-when it will generate a certificate for the puppetserver.
-
-
-# Examples
-
-    docker-compose up -d
-
-
-To scale out more puppet-server
-
-    docker-compose scale puppet=2
-
-To scale down
-
-    docker-compose scale puppet=1
-
-
-Tada!
