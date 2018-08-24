@@ -37,3 +37,12 @@ this directory and restarting the stack.
 * `puppetdb-postgres/`: the data files for the PostgreSQL instance used by
 PuppetDB
 * `serverdata/`: persistent data for Puppet Server
+
+# Managing the stack
+
+The script `bin/puppet` makes it easy to run `puppet` commands on the
+puppet master. For example, `./bin/puppet config print autosign --section
+master` prints the current setting for autosigning, which is `true` by
+default. In a similar manner, any other task that you would perform on a
+puppet master by running `puppet x y z ...` can be achieved against the
+stack by running `./bin/puppet x y z ...`.
