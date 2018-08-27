@@ -31,6 +31,9 @@ services:
   puppetdb:
     hostname: puppetdb
     image: puppet/puppetdb
+    environment:
+      - PUPPETDB_PASSWORD=puppetdb
+      - PUPPETDB_USER=puppetdb
     ports:
       - 8080
       - 8081
