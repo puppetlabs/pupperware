@@ -4,8 +4,6 @@ services:
   puppet:
     hostname: puppet
     image: puppet/puppetserver
-    depends_on:
-      - puppetdb
     ports:
       - 8140:8140
     environment:
@@ -38,5 +36,6 @@ services:
       - 8081
     depends_on:
       - postgres
+      - puppet
     volumes:
       - ./puppetdb/ssl:/etc/puppetlabs/puppet/ssl/
