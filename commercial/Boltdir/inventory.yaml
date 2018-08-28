@@ -1,0 +1,9 @@
+# We use groups as an additional level of indirection though it's probably
+# not strictly necessary
+groups:
+  - name: master
+    nodes:
+      - docker
+  - name: agents
+    nodes:
+      - agent1
