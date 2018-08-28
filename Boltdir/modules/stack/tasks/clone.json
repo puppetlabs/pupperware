@@ -1,0 +1,8 @@
+{
+  "description": "clone the pupperware repo",
+  "implementations" : [
+    { "name": "clone.sh", "requirements": ["shell"] }
+  ],
+  "parameters" : {
+  }
+}
