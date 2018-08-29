@@ -46,3 +46,8 @@ master` prints the current setting for autosigning, which is `true` by
 default. In a similar manner, any other task that you would perform on a
 puppet master by running `puppet x y z ...` can be achieved against the
 stack by running `./bin/puppet x y z ...`.
+
+The script `bin/change-db-password` will change the postgresql database
+password, rebuild the necessary containers, and restart all of the Puppet
+Infrastructure containers. This script doesn't take any arguments and will
+prompt you for all the needed information.
