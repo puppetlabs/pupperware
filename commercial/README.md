@@ -37,6 +37,9 @@ this directory and restarting the stack.
 * `puppetdb-postgres/`: the data files for the PostgreSQL instance used by
 PuppetDB
 * `serverdata/`: persistent data for Puppet Server
+* Note: On OSX, you must add the repository directory to "File Sharing" under
+  `Preferences>File Sharing` in order for these directories to be created
+  and volume-mounted automatically. There is no need to add each sub directory.
 
 # Managing the stack
 
