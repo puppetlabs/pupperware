@@ -1,0 +1,5 @@
+code/
+puppet/
+puppetdb/
+puppetdb-postgres/
+serverdata/
