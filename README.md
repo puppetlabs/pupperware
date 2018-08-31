@@ -41,9 +41,43 @@ PuppetDB
   `Preferences>File Sharing` in order for these directories to be created
   and volume-mounted automatically. There is no need to add each sub directory.
 
+#### Docker for Windows
+
+Due to [permissions issues with Postgres](https://forums.docker.com/t/trying-to-get-postgres-to-work-on-persistent-windows-mount-two-issues/12456/4) on Docker for Windows, an external volume and a slightly different configuration is required.
+
+To create the stack:
+
+``` powershell
+PS> docker volume create --name puppetdb-postgres-volume -d local
+puppetdb-postgres-volume
+
+PS> $ENV:DNS_ALT_NAMES = 'puppet,host.exmple.com'
+
+PS> docker-compose -f .\docker-compose.yml -f .\docker-compose.windows.yml up
+Creating pupperware_postgres_1 ... done
+Creating pupperware_puppet_1   ... done
+Creating pupperware_puppetdb_1 ... done
+Attaching to pupperware_postgres_1, pupperware_puppet_1, pupperware_puppetdb_1
+postgres_1  | The files belonging to this database system will be owned by user "postgres".
+postgres_1  | This user must also own the server process.
+postgres_1  |
+...
+```
+
+To delete the stack:
+
+``` powershell
+PS> docker-compose down
+Removing network pupperware_default
+...
+
+PS> docker volume rm puppetdb-postgres-volume
+puppetdb-postgres-volume
+```
+
 # Managing the stack
 
-The script `bin/puppet` makes it easy to run `puppet` commands on the
+The script `bin/puppet` (or `bin\puppet.ps1` on Windows) makes it easy to run `puppet` commands on the
 puppet master. For example, `./bin/puppet config print autosign --section
 master` prints the current setting for autosigning, which is `true` by
 default. In a similar manner, any other task that you would perform on a
