@@ -84,7 +84,11 @@ default. In a similar manner, any other task that you would perform on a
 puppet master by running `puppet x y z ...` can be achieved against the
 stack by running `./bin/puppet x y z ...`.
 
-The script `bin/change-db-password` will change the postgresql database
-password, rebuild the necessary containers, and restart all of the Puppet
-Infrastructure containers. This script doesn't take any arguments and will
-prompt you for all the needed information.
+### Changing postgresql password
+
+The postgresql instance uses password authentication for communication with the
+puppetdb instance. If you need to change the postgresql password, you'll need to
+do the following:
+* update the password in postgresql: `docker-compose exec postgres /bin/bash -c "psql -U \$POSTGRES_USER -c \"ALTER USER \$POSTGRES_USER PASSWORD '$dbpassword'\";"`
+* update values for `PUPPETDB_PASSWORD` and `POSTGRES_PASSWORD` in docker-compose.yml
+* rebuild and restart containers affected by these changes: `docker-compose up --detach --build`
