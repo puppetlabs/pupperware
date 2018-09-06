@@ -41,7 +41,7 @@ PuppetDB
   `Preferences>File Sharing` in order for these directories to be created
   and volume-mounted automatically. There is no need to add each sub directory.
 
-#### Docker for Windows
+## Docker for Windows
 
 Due to [permissions issues with Postgres](https://forums.docker.com/t/trying-to-get-postgres-to-work-on-persistent-windows-mount-two-issues/12456/4) on Docker for Windows, an external volume and a slightly different configuration is required.
 
@@ -75,7 +75,7 @@ PS> docker volume rm puppetdb-postgres-volume
 puppetdb-postgres-volume
 ```
 
-# Managing the stack
+## Managing the stack
 
 The script `bin/puppet` (or `bin\puppet.ps1` on Windows) makes it easy to run `puppet` commands on the
 puppet master. For example, `./bin/puppet config print autosign --section
@@ -84,7 +84,11 @@ default. In a similar manner, any other task that you would perform on a
 puppet master by running `puppet x y z ...` can be achieved against the
 stack by running `./bin/puppet x y z ...`.
 
-The script `bin/change-db-password` will change the postgresql database
-password, rebuild the necessary containers, and restart all of the Puppet
-Infrastructure containers. This script doesn't take any arguments and will
-prompt you for all the needed information.
+### Changing postgresql password
+
+The postgresql instance uses password authentication for communication with the
+puppetdb instance. If you need to change the postgresql password, you'll need to
+do the following:
+* update the password in postgresql: `docker-compose exec postgres /bin/bash -c "psql -U \$POSTGRES_USER -c \"ALTER USER \$POSTGRES_USER PASSWORD '$dbpassword'\";"`
+* update values for `PUPPETDB_PASSWORD` and `POSTGRES_PASSWORD` in docker-compose.yml
+* rebuild and restart containers affected by these changes: `docker-compose up --detach --build`
