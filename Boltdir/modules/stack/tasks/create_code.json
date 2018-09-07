@@ -1,0 +1,8 @@
+{
+  "description": "put some trivial code into the codedir",
+  "implementations" : [
+    { "name": "create_code.sh", "requirements": ["shell"] }
+  ],
+  "parameters" : {
+  }
+}
