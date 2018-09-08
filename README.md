@@ -43,6 +43,8 @@ PuppetDB
 
 ## Docker for Windows
 
+Complete instructions for provisiong a server with LCOW support are in [README-windows.md](./README-windows.md)
+
 Due to [permissions issues with Postgres](https://forums.docker.com/t/trying-to-get-postgres-to-work-on-persistent-windows-mount-two-issues/12456/4) on Docker for Windows, an external volume and a slightly different configuration is required.
 
 To create the stack:
