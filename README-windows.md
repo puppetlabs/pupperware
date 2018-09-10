@@ -64,6 +64,8 @@ For convenience, put the docker binary into the system PATH so that commands can
 [Environment]::SetEnvironmentVariable("Path", "${Env:Path};${Env:ProgramFiles}\docker", [EnvironmentVariableTarget]::Machine)
 ```
 
+**Warning** - On Windows 10, the required LCOW virtal machine files may not exist, and the currently available download ([4.14.29](https://github.com/linuxkit/lcow/releases/tag/4.14.29-0aea33bc)) is too out of date. The LCOW files need to be built as per the instructions in this README.
+
 ### Building the LCOW virtual machine
 
 To run Linux containers with LCOW requires a lightweight VM image that runs under Hyper-V. At this time, the
@@ -191,6 +193,9 @@ if one is not explicitly configured. This can be verified with:
 ```
 
 * Acquire and build the LCOW image
+
+Note - The LCOW building process uses `docker` to build, therefore it requires a working installation of Docker.  Due to LCOW not currently working out of the box, you will need to install
+[Docker For Windows](https://www.docker.com/products/docker-desktop) locally, or build the LCOW files on another computer.
 
 ```powershell
 Push-Location $Env:Temp
