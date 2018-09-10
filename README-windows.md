@@ -196,7 +196,7 @@ if one is not explicitly configured. This can be verified with:
 Push-Location $Env:Temp
 git clone https://github.com/linuxkit/lcow
 Push-Location lcow
-$Env:Path += "$Env:USERPROFILE\go\bin"
+$Env:Path += ";$Env:USERPROFILE\go\bin"
 linuxkit build lcow.yml
 ```
 
