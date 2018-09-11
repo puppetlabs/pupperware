@@ -22,6 +22,7 @@ fi
 
 if [ ! -d pupperware ]; then
     git clone git@github.com:puppetlabs/pupperware.git || die clone "Failed to clone pupperware repo"
+    cd pupperware
     echo '{ "status": "cloned" }'
 else
     cd pupperware
