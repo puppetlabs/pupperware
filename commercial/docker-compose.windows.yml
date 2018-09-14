@@ -1,16 +1,16 @@
-version: '2'
+version: '3'
 
 services:
-  postgres:
-    volumes:
-      - puppetdb-postgres-volume:/var/lib/postgresql/data/
+  puppet:
+    networks:
+      default:
+        aliases:
+         - puppet.${AZURE_DOMAIN}
 
-# An external volume is needed for postgres as when under Docker For Windows the files have a different
-# owner that the starting process.
-# ref: https://forums.docker.com/t/trying-to-get-postgres-to-work-on-persistent-windows-mount-two-issues/12456/4
-#
-# To create the volume use; docker volume create --name puppetdb-postgres-volume -d local
-# To delete the volume use; docker volume rm puppetdb-postgres-volume
-volumes:
-  puppetdb-postgres-volume:
-    external: true
+  postgres:
+    image: stellirin/postgres-windows:9.6
+    environment:
+      - PGDATA=c:\data
+    volumes:
+      - ./volumes/puppetdb-postgres/data:c:\data
+      - ./postgres-custom:c:\docker-entrypoint-initdb.d

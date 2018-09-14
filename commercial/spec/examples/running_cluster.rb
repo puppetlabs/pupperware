@@ -51,7 +51,7 @@ shared_examples 'a running pupperware cluster' do
     container = get_service_container('puppet')
     status = get_container_status(container)
     # puppetserver has a healthcheck, we can let that deal with timeouts
-    while status == 'starting'
+    while (status == 'starting' || status == "'starting'")
       sleep(1)
       status = get_container_status(container)
     end
@@ -63,7 +63,9 @@ shared_examples 'a running pupperware cluster' do
   end
 
   def run_agent(agent_name)
-    %x(docker run --rm --interactive --tty --network pupperware_default --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine)
+    # lack of TTY here causes Windows to not show output of container download / start :(
+    tty = File::ALT_SEPARATOR.nil? ? '--tty' : ''
+    %x(docker run --rm --interactive #{tty} --network pupperware_default --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine)
     return $?
   end
 
@@ -133,7 +135,7 @@ shared_examples 'a running pupperware cluster' do
 
   it 'should start puppetserver' do
     status = start_puppetserver
-    expect(status).to eq('healthy')
+    expect(status).to match(/\'?healthy\'?/)
   end
 
   it 'should start puppetdb' do
