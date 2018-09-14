@@ -4,6 +4,10 @@ pool:
   # includes Ruby 2.5, Go 1.10, Node.js 10.10, hadolint
   name: Default
 
+variables:
+  BUILD_REPOSITORY: 127.0.0.1
+  COMPOSE_PROJECT_NAME: pupperware
+
 steps:
 - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
   clean: true  # whether to fetch clean each time
@@ -28,6 +32,7 @@ steps:
     docker version
     docker images
     docker info
+    docker-compose version
     sc.exe qc docker
     #
     # Ruby
@@ -43,3 +48,75 @@ steps:
     Get-ChildItem Env: | % { Write-Host "$($_.Key): $($_.Value)"  }
   displayName: Diagnostic Host Information
   name: hostinfo
+
+- powershell: |
+    $dbname = -join ((97..122) * 100 | Get-Random -Count 16 | % {[char]$_})
+    # TODO: do we want to use isOutput=true ?
+    Write-Host "##vso[task.setvariable variable=puppetdb.database.name.secret;issecret=true]$dbname"
+    $username = -join ((97..122) * 100 | Get-Random -Count 8 | % {[char]$_})
+    Write-Host "##vso[task.setvariable variable=puppetdb.user.name.secret;issecret=true]$username"
+    $password = -join ((97..122) * 100 | Get-Random -Count 8 | % {[char]$_})
+    Write-Host "##vso[task.setvariable variable=puppetdb.password.secret;issecret=true]$password"
+  displayName: Generate temporary database config
+  name: generate_test_db_config
+
+- powershell: |
+    bundle install --with test --path '.bundle/gems'
+    # heavy handed approach to use the correct compose file
+    Copy-Item ./docker-compose.azure.yml ./docker-compose.yml -Force
+    Write-Host 'Forcibly removing previous cluster config'
+    'code', 'puppet', 'serverdata', 'puppetdb\ssl' |
+      % { Remove-Item $_ -Force -Recurse -ErrorAction SilentlyContinue; New-Item $_ -Type Directory }
+    # create a randomized user / database for this test
+    Write-Host 'Creating temporary Postgres user / database'
+    psql -c "create user $(puppetdb.user.name.secret) with password '$(puppetdb.password.secret)';"
+    psql -c "create database $(puppetdb.database.name.secret) with owner $(puppetdb.user.name.secret);"
+  displayName: Prepare Test Environment
+  name: test_prepare
+  env:
+    PGUSER: $(PGUSER.secret)
+    PGPASSWORD: $(PGPASSWORD.secret)
+
+- powershell: |
+    # 172.17.0.1 can be used instead?
+    Write-Host 'Writing database connection information to disk'
+    $content = @"
+    PUPPETDB_USER=$(puppetdb.user.name.secret)
+    PUPPETDB_PASSWORD=$(puppetdb.password.secret)
+    PUPPETDB_DATABASE_CONNECTION="//host.docker.internal:5432/$(puppetdb.database.name.secret)"
+    "@
+    $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
+    [System.IO.File]::WriteAllLines(".env", $content, $Utf8NoBomEncoding)
+    Get-Content -Path '.env'
+    Write-Host 'Executing Pupperware specs'
+    bundle exec rspec spec --fail-fast
+  displayName: Test pupperware
+  name: test_pupperware
+  continueOnError: true
+
+- task: PublishTestResults@2
+  displayName: Publish pupperware test results
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: '/TEST-rspec.xml'
+    testRunTitle: pupperware Test Results
+
+- powershell: |
+    Write-Host 'Forcibly removing temporary user and database'
+    psql -c "drop database $(puppetdb.database.name.secret);"
+    psql -c "drop user $(puppetdb.user.name.secret);"
+  displayName: Temporary Database Cleanup
+  timeoutInMinutes: 3
+  condition: always()
+  env:
+    PGUSER: $(PGUSER.secret)
+    PGPASSWORD: $(PGPASSWORD.secret)
+
+- powershell: |
+    Write-Host 'Pruning containers'
+    docker container prune --force
+    Write-Host 'Pruning images'
+    docker image prune --filter "dangling=true" --force
+  displayName: Container Cleanup
+  timeoutInMinutes: 3
+  condition: always()
