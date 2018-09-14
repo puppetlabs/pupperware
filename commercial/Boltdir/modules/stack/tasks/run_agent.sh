@@ -9,8 +9,6 @@ die() {
     exit 1
 }
 
-export PATH=/opt/puppetlabs/bin:$PATH
-
 FILE=/tmp/mark.txt
 
 if [[ -f "$FILE" ]]; then
@@ -19,7 +17,7 @@ else
     old="$FILE does not exist yet"
 fi
 
-out=$(puppet agent -t --color=false 2>&1)
+out=$(sudo /opt/puppetlabs/bin/puppet agent -t --color=false 2>&1)
 rc=$?
 if [[ $rc = 1 ]]; then
     out=$(to_json "$out")

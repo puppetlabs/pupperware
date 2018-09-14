@@ -25,7 +25,7 @@ plan stack::test {
   # We would like to pass '_tty' => true or some such here to force
   # allocation of a tty but that seems to not be possible. We need the
   # tty since default CentOS requires one for sudo
-  run_task(stack::run_agent, agents, '_run_as' => 'root')
+  run_task(stack::run_agent, agents)
 
   # Stop and start the stack
   run_task(stack::manage, master, action => down)
@@ -33,5 +33,5 @@ plan stack::test {
   run_task(stack::manage, master, action => up, wait => true)
 
   # Run the agent again
-  run_task(stack::run_agent, agents, '_run_as' => 'root')
+  run_task(stack::run_agent, agents)
 }
