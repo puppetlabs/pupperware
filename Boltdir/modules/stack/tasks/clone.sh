@@ -21,6 +21,17 @@ if ! ssh-add -l > /dev/null; then
 fi
 
 if [ ! -d pupperware ]; then
+    # Turn off host key checking for github.com so that the clone succeeds
+    # even if we never cloned from there. Once the repo becomes public,
+    # we can do away with all this voodoo and use the repo's https URL
+    SSH_CONFIG="${HOME}/.ssh/config"
+    if ! grep -q 'Host github.com' "$SSH_CONFIG"; then
+        cat >> "$SSH_CONFIG" <<EOF
+Host github.com
+StrictHostKeyChecking no
+EOF
+        chmod go-rwx "$SSH_CONFIG"
+    fi
     git clone git@github.com:puppetlabs/pupperware.git || die clone "Failed to clone pupperware repo"
     cd pupperware
     echo '{ "status": "cloned" }'
