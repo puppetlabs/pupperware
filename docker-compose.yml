@@ -21,14 +21,16 @@ services:
       default:
 
   postgres:
-    image: puppet/puppetdb-postgres
     environment:
       - POSTGRES_PASSWORD=puppetdb
       - POSTGRES_USER=puppetdb
+      - POSTGRES_DB=puppetdb
     expose:
       - 5432
-    volumes:
-      - ./volumes/puppetdb-postgres/data:/var/lib/postgresql/data/
+    # volumes can only be overriden by *target*, not *source*
+    # so define them in .override.yml and .windows.yml since target varies
+    # either /var/lib/postgresql/data/ on Linux or c:\data on Windows
+    # https://docs.docker.com/compose/extends/#adding-and-overriding-configuration
     networks:
       default:
 
