@@ -1,19 +1,9 @@
 # A simple plan to run some tests against the stack
 #
-# To use this plan, you need the following:
+# To use this plan, read the setup instructions under 'Running tests` in
+# README.md
 #
-# 1) A Linux (CentOS 7) host with docker-compose installed on it; that host
-#    must be aliased to 'docker' in your .ssh/config
-#
-# 2) A Linux (CentOS 7) host with the puppet agent installed on it; after
-#    agent installation, run 'puppet config set server DOCKER --section
-#    agent' where DOCKER is the name under which this host can reach the
-#    docker host from (1) You also need to set 'ForwardAgent yes' in your
-#    .ssh/config for this host.
-#
-# This plan can be run from any machine that has bolt installed and can
-# reach the hosts from (1) and (2) via ssh. To run this plan, cd into the
-# toplevel pupperware directory and run
+# Once everything is set up, you can run this plan with
 #
 #    bolt plan run --tty stack::test
 #
