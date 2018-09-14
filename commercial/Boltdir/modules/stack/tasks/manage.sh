@@ -7,6 +7,9 @@ die() {
 
 cd pupperware || die no-repo "run the clone task first to set up pupperware"
 
+host=$(getent hosts $(hostname -s))
+export DNS_ALT_NAMES="puppet,${host##* }"
+
 case $PT_action in
     up)
         docker-compose up -d > /dev/null 2>&1
