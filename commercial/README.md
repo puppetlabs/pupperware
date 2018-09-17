@@ -94,3 +94,31 @@ do the following:
 * update the password in postgresql: `docker-compose exec postgres /bin/bash -c "psql -U \$POSTGRES_USER -c \"ALTER USER \$POSTGRES_USER PASSWORD '$dbpassword'\";"`
 * update values for `PUPPETDB_PASSWORD` and `POSTGRES_PASSWORD` in docker-compose.yml
 * rebuild and restart containers affected by these changes: `docker-compose up --detach --build`
+
+## Running tests
+
+This repo contains some simple tests that can be run with
+[bolt](https://puppet.com/docs/bolt/0.x/bolt.html) To run the tests you
+need to set a few things up first:
+
+1. Install `bolt` on your workstation
+1. Create two CentOS 7 virtual machines. In your `.ssh/config`, alias one
+as `docker` and the other as `agent1` by adding the following and adjusting
+the IP addresses given as `HostName`:
+```
+Host docker
+HostName IP1
+ForwardAgent yes
+User centos
+
+Host agent1
+HostName IP2
+User centos
+```
+1. Log into both `docker` and `agent1` with `ssh` at least once to make
+sure you can access them and to add them to your known hosts file
+1. Run `bolt plan run --tty stack::install`. This will install Docker
+Compose on `docker`, and the Puppet agent on `agent1`
+
+Once the setup is completed, run the tests with `bolt plan run --tty
+stack::test`.
