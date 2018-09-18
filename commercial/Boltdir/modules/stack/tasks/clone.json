@@ -3,6 +3,7 @@
   "implementations" : [
     { "name": "clone.sh", "requirements": ["shell"] }
   ],
+  "input_method": "environment",
   "parameters" : {
   }
 }
