@@ -122,3 +122,7 @@ Compose on `docker`, and the Puppet agent on `agent1`
 
 Once the setup is completed, run the tests with `bolt plan run --tty
 stack::test`.
+
+## License
+
+See [LICENSE](LICENSE) file.
