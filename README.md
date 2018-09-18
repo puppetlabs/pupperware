@@ -1,5 +1,5 @@
 
-# puppetstack
+# pupperware
 
 Run a container-based deployment of Puppet Infrastructure.
 
@@ -122,3 +122,12 @@ Compose on `docker`, and the Puppet agent on `agent1`
 
 Once the setup is completed, run the tests with `bolt plan run --tty
 stack::test`.
+
+## License
+
+See [LICENSE](LICENSE) file.
+
+## Issue Tracking
+
+Please open tickets for any issues in the [Puppet JIRA](https://tickets.puppetlabs.com/browse/CPR)
+with the component set to 'Container'.
