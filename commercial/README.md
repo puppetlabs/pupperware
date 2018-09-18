@@ -126,3 +126,8 @@ stack::test`.
 ## License
 
 See [LICENSE](LICENSE) file.
+
+## Issue Tracking
+
+Please open tickets for any issues in the [Puppet JIRA](https://tickets.puppetlabs.com/browse/CPR)
+with the component set to 'Container'.
