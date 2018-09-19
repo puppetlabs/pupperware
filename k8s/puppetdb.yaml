@@ -1,0 +1,74 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: puppetdb
+  labels:
+    app: pupperware
+spec:
+  ports:
+    - name: "pdb-http"
+      port: 8080
+    - name: "pdb-https"
+      port: 8081
+  selector:
+    app: pupperware
+    svc: puppetdb
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: puppetdb-claim
+  labels:
+    app: pupperware
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: puppetdb
+  labels:
+    app: pupperware
+spec:
+  selector:
+    matchLabels:
+      app: pupperware
+      svc: puppetdb
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: pupperware
+        svc: puppetdb
+    spec:
+      hostname: puppetdb
+      containers:
+        - image: puppet/puppetdb
+          name: puppetdb
+          env:
+            - name: PUPPETDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: puppetdb
+                  key: password
+            - name: PUPPETDB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: puppetdb
+                  key: user
+          ports:
+            - containerPort: 8080
+            - containerPort: 8081
+          volumeMounts:
+            - name: puppetdb-storage
+              mountPath: /etc/puppetlabs/puppet/ssl/
+      volumes:
+        - name: puppetdb-storage
+          persistentVolumeClaim:
+            claimName: puppetdb-claim
