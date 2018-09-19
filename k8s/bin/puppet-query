@@ -1,0 +1,3 @@
+#! /bin/sh
+
+kubectl get pods --selector=svc=puppetdb -o name | cut -d '/' -f 2 | xargs -I '%' kubectl exec '%' -- curl -s -X GET http://puppetdb:8080/pdb/query/v4 --data-urlencode "query=$@"
