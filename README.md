@@ -123,6 +123,13 @@ Compose on `docker`, and the Puppet agent on `agent1`
 Once the setup is completed, run the tests with `bolt plan run --tty
 stack::test`.
 
+## Containers
+
+The containers used in pupperware are generated based on dockerfiles in the
+repos for [puppetserver](https://github.com/puppetlabs/puppetserver/tree/master/docker)
+and [puppetdb](https://github.com/puppetlabs/puppetdb/tree/master/docker).
+Published containers can be found on [dockerhub](https://hub.docker.com/u/puppet).
+
 ## License
 
 See [LICENSE](LICENSE) file.
