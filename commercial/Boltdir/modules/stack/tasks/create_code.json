@@ -3,6 +3,7 @@
   "implementations" : [
     { "name": "create_code.sh", "requirements": ["shell"] }
   ],
+  "input_method": "environment",
   "parameters" : {
   }
 }

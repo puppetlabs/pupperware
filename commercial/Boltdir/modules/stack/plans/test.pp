@@ -27,6 +27,8 @@ plan stack::test {
   # tty since default CentOS requires one for sudo
   run_task(stack::run_agent, agents)
 
+  $ts1 = stack::pdb_timestamps()
+
   # Stop and start the stack
   run_task(stack::manage, master, action => down)
 
@@ -34,4 +36,19 @@ plan stack::test {
 
   # Run the agent again
   run_task(stack::run_agent, agents)
+
+  $ts2 = stack::pdb_timestamps()
+
+  # Check that timestamps changed
+  ["facts", "catalog", "report"].each |$item| {
+    # We check not just equality, but that the timestamps
+    # moved in the right direction
+    if $ts1[$item] >= $ts2[$item] {
+      fail_plan("The timestamp for ${item} did not change after an agent run",
+                "stack/timestamps-not-changed",
+                { "item" => $item,
+                  "before" => $ts1[$item],
+                  "after" => $ts2[$item] })
+    }
+  }
 }

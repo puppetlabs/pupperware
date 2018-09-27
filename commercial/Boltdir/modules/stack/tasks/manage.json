@@ -3,6 +3,7 @@
   "implementations" : [
     { "name": "manage.sh", "requirements": ["shell"] }
   ],
+  "input_method": "environment",
   "parameters" : {
     "action" : {
       "description": "the action to perform",
