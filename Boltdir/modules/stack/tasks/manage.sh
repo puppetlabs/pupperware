@@ -5,19 +5,35 @@ die() {
     exit 1
 }
 
+pdb_running() {
+    docker-compose exec -T puppet \
+        curl -s 'http://puppetdb:8080/status/v1/services/puppetdb-status' | \
+    python -c 'import json, sys; print json.load(sys.stdin)["state"]'
+}
+
+wait_for_it() {
+    # Wait for Puppet server to come up
+    cont=$(docker-compose ps -q puppet)
+    while [[ $(docker inspect "$cont" --format '{{.State.Health.Status}}') != 'healthy' ]]; do
+        sleep 1
+    done
+
+    # Wait for PuppetDB to be ready
+    while [[ $(pdb_running 2>/dev/null) != running ]]; do
+        sleep 1
+    done
+}
+
 cd pupperware || die no-repo "run the clone task first to set up pupperware"
 
-host=$(getent hosts $(hostname -s))
+host=$(getent hosts "$(hostname -s)")
 export DNS_ALT_NAMES="puppet,${host##* }"
 
 case $PT_action in
     up)
         docker-compose up -d > /dev/null 2>&1
         if [[ "$PT_wait" = "true" ]]; then
-            cont=$(docker-compose ps -q puppet)
-            while [[ $(docker inspect $cont --format '{{.State.Health.Status}}') != 'healthy' ]]; do
-                sleep 1
-            done
+            wait_for_it
         fi
         echo '{ "status": "started" }'
         ;;
