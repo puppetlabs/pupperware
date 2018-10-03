@@ -138,3 +138,9 @@ See [LICENSE](LICENSE) file.
 
 Please open tickets for any issues in the [Puppet JIRA](https://tickets.puppetlabs.com/browse/CPR)
 with the component set to 'Container'.
+
+## Contact us!
+
+If you have questions or comments about pupperware, feel free to send a message
+to the [puppet-users mailing list](https://groups.google.com/forum/#!forum/puppet-users)
+or reach out in the #puppet channel in the [puppet community slack](https://slack.puppet.com/).
