@@ -1,0 +1,126 @@
+#! /usr/bin/env bash
+
+set -e
+
+DNS_ALT_NAMES='puppet'
+
+function log() {
+  local message="$1"
+  local level="$2"
+  echo "$level: $message"
+}
+
+function setup_prerequisites() {
+  if ! command -v docker-compose; then
+    log 'You must have docker-compose installed to run the tests' 'ERROR'
+    exit 1
+  fi
+
+  test_agent="puppet_test$RANDOM"
+  if command -v facter; then
+    ipaddress="$(facter ipaddress)"
+    domain="$(facter domain)"
+  elif [[ -n "$IPADDRESS" ]]; then
+    ipaddress="$IPADDRESS"
+    if [[ -n "$DOMAIN" ]]; then
+      domain="$DOMAIN"
+    else
+      log 'Cannot determine domain, please set the DOMAIN environment variable' 'ERROR'
+      exit 1
+    fi
+  else
+    log 'Cannot determine IP Address, please set the IPADDRESS environment variable' 'ERROR'
+    log 'and the DOMAIN environment variable' 'ERROR'
+    exit 1
+  fi
+}
+
+function pdb_running() {
+  docker-compose exec -T puppet \
+    curl -s 'http://puppetdb:8080/status/v1/services/puppetdb-status' | \
+    ruby -e "require 'json'; puts JSON.parse(STDIN.read)['state']"
+}
+
+function wait_for_start() {
+  log '*** Wait for puppetserver to be up and running ***' 'INFO'
+  container="$(docker-compose ps -q puppet)"
+  while [[ "$(docker inspect "$container" --format '{{.State.Health.Status}}')" == 'starting' ]]; do
+    sleep 1
+  done
+
+  if [[ "$(docker inspect "$container" --format '{{.State.Health.Status}}')" != 'healthy' ]]; then
+    logs="$(docker-compose logs puppet)"
+    log 'Puppet server did not start successfully' 'ERROR'
+    log "$logs" 'ERROR'
+    exit 1
+  fi
+
+  # Need this to work around SERVER-2354
+  docker-compose exec puppet puppet config set server puppet
+
+  log '*** Wait for puppetdb to be up and running ***' 'INFO'
+  while [[ "$(pdb_running 2>/dev/null)" != 'running' ]]; do
+    sleep 1
+  done
+}
+
+function start_cluster() {
+  log '*** Test the cluster starts ***' 'INFO'
+  docker-compose up -d
+  wait_for_start
+}
+
+function stop_cluster() {
+  log '*** Stopping the test cluster ***' 'INFO'
+  docker-compose stop
+}
+
+function run_agent() {
+  log '*** Run a puppet agent against the cluster ***' 'INFO'
+  docker run -it --rm --add-host puppet:$ipaddress --name "$test_agent" --hostname "$test_agent" puppet/puppet-agent-ubuntu
+}
+
+function check_agent() {
+  body=$(printf '{ "query": "nodes { certname = \\"%s\\" }" }' "$test_agent.$domain")
+
+  out=""
+  while [ -z "$out" ]; do
+    out=$(docker-compose exec -T puppet \
+      curl -s -X POST http://puppetdb:8080/pdb/query/v4 \
+      -H 'Content-Type:application/json' \
+      -d "$body")
+    if [ -z "$out" ]; then
+      sleep 1
+    fi
+  done
+  timestamp="$(echo $out | ruby -e "require 'json'; puts JSON.parse(STDIN.read).first['report_timestamp']")"
+  echo "$timestamp"
+}
+
+function clean_agent() {
+  log "*** Deleting certs for '$test_agent' ***" 'INFO'
+  docker-compose exec -T puppet puppetserver ca clean --certname "$test_agent.$domain"
+}
+
+setup_prerequisites
+docker-compose pull
+start_cluster
+
+run_agent
+clean_agent
+timestamp1="$(check_agent)"
+stop_cluster
+
+start_cluster
+run_agent
+clean_agent
+timestamp2="$(check_agent)"
+
+if [[ "$timestamp1" == "$timestamp2" ]]; then
+  log '*** Second agent run not recorded in PuppetDB! ***' 'ERROR'
+  exit 1
+else
+  log "*** Timestamp for first report: $timestamp1 ***" 'INFO'
+  log "*** Timestamp for second report: $timestamp2 ***" 'INFO'
+  log '*** Testing completed successfully! ***' 'INFO'
+fi
