@@ -14,9 +14,9 @@ services:
       - DNS_ALT_NAMES
       - PUPPETDB_SERVER_URLS=https://puppetdb:8081
     volumes:
-      - ./code:/etc/puppetlabs/code/
-      - ./puppet:/etc/puppetlabs/puppet/
-      - ./serverdata:/opt/puppetlabs/server/data/puppetserver/
+      - ./persistence/code:/etc/puppetlabs/code/
+      - ./persistence/puppet:/etc/puppetlabs/puppet/
+      - ./persistence/serverdata:/opt/puppetlabs/server/data/puppetserver/
 
   postgres:
     image: puppet/puppetdb-postgres
@@ -26,7 +26,7 @@ services:
     expose:
       - 5432
     volumes:
-      - ./puppetdb-postgres/data:/var/lib/postgresql/data/
+      - ./persistence/puppetdb-postgres/data:/var/lib/postgresql/data/
 
   puppetdb:
     hostname: puppetdb
@@ -41,4 +41,4 @@ services:
       - postgres
       - puppet
     volumes:
-      - ./puppetdb/ssl:/etc/puppetlabs/puppet/ssl/
+      - ./persistence/puppetdb/ssl:/etc/puppetlabs/puppet/ssl/
