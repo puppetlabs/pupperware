@@ -5,29 +5,17 @@ require 'json'
 require "#{File.join(File.dirname(__FILE__), 'examples', 'running_cluster.rb')}"
 
 describe 'The docker-compose file works' do
-  def which(cmd)
-    exts = ENV['PATHEXT'] ? ENV['PATHEXT'].split(';') : ['']
-    ENV['PATH'].split(File::PATH_SEPARATOR).each do |path|
-      exts.each { |ext|
-        exe = File.join(path, "#{cmd}#{ext}")
-        return exe if File.executable?(exe) && !File.directory?(exe)
-      }
-    end
-    return nil
-  end
-
   before(:all) do
     @test_agent = "puppet_test#{Random.rand(1000)}"
-    @docker = which('docker')
-    @compose = which('docker-compose')
     @timestamps = []
-    if @compose.nil?
+    %x(docker-compose --help)
+    if $? != 0
       fail "`docker-compose` must be installed and available in your PATH"
     end
   end
 
   after(:all) do
-    %x(#{@compose} down)
+    %x(docker-compose down)
   end
 
   describe 'the cluster starts' do
@@ -36,10 +24,10 @@ describe 'The docker-compose file works' do
 
   describe 'the cluster restarts' do
     it 'should stop the cluster' do
-      ps = %x(#{@compose} ps)
+      ps = %x(docker-compose ps)
       expect(ps.match('puppet')).not_to eq(nil)
-      %x(#{@compose} down)
-      ps = %x(#{@compose} ps)
+      %x(docker-compose down)
+      ps = %x(docker-compose ps)
       expect(ps.match('puppet')).to eq(nil)
     end
 
