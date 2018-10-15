@@ -1,25 +1,34 @@
 shared_examples 'a running pupperware cluster' do
+  require 'timeout'
+  require 'json'
+  require 'rspec/core'
+
   def puppetserver_health_check(container)
     %x(docker inspect "#{container}" --format '{{.State.Health.Status}}').chomp
   end
 
   def get_puppetdb_state
     status = %x(docker-compose exec -T puppet curl -s 'http://puppetdb:8080/status/v1/services/puppetdb-status').chomp
-    begin
-      return JSON.parse(status)['state'] unless status.empty?
-    rescue
-      return ''
-    end
+    return JSON.parse(status)['state'] unless status.empty?
+  rescue
+    return ''
+  else
     return ''
   end
 
   def start_puppetserver
     container = %x(docker-compose ps -q puppet).chomp
-    while container.empty?
-      sleep(1)
-      container = %x(docker-compose ps -q puppet).chomp
+    Timeout::timeout(120) do
+      while container.empty?
+        sleep(1)
+        container = %x(docker-compose ps -q puppet).chomp
+      end
     end
+  rescue Timeout::Error
+    return ''
+  else
     status = puppetserver_health_check(container)
+    # puppetserver has a healthcheck, we can let that deal with timeouts
     while status == 'starting'
       sleep(1)
       status = puppetserver_health_check(container)
@@ -40,15 +49,17 @@ shared_examples 'a running pupperware cluster' do
     domain = %x(docker-compose exec -T puppet facter domain).chomp
     body = "{ \"query\": \"nodes { certname = \\\"#{agent_name}.#{domain}\\\" } \" }"
     out = ''
-    while out.empty?
-      out = %x(docker-compose exec -T puppet curl -s -X POST http://puppetdb:8080/pdb/query/v4 -H 'Content-Type:application/json' -d '#{body}')
-      sleep(1) if out.empty?
-    end
-    begin
+    Timeout::timeout(120) do
+      while out.empty?
+        out = %x(docker-compose exec -T puppet curl -s -X POST http://puppetdb:8080/pdb/query/v4 -H 'Content-Type:application/json' -d '#{body}')
+        sleep(1) if out.empty?
+      end
       JSON.parse(out).first['report_timestamp']
-    rescue
-      return ''
     end
+  rescue Timeout::Error
+    return ''
+  rescue
+      return ''
   end
 
   def clean_certificate(agent_name)
@@ -59,12 +70,20 @@ shared_examples 'a running pupperware cluster' do
 
   def start_puppetdb
     status = get_puppetdb_state
-    while status != 'running'
-      sleep(1)
-      status = get_puppetdb_state
+    # since pdb doesn't have a proper healthcheck yet, this could spin forever
+    # add a timeout so it eventually returns.
+    Timeout::timeout(600) do
+      while status != 'running'
+        sleep(1)
+        status = get_puppetdb_state
+      end
     end
+  rescue Timeout::Error
+    return ''
+  else
     return status
   end
+
   it 'should start the cluster' do
     %x(docker-compose up -d)
     ps = %x(docker-compose ps)
