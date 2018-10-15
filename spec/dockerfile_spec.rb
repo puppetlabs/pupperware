@@ -1,7 +1,5 @@
 #! /usr/bin/env ruby
 
-require 'rspec/core'
-require 'json'
 require "#{File.join(File.dirname(__FILE__), 'examples', 'running_cluster.rb')}"
 
 describe 'The docker-compose file works' do
