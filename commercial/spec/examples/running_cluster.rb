@@ -5,7 +5,11 @@ shared_examples 'a running pupperware cluster' do
 
   def get_puppetdb_state
     status = %x(docker-compose exec -T puppet curl -s 'http://puppetdb:8080/status/v1/services/puppetdb-status').chomp
-    return JSON.parse(status)['state'] unless status.empty?
+    begin
+      return JSON.parse(status)['state'] unless status.empty?
+    rescue
+      return ''
+    end
     return ''
   end
 
