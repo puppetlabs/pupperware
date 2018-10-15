@@ -98,6 +98,22 @@ do the following:
 
 ## Running tests
 
+### Running tests locally
+This repo contains some simple tests that can be run with [RSpec](http://rspec.info).
+To run these tests you need to have Ruby, Docker, and Docker Compose installed on the
+machine where you're running the tests. The tests depend on the 'rspec' and 'json'
+rubygems. The tests are known to run on at least ruby 1.9.3-p551 and as new as
+ruby 2.4.3p205.
+
+**NOTE** These tests will start and stop the cluster
+running from the current checkout of Pupperware, so be careful where you run them
+from.
+
+To run the tests:
+1. `bundle install --with test`
+2. `bundle exec rspec spec`
+
+### Tests using Bolt
 This repo contains some simple tests that can be run with
 [bolt](https://puppet.com/docs/bolt/0.x/bolt.html) To run the tests you
 need to set a few things up first:
