@@ -1,5 +1,12 @@
-#! /bin/sh
+#! /usr/bin/env ruby
 
-cd "$(dirname "$0")/.." || exit 1
+status = 0
 
-docker-compose exec puppet puppet "$@"
+# want to run from one directory above where this file exists
+Dir.chdir(File.dirname(File.dirname(__FILE__))) do
+  output = %x(docker-compose exec puppet puppet #{ARGV.join(' ')})
+  puts output
+  status = $?
+end
+
+exit status.exitstatus
