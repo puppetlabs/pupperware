@@ -1,0 +1,3 @@
+FROM alpine:latest
+COPY migrate.sh /
+CMD /migrate.sh
