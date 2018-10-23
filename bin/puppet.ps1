@@ -6,4 +6,4 @@ param (
 
 Push-Location (Join-Path -Path $PSScriptRoot -ChildPath '..') | Out-Null
 
-& docker-compose exec puppet puppet $Arguments
+& docker-compose exec master puppet $Arguments

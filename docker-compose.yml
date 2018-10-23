@@ -10,17 +10,55 @@ services:
     volumes:
       - ./volumes/consul:/consul/data
 
+  # Logging from https://gist.github.com/codification/1733666f9ce9072b14906c4966c2abb5
+  rsyslog:
+    image: jumanjiman/rsyslog
+    volumes:
+      - rsyslog:/var/run/rsyslog/dev
+
   puppet:
-    hostname: puppet
-    build: ./services/puppetserver
+    build: ./services/lb
     ports:
       - 8140:8140
+      - 8765:8765
+      - 9000:9000
+    volumes:
+      # Needs certs/ca.pem, proxy_cert.pem, and crl.pem from puppet/ssl
+      # CRL means it needs to share a volume with master so that HAProxy
+      # sees updated CRL after a revocation
+      - ./volumes/puppet/ssl:/etc/ssl/
+      - rsyslog:/var/run/rsyslog/dev
+    depends_on:
+      - master  # the name 'master' must resolve before we can start the lb
+
+  master:
+    build: ./services/puppetserver
+    ports:
+      - 8140
     environment:
       # DNS_ALT_NAMES must be set before starting the stack the first time,
       # and must list all the names under which the puppetserver can be
       # reached. 'puppet' must be one of them, otherwise puppetdb won't be
       # able to get a cert. Add other names as a comma-separated list
       - DNS_ALT_NAMES=puppet,${DNS_ALT_NAMES:-}
+      - PUPPETSERVER_HOSTNAME
+      - PUPPETDB_SERVER_URLS=https://puppetdb:8081
+      - MAIN_PUPPET=yes
+    volumes:
+      - ./volumes/code:/etc/puppetlabs/code/
+      - ./volumes/puppet:/etc/puppetlabs/puppet/
+      - ./volumes/serverdata:/opt/puppetlabs/server/data/puppetserver/
+
+  compiler:
+    # We do not want to start additional compilers by default; there
+    # does not seem a way to do this with docker-compose.
+    # See for example https://github.com/docker/compose/issues/1896
+    # You might think that using 'scale: 0' works, but that is just ignored
+    # and acts like 'scale: 1'
+    build: ./services/puppetserver
+    ports:
+      - 8140
+    environment:
       - PUPPETDB_SERVER_URLS=https://puppetdb:8081
     volumes:
       - ./volumes/code:/etc/puppetlabs/code/
@@ -62,3 +100,6 @@ services:
 
 networks:
   default:
+
+volumes:
+  rsyslog:

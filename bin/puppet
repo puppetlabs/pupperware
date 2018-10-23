@@ -2,4 +2,4 @@
 
 cd "$(dirname "$0")/.." || exit 1
 
-docker-compose exec puppet puppet "$@"
+docker-compose exec master puppet "$@"
