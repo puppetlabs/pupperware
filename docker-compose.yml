@@ -1,6 +1,15 @@
 version: '3'
 
 services:
+  consul:
+    image: library/consul
+    ports:
+      - 8500 # Consul HTTP
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+    volumes:
+      - ./volumes/consul:/consul/data
+
   puppet:
     hostname: puppet
     build: ./services/puppetserver
