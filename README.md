@@ -22,7 +22,7 @@ revoke the server's certificate and restart the stack with the changed
 `DNS_ALT_NAMES` value.
 
 When you first start the Puppet Infrastructure, the stack will create a
-`persistence/` directory with a number of sub-directories to store the
+`volumes/` directory with a number of sub-directories to store the
 persistent data that should survive the restart of your infrastructure. This
 directory is created right next to the Docker Compose file and contains the
 following sub-directories:
@@ -38,7 +38,7 @@ this directory and restarting the stack.
 * `puppetdb-postgres/`: the data files for the PostgreSQL instance used by
 PuppetDB
 * `serverdata/`: persistent data for Puppet Server
-* Note: On OSX, you must add the `persistence` directory to "File Sharing" under
+* Note: On OSX, you must add the `volumes` directory to "File Sharing" under
   `Preferences>File Sharing` in order for these directories to be created
   and volume-mounted automatically. There is no need to add each sub directory.
 
