@@ -1,8 +1,12 @@
 #!/bin/bash
 
+master_running() {
+    test "$(curl -sfk https://${PUPPETSERVER_HOSTNAME}:8140/status/v1/simple)" = running
+}
+
 PUPPETSERVER_HOSTNAME="${PUPPETSERVER_HOSTNAME:-puppet}"
 if [ ! -d "/etc/puppetlabs/puppetdb/ssl" ]; then
-  while ! nc -z "$PUPPETSERVER_HOSTNAME" 8140; do
+  while ! master_running; do
     sleep 1
   done
   set -e
