@@ -3,7 +3,7 @@ version: '3'
 services:
   puppet:
     hostname: puppet
-    image: puppet/puppetserver
+    build: ./services/puppetserver
     ports:
       - 8140:8140
     environment:
@@ -36,7 +36,7 @@ services:
 
   puppetdb:
     hostname: puppetdb
-    image: puppet/puppetdb
+    build: ./services/puppetdb
     environment:
       - PUPPETDB_PASSWORD=puppetdb
       - PUPPETDB_USER=puppetdb
