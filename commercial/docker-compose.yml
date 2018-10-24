@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+  pe:
+    hostname: pe.docker
+    image: puppet-enterprise:2017.3.10
+    environment:
+      - AUTOSIGN=true
+      - NO_NGINX=true
+    ports:
+      - 4430
+      - 4433:4433
+      - 8140:8140
+      - 8142:8142
+      - 8170:8170
+      - 8081:8081
+      - 61613:61613
+    volumes:
+      - etc-puppetlabs:/etc/puppetlabs
+      - opt-puppetlabs:/opt/puppetlabs
+      - var-log-puppetlabs:/var/log/puppetlabs
+      - var-run-puppetlabs:/var/run/puppetlabs
+
+  nginx:
+    image: nginx
+    depends_on:
+      - pe
+    ports:
+      - 443:443
+      - 80:80
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/proxy.conf:/etc/puppetlabs/nginx/conf.d/proxy.conf
+      - ./nginx/http_redirect.conf:/etc/puppetlabs/nginx/conf.d/http_redirect.conf
+      - etc-puppetlabs:/etc/puppetlabs
+      - opt-puppetlabs:/opt/puppetlabs
+      - var-log-puppetlabs:/var/log/puppetlabs
+      - var-run-puppetlabs:/var/run/puppetlabs
+
+volumes:
+  etc-puppetlabs:
+  opt-puppetlabs:
+  var-log-puppetlabs:
+  var-run-puppetlabs:
