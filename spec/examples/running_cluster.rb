@@ -41,7 +41,7 @@ shared_examples 'a running pupperware cluster' do
   end
 
   def run_agent(agent_name)
-    %x(docker run --rm -it --net pupperware_default --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-ubuntu)
+    %x(docker run --rm -it --net pupperware_default --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine)
     return $?
   end
 
