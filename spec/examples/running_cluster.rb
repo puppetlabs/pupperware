@@ -8,7 +8,7 @@ shared_examples 'a running pupperware cluster' do
   end
 
   def get_puppetdb_state
-    status = %x(docker-compose exec -T puppet curl -s 'http://puppetdb:8080/status/v1/services/puppetdb-status').chomp
+    status = %x(docker-compose exec -T puppet curl --silent 'http://puppetdb:8080/status/v1/services/puppetdb-status').chomp
     return JSON.parse(status)['state'] unless status.empty?
   rescue
     return ''
@@ -17,11 +17,11 @@ shared_examples 'a running pupperware cluster' do
   end
 
   def start_puppetserver
-    container = %x(docker-compose ps -q puppet).chomp
+    container = %x(docker-compose ps --quiet puppet).chomp
     Timeout::timeout(120) do
       while container.empty?
         sleep(1)
-        container = %x(docker-compose ps -q puppet).chomp
+        container = %x(docker-compose ps --quiet puppet).chomp
       end
     end
   rescue Timeout::Error
@@ -41,7 +41,7 @@ shared_examples 'a running pupperware cluster' do
   end
 
   def run_agent(agent_name)
-    %x(docker run --rm -it --net pupperware_default --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine)
+    %x(docker run --rm --interactive --tty --network pupperware_default --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine)
     return $?
   end
 
@@ -51,7 +51,7 @@ shared_examples 'a running pupperware cluster' do
     out = ''
     Timeout::timeout(120) do
       while out.empty?
-        out = %x(docker-compose exec -T puppet curl -s -X POST http://puppetdb:8080/pdb/query/v4 -H 'Content-Type:application/json' -d '#{body}')
+        out = %x(docker-compose exec -T puppet curl --silent --request POST http://puppetdb:8080/pdb/query/v4 --header 'Content-Type:application/json' --data '#{body}')
         sleep(1) if out.empty?
       end
       JSON.parse(out).first['report_timestamp']
@@ -85,7 +85,7 @@ shared_examples 'a running pupperware cluster' do
   end
 
   it 'should start the cluster' do
-    %x(docker-compose up -d)
+    %x(docker-compose up --detach)
     ps = %x(docker-compose ps)
     expect(ps.match('puppet')).not_to eq(nil)
   end
