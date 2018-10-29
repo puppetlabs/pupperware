@@ -7,6 +7,7 @@ The Pupperware project is being tested against the latest [LCOW (Linux Container
 * A build of Windows newer than Windows 10, Build 1709
 * Docker edge release 18.02 with experimental features enabled, nightly currently preferred
 * A LinuxKit based kernel image
+* docker-compose binaries
 
 The February 2018 [Docker for Windows Desktop 18.02 blog post](https://blog.docker.com/2018/02/docker-for-windows-18-02-with-windows-10-fall-creators-update/) covers some of the important changes made in that release. In particular, the previous "Linux mode" capable of running only Linux containers was deprecated in favor of LCOW (though "Linux mode" was not yet removed). The previous "Linux mode" initially ran the `MobyLinuxVM` virtual machine in Hyper-V (later replaced with a `LinuxKit` variant in [Docker for Windows 17.10](https://blog.docker.com/2017/11/docker-for-windows-17-11/)) to host Linux containers. Older "Linux mode" support interacted with Docker volumes differently (using SMB / CIFS) than how LCOW now interfaces with volumes (using [9p](http://9p.cat-v.org/)). Note that the official Docker position is that LCOW is the one path forward for running Linux Containers on Windows:
 
@@ -19,6 +20,7 @@ The following steps outline how to provision a host with the required support to
 * [Provision a Windows host with LCOW support](#provision-a-windows-host-with-lcow-support)
 * [Install the Docker nightly build](#install-the-docker-nightly-build)
 * [Build an updated LCOW kernel](#build-an-updated-lcow-kernel)
+* [Build the docker-compose binaries](#build-the-docker-compose-binaries)
 * [Validate the Install](#validate-the-install)
 
 Some of these instructions are updated from the [A sneak peek at LCOW](https://stefanscherer.github.io/sneak-peek-at-lcow/) written by Stefan Scherer [@stefscherer](https://twitter.com/stefscherer)
@@ -191,6 +193,41 @@ Create outputs:
 
 Alternatively, it may be simpler to do this on OSX with the help of Homebrew, as `linuxkit` builds are already available there. Detailed instructions are in [README-OSX-build-LCOW-kernel.md](./README-OSX-build-LCOW-kernel.md). The build artifacts should be copied to the Windows system as previously described.
 
+## Build the docker-compose binaries
+
+To provision the compose files in this repository also requires a working `docker-compose.exe`. Fortunately the source code repository includes a build script at https://github.com/docker/compose/blob/master/script/build/windows.ps1 that does most of the heavy lifting.
+
+Run the following PowerShell script to:
+
+* Install Python build tooling with Chocolatey
+* Copy and build Docker Compose source
+* Install Docker Compose alongside Docker
+
+```powershell
+# building docker-compose requires a 3.6 series Python, 3.7 doesn't work
+choco install -y python --version 3.6.7
+
+# make build tools available in current session
+# by setting environment variable and importing Chocolatey PowerShell
+$env:ChocolateyInstall = Convert-Path "$((Get-Command choco).path)\..\.."
+Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+Update-SessionEnvironment
+
+pip install 'virtualenv>=15.1.0'
+
+Push-Location $Env:Temp
+git clone https://github.com/docker/compose
+Push-Location compose
+
+# run the build script from the repo
+.\script\build\windows.ps1
+
+# copy binaries to the Docker installation directory
+Copy-Item .\dist\docker-compose-Windows-x86_64.exe $ENV:ProgramFiles\Docker\docker-compose.exe -Force
+```
+
+NOTE: Python 3.6 series is required to build Windows binaries. 3.7 can be used, but requires manually merging the patch from https://github.com/Alexpux/MINGW-packages/commit/4c18633ba2331d980f00aff075f17135399c43c5 into the cx_Freeze package.
+
 ## Validate the install
 
 The Docker service should now be running on boot and should now yield details about the LCOW setup like
@@ -231,6 +268,17 @@ Experimental: true
 Insecure Registries:
  127.0.0.0/8
 Live Restore Enabled: false
+```
+
+Docker-compose should also provide information like:
+
+```
+PS> docker-compose version
+
+docker-compose version 1.23.0dev, build de8717cd
+docker-py version: 3.5.0
+CPython version: 3.6.7
+OpenSSL version: OpenSSL 1.0.2p  14 Aug 2018
 ```
 
 With all of the LCOW setup verified, it should now be possible to launch side-by-side
