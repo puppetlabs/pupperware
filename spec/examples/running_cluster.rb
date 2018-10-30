@@ -2,8 +2,9 @@ shared_examples 'a running pupperware cluster' do
   require 'timeout'
   require 'json'
   require 'rspec/core'
+  require 'open3'
 
-  def puppetserver_health_check(container)
+  def get_container_health(container)
     %x(docker inspect "#{container}" --format '{{.State.Health.Status}}').chomp
   end
 
@@ -16,26 +17,25 @@ shared_examples 'a running pupperware cluster' do
     return ''
   end
 
-  def start_puppetserver
-    container = %x(docker-compose ps --quiet puppet).chomp
+  def get_container_for_service(name)
+    container = %x(docker-compose ps --quiet #{name}).chomp
     Timeout::timeout(120) do
       while container.empty?
         sleep(1)
-        container = %x(docker-compose ps --quiet puppet).chomp
+        container = %x(docker-compose ps --quiet #{name}).chomp
       end
     end
-  rescue Timeout::Error
-    return ''
-  else
-    status = puppetserver_health_check(container)
+
+    return container
+  end
+
+  def wait_for_container_start(container)
+    status = get_container_health(container)
     # puppetserver has a healthcheck, we can let that deal with timeouts
     while status == 'starting'
       sleep(1)
-      status = puppetserver_health_check(container)
+      status = get_container_health(container)
     end
-
-    # work around SERVER-2354
-    %x(docker-compose exec puppet puppet config set server puppet)
 
     return status
   end
@@ -85,13 +85,21 @@ shared_examples 'a running pupperware cluster' do
   end
 
   it 'should start the cluster' do
-    %x(docker-compose up --detach)
-    ps = %x(docker-compose ps)
-    expect(ps.match('puppet')).not_to eq(nil)
+    stdout_stderr, status = Open3.capture2e("docker-compose up --detach")
+    puts stdout_stderr
+    stdout, stderr, status = Open3.capture3("docker-compose ps")
+    puts stdout
+    puts stderr
+    expect(stdout.match('puppet')).not_to eq(nil)
   end
 
   it 'should start puppetserver' do
-    status = start_puppetserver
+    container = get_container_for_service('puppet')
+    status = wait_for_container_start(container)
+
+    # work around SERVER-2354
+    %x(docker-compose exec puppet puppet config set server puppet)
+
     expect(status).to eq('healthy')
   end
 

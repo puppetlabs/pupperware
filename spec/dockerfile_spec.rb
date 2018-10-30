@@ -1,5 +1,6 @@
 #! /usr/bin/env ruby
 
+require 'open3'
 require "#{File.join(File.dirname(__FILE__), 'examples', 'running_cluster.rb')}"
 
 describe 'The docker-compose file works' do
