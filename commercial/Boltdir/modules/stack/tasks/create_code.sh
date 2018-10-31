@@ -7,12 +7,14 @@ die() {
 
 cd pupperware || die no-repo "run the clone task first to set up pupperware"
 
-if [[ -d code/ ]]; then
-    sudo chown -R "$USER" code/
-    rm -rf code/*
+code_vol=volumes/code
+
+if [[ -d "$code_vol" ]]; then
+    sudo chown -R "$USER" "$code_vol"
+    rm -rf "$code_vol"/*
 fi
-mkdir -p code/environments/production/manifests
-cat > code/environments/production/manifests/site.pp <<'EOF'
+mkdir -p "$code_vol"/environments/production/manifests
+cat > "$code_vol"/environments/production/manifests/site.pp <<'EOF'
 $timestamp = strftime('%Y-%m-%dT%H:%M:%S')
 
 node default {
