@@ -7,7 +7,9 @@ language:
   - ruby
 
 env:
-  - DOCKER_COMPOSE_VERSION=1.22.0
+  global:
+    - DOCKER_COMPOSE_VERSION=1.22.0
+    - COMPOSE_PROJECT_NAME=pupperware
 
 before_install:
   - sudo rm /usr/local/bin/docker-compose
