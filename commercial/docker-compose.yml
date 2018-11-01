@@ -17,6 +17,8 @@ services:
       - ./volumes/code:/etc/puppetlabs/code/
       - ./volumes/puppet:/etc/puppetlabs/puppet/
       - ./volumes/serverdata:/opt/puppetlabs/server/data/puppetserver/
+    networks:
+      default:
 
   postgres:
     image: puppet/puppetdb-postgres
@@ -27,6 +29,8 @@ services:
       - 5432
     volumes:
       - ./volumes/puppetdb-postgres/data:/var/lib/postgresql/data/
+    networks:
+      default:
 
   puppetdb:
     hostname: puppetdb
@@ -42,3 +46,8 @@ services:
       - puppet
     volumes:
       - ./volumes/puppetdb/ssl:/etc/puppetlabs/puppet/ssl/
+    networks:
+      default:
+
+networks:
+  default:
