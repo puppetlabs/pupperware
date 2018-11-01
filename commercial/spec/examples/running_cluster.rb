@@ -2,13 +2,24 @@ shared_examples 'a running pupperware cluster' do
   require 'timeout'
   require 'json'
   require 'rspec/core'
+  require 'net/http'
 
   def puppetserver_health_check(container)
     %x(docker inspect "#{container}" --format '{{.State.Health.Status}}').chomp
   end
 
+  def get_puppetdb_base_uri
+    pdb_ip_port = %x(docker-compose port puppetdb 8080).chomp
+    uri = URI("http://#{pdb_ip_port}")
+    uri.host = 'localhost' if uri.host == '0.0.0.0'
+    STDOUT.puts "determined PDB endpoint #{uri}"
+    return uri
+  end
+
   def get_puppetdb_state
-    status = %x(docker-compose exec -T puppet curl --silent 'http://puppetdb:8080/status/v1/services/puppetdb-status').chomp
+    pdb_uri = URI::join(get_puppetdb_base_uri, '/status/v1/services/puppetdb-status')
+    status = Net::HTTP.get_response(pdb_uri).body
+    STDOUT.puts "retrieved raw puppetdb status: #{status}"
     return JSON.parse(status)['state'] unless status.empty?
   rescue
     return ''
@@ -46,20 +57,29 @@ shared_examples 'a running pupperware cluster' do
   end
 
   def check_report(agent_name)
+    pdb_uri = URI::join(get_puppetdb_base_uri, '/pdb/query/v4')
     domain = %x(docker-compose exec -T puppet facter domain).chomp
     body = "{ \"query\": \"nodes { certname = \\\"#{agent_name}.#{domain}\\\" } \" }"
+
     out = ''
     Timeout::timeout(120) do
-      while out.empty?
-        out = %x(docker-compose exec -T puppet curl --silent --request POST http://puppetdb:8080/pdb/query/v4 --header 'Content-Type:application/json' --data '#{body}')
-        sleep(1) if out.empty?
+      Net::HTTP.start(pdb_uri.hostname, pdb_uri.port) do |http|
+        while out.empty?
+          req = Net::HTTP::Post.new(pdb_uri)
+          req.content_type = 'application/json'
+          req.body = body
+          res =  http.request(req)
+          out = res.body if res.code == '200' && !res.body.empty?
+          STDOUT.puts "retrieved agent #{agent_name} report info from #{req.uri}: HTTP #{res.code} /  #{res.body}"
+          sleep(1) if out.empty?
+        end
+        return JSON.parse(out).first['report_timestamp']
       end
-      JSON.parse(out).first['report_timestamp']
     end
   rescue Timeout::Error
     return ''
   rescue
-      return ''
+    return ''
   end
 
   def clean_certificate(agent_name)
