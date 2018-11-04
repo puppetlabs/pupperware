@@ -38,6 +38,7 @@ shared_examples 'a running pupperware cluster' do
       end
     end
   rescue Timeout::Error
+    STDOUT.puts('docker-compose never started a service named "puppet"')
     return ''
   else
     status = puppetserver_health_check(container)
@@ -79,8 +80,10 @@ shared_examples 'a running pupperware cluster' do
       end
     end
   rescue Timeout::Error
+    STDOUT.puts("failed to retrieve report for #{agent_name} due to timeout")
     return ''
   rescue
+    STDOUT.puts("failed to retrieve report for #{agent_name}: #{$!}")
     return ''
   end
 
