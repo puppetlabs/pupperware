@@ -4,8 +4,24 @@ shared_examples 'a running pupperware cluster' do
   require 'rspec/core'
   require 'net/http'
 
-  def puppetserver_health_check(container)
+  def get_container_status(container)
     %x(docker inspect "#{container}" --format '{{.State.Health.Status}}').chomp
+  end
+
+  def get_service_container(service, timeout = 120)
+    container = %x(docker-compose ps --quiet #{service}).chomp
+    Timeout::timeout(timeout) do
+      while container.empty?
+        sleep(1)
+        container = %x(docker-compose ps --quiet #{service}).chomp
+      end
+    end
+
+    STDOUT.puts("service named '#{service}' is hosted in container: '#{container}'")
+    return container
+  rescue Timeout::Error
+    STDOUT.puts("docker-compose never started a service named '#{service}'")
+    return ''
   end
 
   def get_service_base_uri(service, port)
@@ -30,22 +46,12 @@ shared_examples 'a running pupperware cluster' do
   end
 
   def start_puppetserver
-    container = %x(docker-compose ps --quiet puppet).chomp
-    Timeout::timeout(120) do
-      while container.empty?
-        sleep(1)
-        container = %x(docker-compose ps --quiet puppet).chomp
-      end
-    end
-  rescue Timeout::Error
-    STDOUT.puts('docker-compose never started a service named "puppet"')
-    return ''
-  else
-    status = puppetserver_health_check(container)
+    container = get_service_container('puppet')
+    status = get_container_status(container)
     # puppetserver has a healthcheck, we can let that deal with timeouts
     while status == 'starting'
       sleep(1)
-      status = puppetserver_health_check(container)
+      status = get_container_status(container)
     end
 
     # work around SERVER-2354
