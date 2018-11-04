@@ -5,6 +5,7 @@ require "#{File.join(File.dirname(__FILE__), 'examples', 'running_cluster.rb')}"
 describe 'The docker-compose file works' do
   before(:all) do
     @test_agent = "puppet_test#{Random.rand(1000)}"
+    @mapped_ports = {}
     @timestamps = []
     %x(docker-compose --help)
     if $? != 0
@@ -21,6 +22,10 @@ describe 'The docker-compose file works' do
   end
 
   describe 'the cluster restarts' do
+    before(:all) do
+      @mapped_ports = {}
+    end
+
     it 'should stop the cluster' do
       ps = %x(docker-compose ps)
       expect(ps.match('puppet')).not_to eq(nil)

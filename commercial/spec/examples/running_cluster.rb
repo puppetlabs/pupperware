@@ -9,11 +9,14 @@ shared_examples 'a running pupperware cluster' do
   end
 
   def get_service_base_uri(service, port)
-    service_ip_port = %x(docker-compose port #{service} #{port}).chomp
-    uri = URI("http://#{service_ip_port}")
-    uri.host = 'localhost' if uri.host == '0.0.0.0'
-    STDOUT.puts "determined #{service} endpoint for port #{port}: #{uri}"
-    return uri
+    @mapped_ports["#{service}:#{port}"] ||= begin
+      service_ip_port = %x(docker-compose port #{service} #{port}).chomp
+      uri = URI("http://#{service_ip_port}")
+      uri.host = 'localhost' if uri.host == '0.0.0.0'
+      STDOUT.puts "determined #{service} endpoint for port #{port}: #{uri}"
+      uri
+    end
+    @mapped_ports["#{service}:#{port}"]
   end
 
   def get_puppetdb_state
