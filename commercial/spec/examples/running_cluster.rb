@@ -94,13 +94,14 @@ shared_examples 'a running pupperware cluster' do
     status = get_puppetdb_state
     # since pdb doesn't have a proper healthcheck yet, this could spin forever
     # add a timeout so it eventually returns.
-    Timeout::timeout(600) do
+    Timeout::timeout(240) do
       while status != 'running'
         sleep(1)
         status = get_puppetdb_state
       end
     end
   rescue Timeout::Error
+    STDOUT.puts('puppetdb never entered running state')
     return ''
   else
     return status
