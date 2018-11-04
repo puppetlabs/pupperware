@@ -8,16 +8,16 @@ shared_examples 'a running pupperware cluster' do
     %x(docker inspect "#{container}" --format '{{.State.Health.Status}}').chomp
   end
 
-  def get_puppetdb_base_uri
-    pdb_ip_port = %x(docker-compose port puppetdb 8080).chomp
-    uri = URI("http://#{pdb_ip_port}")
+  def get_service_base_uri(service, port)
+    service_ip_port = %x(docker-compose port #{service} #{port}).chomp
+    uri = URI("http://#{service_ip_port}")
     uri.host = 'localhost' if uri.host == '0.0.0.0'
-    STDOUT.puts "determined PDB endpoint #{uri}"
+    STDOUT.puts "determined #{service} endpoint for port #{port}: #{uri}"
     return uri
   end
 
   def get_puppetdb_state
-    pdb_uri = URI::join(get_puppetdb_base_uri, '/status/v1/services/puppetdb-status')
+    pdb_uri = URI::join(get_service_base_uri('puppetdb', 8080), '/status/v1/services/puppetdb-status')
     status = Net::HTTP.get_response(pdb_uri).body
     STDOUT.puts "retrieved raw puppetdb status: #{status}"
     return JSON.parse(status)['state'] unless status.empty?
@@ -57,7 +57,7 @@ shared_examples 'a running pupperware cluster' do
   end
 
   def check_report(agent_name)
-    pdb_uri = URI::join(get_puppetdb_base_uri, '/pdb/query/v4')
+    pdb_uri = URI::join(get_service_base_uri('puppetdb', 8080), '/pdb/query/v4')
     domain = %x(docker-compose exec -T puppet facter domain).chomp
     body = "{ \"query\": \"nodes { certname = \\\"#{agent_name}.#{domain}\\\" } \" }"
 
