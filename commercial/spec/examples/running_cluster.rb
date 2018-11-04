@@ -25,8 +25,7 @@ shared_examples 'a running pupperware cluster' do
     STDOUT.puts "retrieved raw puppetdb status: #{status}"
     return JSON.parse(status)['state'] unless status.empty?
   rescue
-    return ''
-  else
+    STDOUT.puts "Failure querying #{pdb_uri}: #{$!}"
     return ''
   end
 
