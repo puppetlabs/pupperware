@@ -5,7 +5,9 @@ shared_examples 'a running pupperware cluster' do
   require 'net/http'
 
   def get_container_status(container)
-    %x(docker inspect "#{container}" --format '{{.State.Health.Status}}').chomp
+    status = %x(docker inspect "#{container}" --format '{{.State.Health.Status}}').chomp
+    STDOUT.puts "queried health status of #{container}: #{status}"
+    return status
   end
 
   def get_service_container(service, timeout = 120)
@@ -95,6 +97,7 @@ shared_examples 'a running pupperware cluster' do
 
   def clean_certificate(agent_name)
     domain = %x(docker-compose --no-ansi exec -T puppet facter domain).chomp
+    STDOUT.puts "cleaning cert for #{agent_name}.#{domain}"
     %x(docker-compose --no-ansi exec -T puppet puppetserver ca clean --certname #{agent_name}.#{domain})
     return $?
   end
