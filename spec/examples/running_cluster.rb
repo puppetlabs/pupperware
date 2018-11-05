@@ -9,11 +9,11 @@ shared_examples 'a running pupperware cluster' do
   end
 
   def get_service_container(service, timeout = 120)
-    container = %x(docker-compose ps --quiet #{service}).chomp
+    container = %x(docker-compose --no-ansi ps --quiet #{service}).chomp
     Timeout::timeout(timeout) do
       while container.empty?
         sleep(1)
-        container = %x(docker-compose ps --quiet #{service}).chomp
+        container = %x(docker-compose --no-ansi ps --quiet #{service}).chomp
       end
     end
 
@@ -26,7 +26,7 @@ shared_examples 'a running pupperware cluster' do
 
   def get_service_base_uri(service, port)
     @mapped_ports["#{service}:#{port}"] ||= begin
-      service_ip_port = %x(docker-compose port #{service} #{port}).chomp
+      service_ip_port = %x(docker-compose --no-ansi port #{service} #{port}).chomp
       uri = URI("http://#{service_ip_port}")
       uri.host = 'localhost' if uri.host == '0.0.0.0'
       STDOUT.puts "determined #{service} endpoint for port #{port}: #{uri}"
@@ -55,7 +55,7 @@ shared_examples 'a running pupperware cluster' do
     end
 
     # work around SERVER-2354
-    %x(docker-compose exec puppet puppet config set server puppet)
+    %x(docker-compose --no-ansi exec puppet puppet config set server puppet)
 
     return status
   end
@@ -67,7 +67,7 @@ shared_examples 'a running pupperware cluster' do
 
   def check_report(agent_name)
     pdb_uri = URI::join(get_service_base_uri('puppetdb', 8080), '/pdb/query/v4')
-    domain = %x(docker-compose exec -T puppet facter domain).chomp
+    domain = %x(docker-compose --no-ansi exec -T puppet facter domain).chomp
     body = "{ \"query\": \"nodes { certname = \\\"#{agent_name}.#{domain}\\\" } \" }"
 
     out = ''
@@ -94,8 +94,8 @@ shared_examples 'a running pupperware cluster' do
   end
 
   def clean_certificate(agent_name)
-    domain = %x(docker-compose exec -T puppet facter domain).chomp
-    %x(docker-compose exec -T puppet puppetserver ca clean --certname #{agent_name}.#{domain})
+    domain = %x(docker-compose --no-ansi exec -T puppet facter domain).chomp
+    %x(docker-compose --no-ansi exec -T puppet puppetserver ca clean --certname #{agent_name}.#{domain})
     return $?
   end
 
@@ -117,8 +117,8 @@ shared_examples 'a running pupperware cluster' do
   end
 
   it 'should start the cluster' do
-    %x(docker-compose up --detach)
-    ps = %x(docker-compose ps)
+    %x(docker-compose --no-ansi up --detach)
+    ps = %x(docker-compose --no-ansi ps)
     expect(ps.match('puppet')).not_to eq(nil)
   end
 
