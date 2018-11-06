@@ -20,7 +20,7 @@ The following steps outline how to provision a host with the required support to
 * [Provision a Windows host with LCOW support](#provision-a-windows-host-with-lcow-support)
 * [Install the Docker nightly build](#install-the-docker-nightly-build)
 * [Build an updated LCOW kernel](#build-an-updated-lcow-kernel)
-* [Build the docker-compose binaries](#build-the-docker-compose-binaries)
+* [Install the docker-compose binaries](#install-the-docker-compose-binaries)
 * [Validate the Install](#validate-the-install)
 
 Some of these instructions are updated from the [A sneak peek at LCOW](https://stefanscherer.github.io/sneak-peek-at-lcow/) written by Stefan Scherer [@stefscherer](https://twitter.com/stefscherer)
@@ -193,9 +193,23 @@ Create outputs:
 
 Alternatively, it may be simpler to do this on OSX with the help of Homebrew, as `linuxkit` builds are already available there. Detailed instructions are in [README-OSX-build-LCOW-kernel.md](./README-OSX-build-LCOW-kernel.md). The build artifacts should be copied to the Windows system as previously described.
 
-## Build the docker-compose binaries
+## Install the docker-compose binaries
 
-To provision the compose files in this repository also requires a working `docker-compose.exe`. Fortunately the source code repository includes a build script at https://github.com/docker/compose/blob/master/script/build/windows.ps1 that does most of the heavy lifting.
+To provision the compose files in this repository also requires a working `docker-compose.exe`. Windows nightly builds are not available ([issue 6308 filed](https://github.com/docker/compose/issues/6308)), but reasonably release builds are available at the [docker-compose GitHub releases page](https://github.com/docker/compose/releases/). Run the following PowerShell script to:
+
+* Download the 1.23.1 build of docker-compose
+* Install it to expected location
+
+```powershell
+# download docker-compose 1.23.1 from November 1. 2018
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+Invoke-WebRequest -OutFile "${ENV:ProgramFiles}\docker\docker-compose.exe" https://github.com/docker/compose/releases/download/1.23.1/docker-compose-Windows-x86_64.exe
+```
+
+### Build the docker-compose binaries (Alternate Build Workflow)
+
+Rather than consuming an official release, a `docker-compose` binary can be built from sources if necessary. Fortunately the source code repository includes a build script at https://github.com/docker/compose/blob/master/script/build/windows.ps1 that does most of the heavy lifting.
 
 Run the following PowerShell script to:
 
