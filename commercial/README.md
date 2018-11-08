@@ -87,6 +87,9 @@ default. In a similar manner, any other task that you would perform on a
 puppet master by running `puppet x y z ...` can be achieved against the
 stack by running `./bin/puppet x y z ...`.
 
+There is also a similar script providing easy access to `puppetserver` commands. This is particularly
+useful for CA and cert management via the `ca` subcommand.
+
 ### Changing postgresql password
 
 The postgresql instance uses password authentication for communication with the
