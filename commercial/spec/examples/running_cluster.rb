@@ -119,10 +119,16 @@ shared_examples 'a running pupperware cluster' do
     return status
   end
 
-  it 'should start the cluster' do
+  it 'should start all of the cluster services' do
     %x(docker-compose --no-ansi up --detach)
-    ps = %x(docker-compose --no-ansi ps)
-    expect(ps.match('puppet')).not_to eq(nil)
+    ps = %x(docker-compose --no-ansi ps puppet)
+    expect($?).to eq(0), "service puppet not found: #{ps}"
+
+    ps = %x(docker-compose --no-ansi ps puppetdb)
+    expect($?).to eq(0), "service puppetdb not found: #{ps}"
+
+    ps = %x(docker-compose --no-ansi ps postgres)
+    expect($?).to eq(0), "service postgres not found: #{ps}"
   end
 
   it 'should start puppetserver' do
