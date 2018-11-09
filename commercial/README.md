@@ -7,7 +7,7 @@ To get started, you will need an installation of
 [Docker Compose](https://docs.docker.com/compose/install/) on the host on
 which you will run your Puppet Infrastructure.
 
-Once you have Docker Compose installed, you can start the stack with
+Once you have Docker Compose installed, you can start the stack on Linux with:
 ```
     DNS_ALT_NAMES=puppet,host.exmple.com docker-compose up -d
 ```
@@ -42,28 +42,24 @@ PuppetDB
   `Preferences>File Sharing` in order for these directories to be created
   and volume-mounted automatically. There is no need to add each sub directory.
 
-## Docker for Windows
+## Pupperware on Windows (using LCOW)
 
 Complete instructions for provisiong a server with LCOW support are in [README-windows.md](./README-windows.md)
 
-Due to [permissions issues with Postgres](https://forums.docker.com/t/trying-to-get-postgres-to-work-on-persistent-windows-mount-two-issues/12456/4) on Docker for Windows, an external volume and a slightly different configuration is required.
+Due to [permissions issues with Postgres](https://forums.docker.com/t/trying-to-get-postgres-to-work-on-persistent-windows-mount-two-issues/12456/4) on Docker for Windows, to run under the LCOW environment, the Windows stack relies on the [`stellirin/postgres-windows`](https://hub.docker.com/r/stellirin/postgres-windows/) Windows variant of the upstream [`postgres`](https://hub.docker.com/_/postgres/) container instead.
 
 To create the stack:
 
 ``` powershell
-PS> docker volume create --name puppetdb-postgres-volume -d local
-puppetdb-postgres-volume
-
 PS> $ENV:DNS_ALT_NAMES = 'puppet,host.exmple.com'
 
 PS> docker-compose -f .\docker-compose.yml -f .\docker-compose.windows.yml up
-Creating pupperware_postgres_1 ... done
-Creating pupperware_puppet_1   ... done
-Creating pupperware_puppetdb_1 ... done
-Attaching to pupperware_postgres_1, pupperware_puppet_1, pupperware_puppetdb_1
-postgres_1  | The files belonging to this database system will be owned by user "postgres".
-postgres_1  | This user must also own the server process.
-postgres_1  |
+Creating network "pupperware_default" with the default driver
+Creating pupperware_puppet_1_4be38bcee346   ... done
+Creating pupperware_postgres_1_c82bfeb597f5 ... done
+Creating pupperware_puppetdb_1_bcd7e5f54a3f ... done
+Attaching to pupperware_postgres_1_cf9a935a098e, pupperware_puppet_1_79b6ff064b91, pupperware_puppetdb_1_70edf5d8cd1e
+
 ...
 ```
 
@@ -73,10 +69,9 @@ To delete the stack:
 PS> docker-compose down
 Removing network pupperware_default
 ...
-
-PS> docker volume rm puppetdb-postgres-volume
-puppetdb-postgres-volume
 ```
+
+Note that `docker-compose down` may perform slowly on Windows - see [docker/for-win 629](https://github.com/docker/for-win/issues/629) and [docker/compose](https://github.com/docker/compose/issues/3419) for further information.
 
 ## Managing the stack
 

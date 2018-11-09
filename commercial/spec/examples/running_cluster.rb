@@ -51,7 +51,7 @@ shared_examples 'a running pupperware cluster' do
     container = get_service_container('puppet')
     status = get_container_status(container)
     # puppetserver has a healthcheck, we can let that deal with timeouts
-    while status == 'starting'
+    while (status == 'starting' || status == "'starting'")
       sleep(1)
       status = get_container_status(container)
     end
@@ -63,7 +63,9 @@ shared_examples 'a running pupperware cluster' do
   end
 
   def run_agent(agent_name)
-    %x(docker run --rm --interactive --tty --network pupperware_default --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine)
+    # lack of TTY here causes Windows to not show output of container download / start :(
+    tty = File::ALT_SEPARATOR.nil? ? '--tty' : ''
+    %x(docker run --rm --interactive #{tty} --network pupperware_default --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine)
     return $?
   end
 
@@ -119,15 +121,21 @@ shared_examples 'a running pupperware cluster' do
     return status
   end
 
-  it 'should start the cluster' do
+  it 'should start all of the cluster services' do
     %x(docker-compose --no-ansi up --detach)
-    ps = %x(docker-compose --no-ansi ps)
-    expect(ps.match('puppet')).not_to eq(nil)
+    ps = %x(docker-compose --no-ansi ps puppet)
+    expect($?).to eq(0), "service puppet not found: #{ps}"
+
+    ps = %x(docker-compose --no-ansi ps puppetdb)
+    expect($?).to eq(0), "service puppetdb not found: #{ps}"
+
+    ps = %x(docker-compose --no-ansi ps postgres)
+    expect($?).to eq(0), "service postgres not found: #{ps}"
   end
 
   it 'should start puppetserver' do
     status = start_puppetserver
-    expect(status).to eq('healthy')
+    expect(status).to match(/\'?healthy\'?/)
   end
 
   it 'should start puppetdb' do
