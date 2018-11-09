@@ -1,0 +1,7 @@
+version: '3'
+
+services:
+  postgres:
+    image: puppet/puppetdb-postgres
+    volumes:
+      - ./volumes/puppetdb-postgres/data:/var/lib/postgresql/data/
