@@ -62,6 +62,12 @@ shared_examples 'a running pupperware cluster' do
     return status
   end
 
+  def get_postgres_extensions
+    extensions = %x(docker-compose --no-ansi exec -T postgres psql --username=puppetdb --command="SELECT * FROM pg_extension").chomp
+    STDOUT.puts("retrieved extensions: #{extensions}")
+    extensions
+  end
+
   def run_agent(agent_name)
     # lack of TTY here causes Windows to not show output of container download / start :(
     tty = File::ALT_SEPARATOR.nil? ? '--tty' : ''
@@ -141,6 +147,12 @@ shared_examples 'a running pupperware cluster' do
   it 'should start puppetdb' do
     status = start_puppetdb
     expect(status).to eq('running')
+  end
+
+  it 'should include postgres extensions' do
+    installed_extensions = get_postgres_extensions
+    expect(installed_extensions).to match(/^\s+pg_trgm\s+/)
+    expect(installed_extensions).to match(/^\s+pgcrypto\s+/)
   end
 
   it 'should be able to run an agent' do
