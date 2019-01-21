@@ -51,5 +51,21 @@ services:
     networks:
       default:
 
+  debian:
+    image: puppet/puppet-agent-debian
+    entrypoint: /bin/sleep infinity
+    networks:
+      default:
+  centos:
+    image: puppet/puppet-agent-centos
+    entrypoint: /usr/bin/sleep infinity
+    networks:
+      default:
+  alpine:
+    image: puppet/puppet-agent-alpine
+    entrypoint: /bin/sleep 65535d
+    networks:
+      default:
+
 networks:
   default:
