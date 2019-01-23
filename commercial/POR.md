@@ -33,19 +33,17 @@ Phase 0 and 0.5 relate to containerizing open source platform components. The go
 ## Phase 1
 ### [Containerize core PE components. This phase supports a new install of PE.](https://tickets.puppetlabs.com/browse/PC-719)
 
-  * [ ] Document docker versions and compose versions (as a comment in the YAML) that are supported, operator instructions. Update the README.
-  * [ ] Able to add a containerized compile master and MoM
+  * [x] Data persists when containers exit
+  * [x] Puppet agent runs successfully / acquire catalog (tested in Pupperware via compose + rake specs)
+  * [x] Tests can be run locally
+  * [ ] Document docker versions and compose versions (3) (as a comment in the YAML) that are supported, operator instructions. Update the README.
   * [ ] Core PE components are containerized (excludes razor, HA, file sync)
-  * [ ] Components functioning together on single host
+  * [ ] Core PE Components functioning together on single host (via compose / swarm)
   * [ ] Able to install with max 2 commands on a single host
-  * [ ] Puppet runs successfully
-  * [ ] Agents can get their catalog
-  * [ ] Data persists when containers exit
   * [ ] Create security model/opinion on if/how we care about service to service SSL, credential handling, private networks, cert sharing, etc
   * [ ] Works on Windows
-  * [ ] Tests can be run locally
   * [ ] Docker volume exist for storage
-  * [ ] Agent container in play
+  * [ ] Agent container in play (+ Windows agent)
 
 ## Phase 2:
 ### [Support for updating](https://tickets.puppetlabs.com/browse/PC-720)
