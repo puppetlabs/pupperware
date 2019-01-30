@@ -7,6 +7,23 @@ To get started, you will need an installation of
 [Docker Compose](https://docs.docker.com/compose/install/) on the host on
 which you will run your Puppet Infrastructure.
 
+## Required versions
+
+* Docker Compose - must support `version: '3'` of the compose file format, which requires Docker Engine `1.13.0+`. [Full compatibility matrix](https://docs.docker.com/compose/compose-file/compose-versioning/)
+  * Linux is tested with docker-compose `1.22`
+  * Windows is tested with `docker-compose version 1.24.0-rc1, build 0f3d4dda`
+  * OSX is tested with `docker-compose version 1.23.2, build 1110ad01`
+* Docker Engine support is only tested on versions newer than `17.09.0-ce`
+  * Linux is tested with (client and server) `17.09.0-ce` using API version `1.32` (`Git commit:   afdb6d4`)
+  * Windows is tested with newer nightly versions that enable LCOW support / fix bugs in the Docker runtime (minimum required is edge release `18.02`, but latest highly recommended)
+      - Client `master-dockerproject-2019-01-08` using API version `1.40` (`Git commit:        d04b6165`)
+      - Server `master-dockerproject-2019-01-08` using API version `1.40 (minimum version 1.24)` (`Git commit:        77df18c`) with `Experimental: true`
+  * OSX is tested during development with `Docker Engine - Community` edition
+      - Client `18.09.1` using API version `1.39` (`Git commit:        4c52b90`)
+      - Server `18.09.1` using API version `1.39 (minimum version 1.12)` (`Git commit:       4c52b90`)
+
+## Provisioning
+
 Once you have Docker Compose installed, you can start the stack on Linux with:
 ```
     DNS_ALT_NAMES=host.example.com docker-compose up -d
