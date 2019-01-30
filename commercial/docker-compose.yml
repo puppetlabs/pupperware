@@ -17,8 +17,6 @@ services:
       - ./volumes/code:/etc/puppetlabs/code/
       - ./volumes/puppet:/etc/puppetlabs/puppet/
       - ./volumes/serverdata:/opt/puppetlabs/server/data/puppetserver/
-    networks:
-      default:
 
   postgres:
     environment:
@@ -31,8 +29,6 @@ services:
     # so define them in .override.yml and .windows.yml since target varies
     # either /var/lib/postgresql/data/ on Linux or c:\data on Windows
     # https://docs.docker.com/compose/extends/#adding-and-overriding-configuration
-    networks:
-      default:
 
   puppetdb:
     hostname: puppetdb
@@ -48,8 +44,6 @@ services:
       - puppet
     volumes:
       - ./volumes/puppetdb/ssl:/etc/puppetlabs/puppet/ssl/
-    networks:
-      default:
 
 networks:
   default:
