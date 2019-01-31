@@ -197,14 +197,14 @@ Alternatively, it may be simpler to do this on OSX with the help of Homebrew, as
 
 To provision the compose files in this repository also requires a working `docker-compose.exe`. Windows nightly builds are not available ([issue 6308 filed](https://github.com/docker/compose/issues/6308)), but reasonably release builds are available at the [docker-compose GitHub releases page](https://github.com/docker/compose/releases/). Run the following PowerShell script to:
 
-* Download the 1.23.1 build of docker-compose
+* Download the 1.24.0-rc1 build of docker-compose
 * Install it to expected location
 
 ```powershell
-# download docker-compose 1.23.1 from November 1. 2018
+# download docker-compose 1.24.0-rc1 from Jan 14 2019
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-Invoke-WebRequest -OutFile "${ENV:ProgramFiles}\docker\docker-compose.exe" https://github.com/docker/compose/releases/download/1.23.1/docker-compose-Windows-x86_64.exe
+Invoke-WebRequest -OutFile "${ENV:ProgramFiles}\docker\docker-compose.exe" https://github.com/docker/compose/releases/download/1.24.0-rc1/docker-compose-Windows-x86_64.exe
 ```
 
 ### Build the docker-compose binaries (Alternate Build Workflow)
@@ -289,10 +289,10 @@ Docker-compose should also provide information like:
 ```
 PS> docker-compose version
 
-docker-compose version 1.23.0dev, build de8717cd
-docker-py version: 3.5.0
-CPython version: 3.6.7
-OpenSSL version: OpenSSL 1.0.2p  14 Aug 2018
+docker-compose version 1.24.0-rc1, build 0f3d4dda
+docker-py version: 3.7.0
+CPython version: 3.6.6
+OpenSSL version: OpenSSL 1.0.2o  27 Mar 2018
 ```
 
 With all of the LCOW setup verified, it should now be possible to launch side-by-side
