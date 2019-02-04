@@ -1,6 +1,23 @@
 version: '3'
 
 services:
+  consul:
+    hostname: consul
+    image: library/consul
+    ports:
+      - 8500:8500 # Consul HTTP
+      - 53
+    environment:
+      CONSUL_BIND_INTERFACE: 'eth0'
+      CONSUL_ALLOW_PRIVILEGED_PORTS: 'true'
+      CONSUL_LOCAL_CONFIG: '{ "ports": { "dns": 53 }, "recursors": [ "8.8.8.8" ] }'
+      CONSUL_IP:
+    volumes:
+      - ./volumes/consul:/consul/data
+    networks:
+      default:
+        ipv4_address: $CONSUL_IP
+
   puppet:
     hostname: puppet
     image: puppet/puppetserver
@@ -11,8 +28,14 @@ services:
       # and must list all the names under which the puppetserver can be
       # reached. 'puppet' must be one of them, otherwise puppetdb won't be
       # able to get a cert. Add other names as a comma-separated list
-      - DNS_ALT_NAMES=puppet,${DNS_ALT_NAMES:-}
+      - DNS_ALT_NAMES=puppet,puppet.service.consul,${DNS_ALT_NAMES:-}
+      - CONSUL_ENABLED=true
+      - CONSUL_IP
       - PUPPETDB_SERVER_URLS=https://puppetdb:8081
+    depends_on:
+      - consul
+    dns:
+      - $CONSUL_IP
     volumes:
       - ./volumes/code:/etc/puppetlabs/code/
       - ./volumes/puppet:/etc/puppetlabs/puppet/
@@ -36,14 +59,21 @@ services:
     environment:
       - PUPPETDB_PASSWORD=puppetdb
       - PUPPETDB_USER=puppetdb
+      - CONSUL_ENABLED=true
+      - CONSUL_IP
     ports:
       - 8080
       - 8081
     depends_on:
       - postgres
       - puppet
+    dns:
+      - $CONSUL_IP
     volumes:
       - ./volumes/puppetdb/ssl:/etc/puppetlabs/puppet/ssl/
 
 networks:
   default:
+    ipam:
+      config:
+        - subnet: $PUPPERWARE_SUBNET
