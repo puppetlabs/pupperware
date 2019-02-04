@@ -237,11 +237,12 @@ module SpecHelpers
   # Puppet Agent Helpers
   ######################################################################
 
-  def run_agent(agent_name, network, server = get_container_hostname(get_service_container('puppet')))
+  def run_agent(agent_name, network, server: get_container_hostname(get_service_container('puppet')), dns: [])
     # setting up a Windows TTY is difficult, so we don't
     # allocating a TTY will show container pull output on Linux, but that's not good for tests
     STDOUT.puts("running agent #{agent_name} in network #{network} against #{server}")
-    result = run_command("docker run --rm --network #{network} --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine agent --verbose --onetime --no-daemonize --summarize --server #{server}")
+    dns_string = Array(dns).map { |entry| "--dns #{entry}" }.join(' ')
+    result = run_command("docker run --rm --network #{network} --name #{agent_name} --hostname #{agent_name} #{dns_string} puppet/puppet-agent-alpine agent --verbose --onetime --no-daemonize --summarize --server #{server}")
     return result[:status].exitstatus
   end
 

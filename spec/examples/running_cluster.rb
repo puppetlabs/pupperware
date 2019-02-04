@@ -33,7 +33,7 @@ shared_examples 'a running pupperware cluster' do
   end
 
   it 'should be able to run an agent' do
-    status = run_agent(@test_agent, 'pupperware_default')
+    status = run_agent(@test_agent, 'pupperware_default', server: 'puppet.service.consul', dns: [@consul_ip, @default_dns_ip])
     expect(status).to eq(0)
   end
 
