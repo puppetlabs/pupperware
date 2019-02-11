@@ -9,6 +9,7 @@ describe 'The docker-compose file works' do
     @test_agent = "puppet_test#{Random.rand(1000)}"
     @mapped_ports = {}
     @timestamps = []
+    @consul_ip = "172.22.0.100"
     status = run_command('docker-compose --no-ansi --help')[:status]
     if status.exitstatus != 0
       fail "`docker-compose` must be installed and available in your PATH"
