@@ -36,8 +36,8 @@ error() {
 }
 
 ### Verify dependencies available
-! type -p openssl > /dev/null && error "openssl not found on PATH"
-! type -p curl > /dev/null && error "curl not found on PATH"
+! command -v openssl > /dev/null && error "openssl not found on PATH"
+! command -v curl > /dev/null && error "curl not found on PATH"
 
 ### Verify options are valid
 CERTNAME="${1:-${HOSTNAME}}"
