@@ -7,6 +7,7 @@ describe 'The docker-compose file works' do
 
   VOLUMES = [
     'volumes/code',
+    'volumes/consul',
     'volumes/puppet',
     'volumes/serverdata',
     'volumes/puppetdb/ssl',

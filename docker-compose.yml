@@ -3,7 +3,7 @@ version: '3'
 services:
   consul:
     hostname: consul
-    image: library/consul
+    image: consul
     ports:
       - 8500:8500 # Consul HTTP
       - 53
@@ -11,12 +11,11 @@ services:
       CONSUL_BIND_INTERFACE: 'eth0'
       CONSUL_ALLOW_PRIVILEGED_PORTS: 'true'
       CONSUL_LOCAL_CONFIG: '{ "ports": { "dns": 53 }, "recursors": [ "8.8.8.8" ] }'
-      CONSUL_IP:
     volumes:
-      - ./volumes/consul:/consul/data
+      - ./volumes/consul:/consul/data:rw
     networks:
       default:
-        ipv4_address: $CONSUL_IP
+        ipv4_address: ${CONSUL_IP:-172.22.0.100}
 
   puppet:
     hostname: puppet
@@ -31,12 +30,14 @@ services:
       - DNS_ALT_NAMES=puppet,puppet.service.consul,${DNS_ALT_NAMES:-}
       - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
       - CONSUL_ENABLED=true
-      - CONSUL_IP
       - PUPPETDB_SERVER_URLS=https://puppetdb:8081
     depends_on:
       - consul
     dns:
-      - $CONSUL_IP
+      - ${CONSUL_IP:-172.22.0.100}
+      # need to add this to work around https://github.com/moby/moby/issues/38932
+      # for windows
+      - 127.0.0.11
     volumes:
       - ${VOLUME_ROOT:-.}/volumes/code:/etc/puppetlabs/code/
       - ${VOLUME_ROOT:-.}/volumes/puppet:/etc/puppetlabs/puppet/
@@ -68,7 +69,6 @@ services:
       - PUPPETDB_PASSWORD=puppetdb
       - PUPPETDB_USER=puppetdb
       - CONSUL_ENABLED=true
-      - CONSUL_IP
     ports:
       - 8080
       - 8081
@@ -76,7 +76,10 @@ services:
       - postgres
       - puppet
     dns:
-      - $CONSUL_IP
+      - ${CONSUL_IP:-172.22.0.100}
+      # need to add this to work around https://github.com/moby/moby/issues/38932
+      # for windows
+      - 127.0.0.11
     volumes:
       - ${VOLUME_ROOT:-.}/volumes/puppetdb/ssl:/etc/puppetlabs/puppet/ssl/
 
@@ -84,4 +87,4 @@ networks:
   default:
     ipam:
       config:
-        - subnet: $PUPPERWARE_SUBNET
+        - subnet: ${PUPPERWARE_SUBNET:-172.22.0.0/16}
