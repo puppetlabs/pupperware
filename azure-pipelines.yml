@@ -79,7 +79,8 @@ steps:
     AZURE_DOMAIN=$domain
     "@
     $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
-    [System.IO.File]::WriteAllLines(".env", $content, $Utf8NoBomEncoding)
+    [System.IO.File]::WriteAllLines("test.env", $content, $Utf8NoBomEncoding)
+    Get-Content 'test.env' | Add-Content '.env'
     Get-Content -Path '.env'
     Write-Host 'Executing Pupperware specs'
     bundle exec rspec --version
