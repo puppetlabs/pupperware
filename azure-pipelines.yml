@@ -64,7 +64,7 @@ steps:
     Remove-Item 'volumes' -Force -Recurse -ErrorAction SilentlyContinue;
     New-Item 'volumes' -Type Directory
     Push-Location 'volumes'
-    'code', 'puppet', 'serverdata', 'puppetdb\ssl', 'puppetdb-postgres\data' |
+    'code', 'puppet', 'serverdata', 'puppetdb\ssl', 'puppetdb-postgres\data', 'consul' |
       % { New-Item $_ -Type Directory }
     Pop-Location
   displayName: Prepare Test Environment
