@@ -3,7 +3,7 @@ version: '3'
 services:
   consul:
     hostname: consul
-    image: library/consul
+    image: consul
     ports:
       - 8500:8500 # Consul HTTP
       - 53
@@ -13,7 +13,7 @@ services:
       CONSUL_LOCAL_CONFIG: '{ "ports": { "dns": 53 }, "recursors": [ "8.8.8.8" ] }'
       CONSUL_IP:
     volumes:
-      - ./volumes/consul:/consul/data
+      - ./volumes/consul:/consul/data/
     networks:
       default:
         ipv4_address: $CONSUL_IP
