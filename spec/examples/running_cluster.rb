@@ -4,6 +4,8 @@ shared_examples 'a running pupperware cluster' do
   require 'rspec/core'
   require 'net/http'
 
+  include Helpers
+
   def get_container_status(container)
     status = %x(docker inspect "#{container}" --format '{{.State.Health.Status}}').chomp
     STDOUT.puts "queried health status of #{container}: #{status}"
@@ -57,7 +59,7 @@ shared_examples 'a running pupperware cluster' do
     end
 
     # work around SERVER-2354
-    %x(docker-compose --no-ansi exec puppet puppet config set server puppet)
+    run_command('docker-compose --no-ansi exec puppet puppet config set server puppet')
 
     return status
   end
@@ -69,10 +71,10 @@ shared_examples 'a running pupperware cluster' do
   end
 
   def run_agent(agent_name)
-    # lack of TTY here causes Windows to not show output of container download / start :(
-    tty = File::ALT_SEPARATOR.nil? ? '--tty' : ''
-    %x(docker run --rm --interactive #{tty} --network pupperware_default --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine)
-    return $?
+    # setting up a Windows TTY is difficult, so we don't
+    # allocating a TTY will show container pull output on Linux, but that's not good for tests
+    status = run_command("docker run --rm --network pupperware_default --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine")
+    return status.exitstatus
   end
 
   def check_report(agent_name)
@@ -106,8 +108,8 @@ shared_examples 'a running pupperware cluster' do
   def clean_certificate(agent_name)
     domain = %x(docker-compose --no-ansi exec -T puppet facter domain).chomp
     STDOUT.puts "cleaning cert for #{agent_name}.#{domain}"
-    %x(docker-compose --no-ansi exec -T puppet puppetserver ca clean --certname #{agent_name}.#{domain})
-    return $?
+    status = run_command("docker-compose --no-ansi exec -T puppet puppetserver ca clean --certname #{agent_name}.#{domain}")
+    return status.exitstatus
   end
 
   def start_puppetdb
@@ -128,7 +130,7 @@ shared_examples 'a running pupperware cluster' do
   end
 
   it 'should start all of the cluster services' do
-    %x(docker-compose --no-ansi up --detach)
+    run_command('docker-compose --no-ansi up --detach')
     ps = %x(docker-compose --no-ansi ps puppet)
     expect($?).to eq(0), "service puppet not found: #{ps}"
 
