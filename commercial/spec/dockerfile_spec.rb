@@ -3,12 +3,14 @@
 require "#{File.join(File.dirname(__FILE__), 'examples', 'running_cluster.rb')}"
 
 describe 'The docker-compose file works' do
+  include Helpers
+
   before(:all) do
     @test_agent = "puppet_test#{Random.rand(1000)}"
     @mapped_ports = {}
     @timestamps = []
-    %x(docker-compose --no-ansi --help)
-    if $? != 0
+    status = run_command('docker-compose --no-ansi --help')
+    if status.exitstatus != 0
       fail "`docker-compose` must be installed and available in your PATH"
     end
   end
@@ -19,10 +21,10 @@ describe 'The docker-compose file works' do
     STDOUT.puts("Retrieved running container ids:\n#{ids}")
     ids.each_line do |id|
       STDOUT.puts("Killing container #{id}")
-      %x(docker container kill #{id})
+      run_command("docker container kill #{id}")
     end
     # still needed to remove network / provide failsafe
-    %x(docker-compose --no-ansi down)
+    run_command('docker-compose --no-ansi down')
   end
 
   describe 'the cluster starts' do
@@ -39,7 +41,7 @@ describe 'The docker-compose file works' do
     it 'should stop the cluster', :if => File::ALT_SEPARATOR.nil? do
       ps = %x(docker-compose --no-ansi ps)
       expect(ps.match('puppet')).not_to eq(nil)
-      %x(docker-compose --no-ansi down)
+      run_command('docker-compose --no-ansi down')
       ps = %x(docker-compose --no-ansi ps)
       expect(ps.match('puppet')).to eq(nil)
     end
