@@ -9,7 +9,7 @@ describe 'The docker-compose file works' do
     @test_agent = "puppet_test#{Random.rand(1000)}"
     @mapped_ports = {}
     @timestamps = []
-    status = run_command('docker-compose --no-ansi --help')
+    status = run_command('docker-compose --no-ansi --help')[:status]
     if status.exitstatus != 0
       fail "`docker-compose` must be installed and available in your PATH"
     end
@@ -17,7 +17,8 @@ describe 'The docker-compose file works' do
 
   after(:all) do
     STDOUT.puts("Tearing down test cluster")
-    ids = %x(docker-compose --no-ansi --log-level INFO ps -q).chomp
+    result = run_command('docker-compose --no-ansi --log-level INFO ps -q')
+    ids = result[:stdout].chomp
     STDOUT.puts("Retrieved running container ids:\n#{ids}")
     ids.each_line do |id|
       STDOUT.puts("Killing container #{id}")
@@ -39,10 +40,10 @@ describe 'The docker-compose file works' do
     # don't run this on Windows because compose down takes forever
     # https://github.com/docker/for-win/issues/629
     it 'should stop the cluster', :if => File::ALT_SEPARATOR.nil? do
-      ps = %x(docker-compose --no-ansi ps)
+      ps = run_command('docker-compose --no-ansi ps')[:stdout].chomp
       expect(ps.match('puppet')).not_to eq(nil)
       run_command('docker-compose --no-ansi down')
-      ps = %x(docker-compose --no-ansi ps)
+      ps = run_command('docker-compose --no-ansi ps')[:stdout].chomp
       expect(ps.match('puppet')).to eq(nil)
     end
 
