@@ -4,18 +4,23 @@ shared_examples 'a running pupperware cluster' do
   require 'rspec/core'
   require 'net/http'
 
+  include Helpers
+
   def get_container_status(container)
-    status = %x(docker inspect "#{container}" --format '{{.State.Health.Status}}').chomp
+    result = run_command("docker inspect \"#{container}\" --format '{{.State.Health.Status}}'")
+    status = result[:stdout].chomp
     STDOUT.puts "queried health status of #{container}: #{status}"
     return status
   end
 
   def get_service_container(service, timeout = 120)
-    container = %x(docker-compose --no-ansi ps --quiet #{service}).chomp
+    result = run_command("docker-compose --no-ansi ps --quiet #{service}")
+    container = result[:stdout].chomp
     Timeout::timeout(timeout) do
       while container.empty?
         sleep(1)
-        container = %x(docker-compose --no-ansi ps --quiet #{service}).chomp
+        result = run_command("docker-compose --no-ansi ps --quiet #{service}")
+        container = result[:stdout].chomp
       end
     end
 
@@ -28,7 +33,8 @@ shared_examples 'a running pupperware cluster' do
 
   def get_service_base_uri(service, port)
     @mapped_ports["#{service}:#{port}"] ||= begin
-      service_ip_port = %x(docker-compose --no-ansi port #{service} #{port}).chomp
+      result = run_command("docker-compose --no-ansi port #{service} #{port}")
+      service_ip_port = result[:stdout].chomp
       uri = URI("http://#{service_ip_port}")
       uri.host = 'localhost' if uri.host == '0.0.0.0'
       STDOUT.puts "determined #{service} endpoint for port #{port}: #{uri}"
@@ -57,27 +63,29 @@ shared_examples 'a running pupperware cluster' do
     end
 
     # work around SERVER-2354
-    %x(docker-compose --no-ansi exec puppet puppet config set server puppet)
+    run_command('docker-compose --no-ansi exec puppet puppet config set server puppet')
 
     return status
   end
 
   def get_postgres_extensions
-    extensions = %x(docker-compose --no-ansi exec -T postgres psql --username=puppetdb --command="SELECT * FROM pg_extension").chomp
+    result = run_command('docker-compose --no-ansi exec -T postgres psql --username=puppetdb --command="SELECT * FROM pg_extension"')
+    extensions = result[:stdout].chomp
     STDOUT.puts("retrieved extensions: #{extensions}")
     extensions
   end
 
   def run_agent(agent_name)
-    # lack of TTY here causes Windows to not show output of container download / start :(
-    tty = File::ALT_SEPARATOR.nil? ? '--tty' : ''
-    %x(docker run --rm --interactive #{tty} --network pupperware_default --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine)
-    return $?
+    # setting up a Windows TTY is difficult, so we don't
+    # allocating a TTY will show container pull output on Linux, but that's not good for tests
+    result = run_command("docker run --rm --network pupperware_default --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine")
+    return result[:status].exitstatus
   end
 
   def check_report(agent_name)
     pdb_uri = URI::join(get_service_base_uri('puppetdb', 8080), '/pdb/query/v4')
-    domain = %x(docker-compose --no-ansi exec -T puppet facter domain).chomp
+    result = run_command("docker-compose --no-ansi exec -T puppet facter domain")
+    domain = result[:stdout].chomp
     body = "{ \"query\": \"nodes { certname = \\\"#{agent_name}.#{domain}\\\" } \" }"
 
     out = ''
@@ -104,10 +112,11 @@ shared_examples 'a running pupperware cluster' do
   end
 
   def clean_certificate(agent_name)
-    domain = %x(docker-compose --no-ansi exec -T puppet facter domain).chomp
+    result = run_command('docker-compose --no-ansi exec -T puppet facter domain')
+    domain = result[:stdout].chomp
     STDOUT.puts "cleaning cert for #{agent_name}.#{domain}"
-    %x(docker-compose --no-ansi exec -T puppet puppetserver ca clean --certname #{agent_name}.#{domain})
-    return $?
+    result = run_command("docker-compose --no-ansi exec -T puppet puppetserver ca clean --certname #{agent_name}.#{domain}")
+    return result[:status].exitstatus
   end
 
   def start_puppetdb
@@ -128,15 +137,15 @@ shared_examples 'a running pupperware cluster' do
   end
 
   it 'should start all of the cluster services' do
-    %x(docker-compose --no-ansi up --detach)
-    ps = %x(docker-compose --no-ansi ps puppet)
-    expect($?).to eq(0), "service puppet not found: #{ps}"
+    run_command('docker-compose --no-ansi up --detach')
+    result = run_command('docker-compose --no-ansi ps puppet')
+    expect(result[:status].exitstatus).to eq(0), "service puppet not found: #{result[:stdout].chomp}"
 
-    ps = %x(docker-compose --no-ansi ps puppetdb)
-    expect($?).to eq(0), "service puppetdb not found: #{ps}"
+    result = run_command('docker-compose --no-ansi ps puppetdb')
+    expect(result[:status].exitstatus).to eq(0), "service puppetdb not found: #{result[:stdout].chomp}"
 
-    ps = %x(docker-compose --no-ansi ps postgres)
-    expect($?).to eq(0), "service postgres not found: #{ps}"
+    result = run_command('docker-compose --no-ansi ps postgres')
+    expect(result[:status].exitstatus).to eq(0), "service postgres not found: #{result[:stdout].chomp}"
   end
 
   it 'should start puppetserver' do
