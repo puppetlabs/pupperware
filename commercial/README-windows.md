@@ -19,31 +19,30 @@ The following steps outline how to provision a host with the required support to
 
 * [Provision a Windows host with LCOW support](#provision-a-windows-host-with-lcow-support)
 * [Install the Docker nightly build](#install-the-docker-nightly-build)
-* [Build an updated LCOW kernel](#build-an-updated-lcow-kernel)
 * [Install the docker-compose binaries](#install-the-docker-compose-binaries)
 * [Validate the Install](#validate-the-install)
 
 Some of these instructions are updated from the [A sneak peek at LCOW](https://stefanscherer.github.io/sneak-peek-at-lcow/) written by Stefan Scherer [@stefscherer](https://twitter.com/stefscherer)
 
-At the time of this writing, the Windows 10 Build 1709 test host returns the following Docker versions:
+At the time of this writing, the Windows 10 Build 1809 test host returns the following Docker versions:
 
 ````
 Client:
- Version:           master-dockerproject-2018-09-03
- API version:       1.39
- Go version:        go1.10.4
- Git commit:        3ea56aa0
- Built:             Mon Sep  3 23:53:23 2018
+ Version:           master-dockerproject-2019-02-28
+ API version:       1.40
+ Go version:        go1.11.5
+ Git commit:        2178fea8
+ Built:             Thu Feb 28 23:51:38 2019
  OS/Arch:           windows/amd64
  Experimental:      false
 
 Server:
  Engine:
-  Version:          master-dockerproject-2018-09-03
-  API version:      1.39 (minimum version 1.24)
-  Go version:       go1.10.4
-  Git commit:       8af9176
-  Built:            Tue Sep  4 00:02:00 2018
+  Version:          master-dockerproject-2019-02-28
+  API version:      1.40 (minimum version 1.24)
+  Go version:       go1.11.5
+  Git commit:       5c152ea
+  Built:            Thu Feb 28 23:59:11 2019
   OS/Arch:          windows/amd64
   Experimental:     true
 ````
@@ -89,33 +88,36 @@ Run the following PowerShell script to:
 # download nightly zip and extract to application directory
 Push-Location $Env:TEMP
 Invoke-WebRequest -OutFile docker-master.zip https://master.dockerproject.com/windows/x86_64/docker.zip
+# for upgrades, stop the service before overwriting anything
+Stop-Service docker -ErrorAction SilentlyContinue
 Expand-Archive -Path docker-master.zip -DestinationPath $Env:ProgramFiles -Force
 
 # register the service to start with system and enable experimental
 & $Env:ProgramFiles\docker\dockerd.exe --register-service --experimental
 
-# allow Docker CLI commands to be run from any command line
-[Environment]::SetEnvironmentVariable("Path", "${Env:Path};${Env:ProgramFiles}\docker", [EnvironmentVariableTarget]::Machine)
+# allow Docker CLI commands to be run from any command line (only add if not present)
+if (([Environment]::GetEnvironmentVariable('Path', [EnvironmentVariableTarget]::Machine) -split ';') -inotcontains "${Env:ProgramFiles}\\docker")
+{
+  [Environment]::SetEnvironmentVariable("Path", "${Env:Path};${Env:ProgramFiles}\docker", [EnvironmentVariableTarget]::Machine)
+}
 
-# download March 23, 2018 existing LCOW kernel image
+# download Nov 15, 2018 LCOW kernel image 4.14.35 kernel / 0.3.9 OpenGCS
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-Invoke-WebRequest -OutFile lcow-kernel.zip http://github.com/linuxkit/lcow/releases/download/4.14.29-0aea33bc/release.zip
+Invoke-WebRequest -OutFile lcow-kernel.zip https://github.com/linuxkit/lcow/releases/download/v4.14.35-v0.3.9/release.zip
 Expand-Archive -Path lcow-kernel.zip -DestinationPath "${Env:ProgramFiles}\Linux Containers" -Force
-# this older image named files differently than expected in current Docker
-Move-Item "${Env:ProgramFiles}\Linux Containers\bootx64.efi" "${Env:ProgramFiles}\Linux Containers\kernel" -Force
 
 # Start Docker Engine
 Start-Service docker
 ```
 
-## Build an updated LCOW kernel
+### Build an updated LCOW kernel (Optional)
 
-In the previous step, an outdated LCOW kernel image [last published release 4.14.29-0aea33bc](https://github.com/linuxkit/lcow/releases) was installed to the expected location for Docker. That artifact included files that are renamed to conform to the latest Docker expectations  `initrd.img` and `kernel`, and that are copied to `$Env:Program Files\Linux Containers`
+In the previous step, an LCOW kernel image [last published release 4.14.35-0.3.9](https://github.com/linuxkit/lcow/releases) was installed to the expected location for Docker. That artifact included files  `initrd.img` and `kernel` that are copied to `$Env:Program Files\Linux Containers`
 
-While not strictly necessary, it's now useful to build an updated kernel image 
-with the [linuxkit](https://github.com/linuxkit/linuxkit) tooling. 
+While not strictly necessary, an updated kernel image can be built
+with the [linuxkit](https://github.com/linuxkit/linuxkit) tooling. As of March 2019, this step is not necessary, but may be again in the future depending on changes to the Linux kernel or [opengcs](https://github.com/Microsoft/opengcs).
 
-### Building on Windows
+#### Building on Windows
 
 Windows can be used to build the kernel image. 
 
@@ -189,7 +191,7 @@ Create outputs:
   lcow-kernel lcow-initrd.img lcow-cmdline
 ```
 
-### Building on OSX (Alternate Build Workflow)
+#### Building on OSX (Alternate Build Workflow)
 
 Alternatively, it may be simpler to do this on OSX with the help of Homebrew, as `linuxkit` builds are already available there. Detailed instructions are in [README-OSX-build-LCOW-kernel.md](./README-OSX-build-LCOW-kernel.md). The build artifacts should be copied to the Windows system as previously described.
 
@@ -249,39 +251,42 @@ The Docker service should now be running on boot and should now yield details ab
 ```powershell
 PS> docker info
 
-Containers: 10
- Running: 0
- Paused: 0
- Stopped: 10
-Images: 6
-Server Version: master-dockerproject-2018-09-03
-Storage Driver: windowsfilter (windows) lcow (linux)
- Windows:
- LCOW:
-Logging Driver: json-file
-Plugins:
- Volume: local
- Network: ics l2bridge l2tunnel nat null overlay transparent
- Log: awslogs etwlogs fluentd gcplogs gelf json-file local logentries splunk syslog
-Swarm: inactive
-Default Isolation: hyperv
-Kernel Version: 10.0 16299 (16299.431.amd64fre.rs3_release_svc_escrow.180502-1908)
-Operating System: Windows 10 Pro Version 1709 (OS Build 16299.611)
-OSType: windows
-Architecture: x86_64
-CPUs: 4
-Total Memory: 16GiB
-Name: pupperware
-ID: VQWA:Y5TW:RNVF:GBSU:JKSH:LLAX:IHSR:G465:7OEH:3EJ3:7JJ3:CWRT
-Docker Root Dir: C:\ProgramData\docker
-Debug Mode (client): false
-Debug Mode (server): false
-Registry: https://index.docker.io/v1/
-Labels:
-Experimental: true
-Insecure Registries:
- 127.0.0.0/8
-Live Restore Enabled: false
+Client:
+ Debug Mode: false
+
+Server:
+ Containers: 0
+  Running: 0
+  Paused: 0
+  Stopped: 0
+ Images: 50
+ Server Version: master-dockerproject-2019-02-28
+ Storage Driver: windowsfilter (windows) lcow (linux)
+  Windows:
+  LCOW:
+ Logging Driver: json-file
+ Plugins:
+  Volume: local
+  Network: ics l2bridge l2tunnel nat null overlay transparent
+  Log: awslogs etwlogs fluentd gcplogs gelf json-file local logentries splunk syslog
+ Swarm: inactive
+ Default Isolation: hyperv
+ Kernel Version: 10.0 17763 (17763.1.amd64fre.rs5_release.180914-1434)
+ Operating System: Windows 10 Enterprise Version 1809 (OS Build 17763.316)
+ OSType: windows
+ Architecture: x86_64
+ CPUs: 2
+ Total Memory: 16GiB
+ Name: ci-lcow-prod-1
+ ID: F4O4:AX7K:ES5U:EQ74:2VJW:HZ2J:6TJK:474M:Q35F:RT2M:UGBW:PW5W
+ Docker Root Dir: C:\ProgramData\docker
+ Debug Mode: false
+ Registry: https://index.docker.io/v1/
+ Labels:
+ Experimental: true
+ Insecure Registries:
+  127.0.0.0/8
+ Live Restore Enabled: false
 ```
 
 Docker-compose should also provide information like:
