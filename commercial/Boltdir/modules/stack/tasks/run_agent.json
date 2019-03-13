@@ -1,0 +1,9 @@
+{
+  "description": "run the agent and check that it succeeded",
+  "implementations" : [
+    { "name": "run_agent.sh", "requirements": ["shell"] }
+  ],
+  "input_method": "environment",
+  "parameters" : {
+  }
+}

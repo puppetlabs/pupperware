@@ -1,0 +1,17 @@
+{
+  "description": "manage the puppet stack via docker-compose",
+  "implementations" : [
+    { "name": "manage.sh", "requirements": ["shell"] }
+  ],
+  "input_method": "environment",
+  "parameters" : {
+    "action" : {
+      "description": "the action to perform",
+      "type": "Enum[up, down, ps, status]"
+    },
+    "wait": {
+      "description": "whether to wait until the stack is running (only for the up action)",
+      "type": "Optional[Boolean]"
+    }
+  }
+}

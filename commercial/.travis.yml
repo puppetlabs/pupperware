@@ -1,0 +1,23 @@
+sudo: required
+
+services:
+  - docker
+
+language:
+  - ruby
+
+env:
+  global:
+    - DOCKER_COMPOSE_VERSION=1.22.0
+    - COMPOSE_PROJECT_NAME=pupperware
+
+before_install:
+  - sudo rm /usr/local/bin/docker-compose
+  - curl --location https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname --kernel-name`-`uname --machine` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
+
+# Use --fail-fast so if the cluster fails to come up successfully we don't need
+# to wait for every service to time out
+script:
+  - bundle exec rspec spec --fail-fast

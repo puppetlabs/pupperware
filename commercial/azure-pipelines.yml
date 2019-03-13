@@ -1,0 +1,105 @@
+pool:
+  # self-hosted agent on Windows 10 1709 environment
+  # includes newer Docker engine with LCOW enabled, new build of LCOW image
+  # includes Ruby 2.5, Go 1.10, Node.js 10.10, hadolint
+  name: Default
+
+variables:
+  COMPOSE_PROJECT_NAME: pupperware
+
+steps:
+- checkout: self  # self represents the repo where the initial Pipelines YAML file was found
+  clean: true  # whether to fetch clean each time
+- powershell: |
+    $line = '=' * 80
+    Write-Host "$line`nWindows`n$line`n"
+    Get-ComputerInfo |
+      select WindowsProductName, WindowsVersion, OsHardwareAbstractionLayer |
+      Out-String |
+      Write-Host
+    #
+    # Azure
+    #
+    $assetTag = Get-WmiObject -class Win32_SystemEnclosure -namespace root\CIMV2 |
+      Select -ExpandProperty SMBIOSAssetTag
+
+    # only Azure VMs have this hard-coded DMI value
+    if ($assetTag -eq '7783-7084-3265-9085-8269-3286-77')
+    {
+      Write-Host "`n`n$line`nAzure`n$line`n"
+      Invoke-RestMethod -Headers @{'Metadata'='true'} -URI http://169.254.169.254/metadata/instance?api-version=2017-12-01 -Method Get |
+        ConvertTo-Json -Depth 10 |
+        Write-Host
+    }
+    #
+    # Docker
+    #
+    Write-Host "`n`n$line`nDocker`n$line`n"
+    docker version
+    docker images
+    docker info
+    docker-compose version
+    sc.exe qc docker
+    #
+    # Ruby
+    #
+    Write-Host "`n`n$line`nRuby`n$line`n"
+    ruby --version
+    gem --version
+    gem env
+    bundle --version
+    #
+    # Environment
+    #
+    Write-Host "`n`n$line`nEnvironment`n$line`n"
+    Get-ChildItem Env: | % { Write-Host "$($_.Key): $($_.Value)"  }
+  displayName: Diagnostic Host Information
+  name: hostinfo
+
+- powershell: |
+    bundle install --with test --path '.bundle/gems'
+    # make sure windows yml slots in as the default override
+    Copy-Item ./docker-compose.windows.yml ./docker-compose.override.yml -Force
+    Write-Host 'Forcibly removing previous cluster config / data'
+    Remove-Item 'volumes' -Force -Recurse -ErrorAction SilentlyContinue;
+    New-Item 'volumes' -Type Directory
+    Push-Location 'volumes'
+    'code', 'puppet', 'serverdata', 'puppetdb\ssl', 'puppetdb-postgres\data' |
+      % { New-Item $_ -Type Directory }
+    Pop-Location
+  displayName: Prepare Test Environment
+  name: test_prepare
+
+- powershell: |
+    $domain = Get-WmiObject -Class Win32_NetworkAdapterConfiguration |
+      Select -ExpandProperty DNSDomain |
+      Select -First 1
+    Write-Host 'Writing compose config to disk'
+    $content = @"
+    AZURE_DOMAIN=$domain
+    "@
+    $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
+    [System.IO.File]::WriteAllLines(".env", $content, $Utf8NoBomEncoding)
+    Get-Content -Path '.env'
+    Write-Host 'Executing Pupperware specs'
+    bundle exec rspec --version
+    bundle exec rspec spec --fail-fast
+  displayName: Test pupperware
+  name: test_pupperware
+
+- task: PublishTestResults@2
+  displayName: Publish pupperware test results
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: 'TEST-rspec.xml'
+    testRunTitle: pupperware Test Results
+  condition: always()
+
+- powershell: |
+    Write-Host 'Pruning containers'
+    docker container prune --force
+    Write-Host 'Pruning images'
+    docker image prune --filter "dangling=true" --force
+  displayName: Container Cleanup
+  timeoutInMinutes: 3
+  condition: always()
