@@ -78,7 +78,8 @@ shared_examples 'a running pupperware cluster' do
   def run_agent(agent_name)
     # setting up a Windows TTY is difficult, so we don't
     # allocating a TTY will show container pull output on Linux, but that's not good for tests
-    result = run_command("docker run --rm --network pupperware_default --dns #{@consul_ip} --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine agent -t --server puppet.service.consul --ca_server puppet")
+    consul_ip = run_command("docker-compose --no-ansi exec -T consul ifconfig eth0 | grep 'inet addr' | cut -d ':' -f 2 | cut -d ' ' -f 1")[:stdout].chomp
+    result = run_command("docker run --rm --network pupperware_default --dns #{consul_ip} --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine agent -t --server puppet.service.consul --ca_server puppet")
     return result[:status].exitstatus
   end
 
