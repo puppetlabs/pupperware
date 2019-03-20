@@ -16,7 +16,7 @@ services:
 
   puppet:
     hostname: puppet
-    image: puppet/puppetserver
+    image: underscorgan/puppetserver:6.2.1
     ports:
       - 8140:8140
     environment:
@@ -48,7 +48,7 @@ services:
 
   puppetdb:
     hostname: puppetdb
-    image: puppet/puppetdb
+    image: underscorgan/puppetdb:6.2.0
     environment:
       - PUPPETDB_PASSWORD=puppetdb
       - PUPPETDB_USER=puppetdb
