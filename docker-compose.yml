@@ -13,7 +13,7 @@ services:
       CONSUL_LOCAL_CONFIG: '{ "ports": { "dns": 53 }, "recursors": [ "8.8.8.8" ] }'
       CONSUL_IP:
     volumes:
-      - ./volumes/consul:/consul/data/
+      - ./volumes/consul:/consul/data:rw
     networks:
       default:
         ipv4_address: $CONSUL_IP
