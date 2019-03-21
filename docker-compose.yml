@@ -2,7 +2,7 @@ version: '3'
 
 services:
   consul:
-    hostname: consul
+    hostname: underscorgan/consul:test
     image: consul
     ports:
       - 8500:8500 # Consul HTTP
