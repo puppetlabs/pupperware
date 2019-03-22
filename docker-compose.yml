@@ -19,6 +19,10 @@ services:
       - ./volumes/serverdata:/opt/puppetlabs/server/data/puppetserver/
 
   postgres:
+    image: postgres:9.6
+    volumes:
+      - ./volumes/puppetdb-postgres/data:/var/lib/postgresql/data/:rw
+      - ./postgres-custom:/docker-entrypoint-initdb.d
     environment:
       - POSTGRES_PASSWORD=puppetdb
       - POSTGRES_USER=puppetdb
