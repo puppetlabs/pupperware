@@ -20,7 +20,7 @@ services:
 
   puppet:
     hostname: puppet
-    image: puppet/puppetserver
+    image: underscorgan/puppetserver:6.2.1
     ports:
       - 8140:8140
     environment:
