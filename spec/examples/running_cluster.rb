@@ -165,6 +165,8 @@ shared_examples 'a running pupperware cluster' do
   end
 
   it 'should be able to run an agent' do
+    # Sleep for 1s to make sure consul has refreshed the healthcheck
+    sleep(1)
     status = run_agent(@test_agent)
     expect(status).to eq(0)
   end
