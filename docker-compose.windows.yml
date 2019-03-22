@@ -7,6 +7,12 @@ services:
         aliases:
          - puppet.${AZURE_DOMAIN}
 
+  consul:
+    networks:
+      default:
+        aliases:
+          - consul.${AZURE_DOMAIN}
+
   postgres:
     image: stellirin/postgres-windows:9.6
     environment:
