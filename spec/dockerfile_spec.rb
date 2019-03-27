@@ -5,6 +5,17 @@ require "#{File.join(File.dirname(__FILE__), 'examples', 'running_cluster.rb')}"
 describe 'The docker-compose file works' do
   include Helpers
 
+  def teardown_cluster
+    STDOUT.puts("Tearing down test cluster")
+    get_containers.each do |id|
+      yield id if block_given?
+      STDOUT.puts("Killing container #{id}")
+      run_command("docker container kill #{id}")
+    end
+    # still needed to remove network / provide failsafe
+    run_command('docker-compose --no-ansi down')
+  end
+
   before(:all) do
     @test_agent = "puppet_test#{Random.rand(1000)}"
     @mapped_ports = {}
@@ -13,22 +24,15 @@ describe 'The docker-compose file works' do
     if status.exitstatus != 0
       fail "`docker-compose` must be installed and available in your PATH"
     end
+    teardown_cluster()
   end
 
   after(:all) do
-    STDOUT.puts("Tearing down test cluster")
-    result = run_command('docker-compose --no-ansi --log-level INFO ps -q')
-    ids = result[:stdout].chomp
-    STDOUT.puts("Retrieved running container ids:\n#{ids}")
-    ids.each_line do |id|
+    teardown_cluster() do |id|
       STDOUT.puts("Container logs for #{id}")
       logs = run_command("docker logs --details --timestamps #{id}")[:stdout]
       STDOUT.puts(logs)
-      STDOUT.puts("Killing container #{id}")
-      run_command("docker container kill #{id}")
     end
-    # still needed to remove network / provide failsafe
-    run_command('docker-compose --no-ansi down')
   end
 
   describe 'the cluster starts' do

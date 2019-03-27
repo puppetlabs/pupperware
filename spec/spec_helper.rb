@@ -20,6 +20,13 @@ module Helpers
     { status: status, stdout: stdout_string }
   end
 
+  def get_containers
+    result = run_command('docker-compose --no-ansi --log-level INFO ps -q')
+    ids = result[:stdout].chomp
+    STDOUT.puts("Retrieved running container ids:\n#{ids}")
+    ids.lines.map(&:chomp)
+  end
+
   def inspect_container(container, query)
     result = run_command("docker inspect \"#{container}\" --format \"#{query}\"")
     status = result[:stdout].chomp
