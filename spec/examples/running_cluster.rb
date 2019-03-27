@@ -6,11 +6,15 @@ shared_examples 'a running pupperware cluster' do
 
   include Helpers
 
-  def get_container_status(container)
-    result = run_command("docker inspect \"#{container}\" --format '{{.State.Health.Status}}'")
+  def inspect_container(container, query)
+    result = run_command("docker inspect \"#{container}\" --format \"#{query}\"")
     status = result[:stdout].chomp
-    STDOUT.puts "queried health status of #{container}: #{status}"
+    STDOUT.puts "queried #{query} of #{container}: #{status}"
     return status
+  end
+
+  def get_container_status(container)
+    inspect_container(container, '{{.State.Health.Status}}')
   end
 
   def get_service_container(service, timeout = 120)
