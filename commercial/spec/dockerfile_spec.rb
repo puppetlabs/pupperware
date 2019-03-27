@@ -21,6 +21,9 @@ describe 'The docker-compose file works' do
     ids = result[:stdout].chomp
     STDOUT.puts("Retrieved running container ids:\n#{ids}")
     ids.each_line do |id|
+      STDOUT.puts("Container logs for #{id}")
+      logs = run_command("docker logs --details --timestamps #{id}")[:stdout]
+      STDOUT.puts(logs)
       STDOUT.puts("Killing container #{id}")
       run_command("docker container kill #{id}")
     end
