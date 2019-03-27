@@ -78,15 +78,6 @@ steps:
     $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
     [System.IO.File]::WriteAllLines(".env", $content, $Utf8NoBomEncoding)
     Get-Content -Path '.env'
-    Write-Host "Creating volumes directory structure in $ENV:TempVolumeRoot"
-    New-Item $ENV:TempVolumeRoot -Type Directory
-    Push-Location $ENV:TempVolumeRoot
-    New-Item 'volumes' -Type Directory
-    'volumes\code', 'volumes\puppet', 'volumes\serverdata', 'volumes\puppetdb\ssl', 'volumes\puppetdb-postgres\data' |
-      % { New-Item $_ -Type Directory }
-    Pop-Location
-    # Hack: grant all users access to this temp dir for the sake of Docker daemon
-    icacls $ENV:TempVolumeRoot /grant Users:"(OI)(CI)F" /T
     Write-Host 'Executing Pupperware specs'
     bundle exec rspec --version
     bundle exec rspec spec --fail-fast

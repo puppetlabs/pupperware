@@ -5,6 +5,33 @@ require "#{File.join(File.dirname(__FILE__), 'examples', 'running_cluster.rb')}"
 describe 'The docker-compose file works' do
   include Helpers
 
+  VOLUMES = [
+    'code',
+    'puppet',
+    'serverdata',
+    'puppetdb/ssl',
+    'puppetdb-postgres/data'
+  ]
+
+  DEFAULT_VOLUME_ROOT = File.join(File.dirname(__FILE__), '..')
+  VOLUME_ROOT = File.join(ENV['TempVolumeRoot'] || DEFAULT_VOLUME_ROOT, 'volumes')
+
+  def create_volumes()
+    STDOUT.puts("Creating volumes directory structure in #{VOLUME_ROOT}")
+    VOLUMES.each { |subdir| FileUtils.mkdir_p(File.join(VOLUME_ROOT, subdir)) }
+
+    if !!File::ALT_SEPARATOR
+      # Hack: grant all users access to this temp dir for the sake of Docker daemon
+      run_command("icacls \"#{VOLUME_ROOT}\" /grant Users:\"(OI)(CI)F\" /T")
+    end
+  end
+
+  # only necessary on non-ephemeral hosts
+  def remove_volumes()
+    STDOUT.puts("Forcibly removing previous cluster config / data from #{VOLUME_ROOT}")
+    FileUtils.rm_rf(VOLUME_ROOT)
+  end
+
   def teardown_cluster
     STDOUT.puts("Tearing down test cluster")
     get_containers.each do |id|
@@ -14,6 +41,7 @@ describe 'The docker-compose file works' do
     end
     # still needed to remove network / provide failsafe
     run_command('docker-compose --no-ansi down')
+    remove_volumes()
   end
 
   before(:all) do
@@ -25,6 +53,7 @@ describe 'The docker-compose file works' do
       fail "`docker-compose` must be installed and available in your PATH"
     end
     teardown_cluster()
+    create_volumes()
   end
 
   after(:all) do
