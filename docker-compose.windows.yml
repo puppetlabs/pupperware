@@ -12,5 +12,5 @@ services:
     environment:
       - PGDATA=c:\data
     volumes:
-      - ./volumes/puppetdb-postgres/data:c:\data
+      - ${VOLUME_ROOT:-.}/volumes/puppetdb-postgres/data:c:\data
       - ./postgres-custom:c:\docker-entrypoint-initdb.d
