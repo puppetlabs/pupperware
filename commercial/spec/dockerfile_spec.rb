@@ -26,12 +26,6 @@ describe 'The docker-compose file works' do
     end
   end
 
-  # only necessary on non-ephemeral hosts
-  def remove_volumes()
-    STDOUT.puts("Forcibly removing previous cluster config / data from #{VOLUME_ROOT}")
-    FileUtils.rm_rf(VOLUME_ROOT)
-  end
-
   def teardown_cluster
     STDOUT.puts("Tearing down test cluster")
     get_containers.each do |id|
@@ -40,8 +34,7 @@ describe 'The docker-compose file works' do
       run_command("docker container kill #{id}")
     end
     # still needed to remove network / provide failsafe
-    run_command('docker-compose --no-ansi down')
-    remove_volumes()
+    run_command('docker-compose --no-ansi down --volumes')
   end
 
   before(:all) do
