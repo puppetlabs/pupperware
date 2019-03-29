@@ -62,9 +62,6 @@ shared_examples 'a running pupperware cluster' do
       status = get_container_status(container)
     end
 
-    # work around SERVER-2354
-    run_command('docker-compose --no-ansi exec puppet puppet config set server puppet')
-
     return status
   end
 
