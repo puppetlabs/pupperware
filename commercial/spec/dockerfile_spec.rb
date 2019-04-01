@@ -29,7 +29,6 @@ describe 'The docker-compose file works' do
   def teardown_cluster
     STDOUT.puts("Tearing down test cluster")
     get_containers.each do |id|
-      yield id if block_given?
       STDOUT.puts("Killing container #{id}")
       run_command("docker container kill #{id}")
     end
@@ -50,11 +49,8 @@ describe 'The docker-compose file works' do
   end
 
   after(:all) do
-    teardown_cluster() do |id|
-      STDOUT.puts("Container logs for #{id}")
-      logs = run_command("docker logs --details --timestamps #{id}")[:stdout]
-      STDOUT.puts(logs)
-    end
+    emit_logs()
+    teardown_cluster()
   end
 
   describe 'the cluster starts' do
