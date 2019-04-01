@@ -38,6 +38,22 @@ module Helpers
     inspect_container(container, '{{.State.Health.Status}}')
   end
 
+  def get_container_name(container)
+    inspect_container(container, '{{.Name}}')
+  end
+
+  def emit_log(container)
+    container_name = get_container_name(container)
+    STDOUT.puts("#{'*' * 80}\nContainer logs for #{container_name} / #{container}\n#{'*' * 80}\n")
+    logs = run_command("docker logs --details --timestamps #{container}")[:stdout]
+    STDOUT.puts(logs)
+  end
+
+  def emit_logs
+    STDOUT.puts("Emitting container logs")
+    get_containers.each { |id| emit_log(id) }
+  end
+
   def get_service_container(service, timeout = 120)
     result = run_command("docker-compose --no-ansi ps --quiet #{service}")
     container = result[:stdout].chomp
