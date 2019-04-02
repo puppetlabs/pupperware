@@ -168,8 +168,7 @@ See [LICENSE](LICENSE) file.
 
 ## Issue Tracking
 
-Please open tickets for any issues in the [Puppet JIRA](https://tickets.puppetlabs.com/browse/CPR)
-with the component set to 'Container'.
+Please report any issues as GitHub issues in this repo.
 
 ## Contact us!
 
