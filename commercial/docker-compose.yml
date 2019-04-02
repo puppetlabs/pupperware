@@ -12,6 +12,7 @@ services:
       # reached. 'puppet' must be one of them, otherwise puppetdb won't be
       # able to get a cert. Add other names as a comma-separated list
       - DNS_ALT_NAMES=puppet,${DNS_ALT_NAMES:-}
+      - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
       - PUPPETDB_SERVER_URLS=https://puppetdb:8081
     volumes:
       - ${VOLUME_ROOT:-.}/volumes/code:/etc/puppetlabs/code/
@@ -34,6 +35,7 @@ services:
     hostname: puppetdb
     image: puppet/puppetdb
     environment:
+      - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
       - PUPPETDB_PASSWORD=puppetdb
       - PUPPETDB_USER=puppetdb
     ports:

@@ -7,3 +7,12 @@ serverdata/
 Gemfile.lock
 .bundle/
 .ruby-version
+
+# .env will allow end-users to customize variables
+# for their compose stack in a way that won't be
+# overwritten by git updates. At this point this is
+# primarily for disabling analytics. If we ever get
+# optional `env_file`s we may be able to move to
+# something else, but that may never happen.
+# https://github.com/docker/compose/pull/3955#issuecomment-341231156
+.env
