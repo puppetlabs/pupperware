@@ -162,6 +162,29 @@ repos for [puppetserver](https://github.com/puppetlabs/puppetserver/tree/master/
 and [puppetdb](https://github.com/puppetlabs/puppetdb/tree/master/docker).
 Published containers can be found on [dockerhub](https://hub.docker.com/u/puppet).
 
+## Analytics Data Collection
+
+The Puppet owned containers run in the pupperware stack collect usage data. You can opt out of providing this data.
+
+### What data is collected?
+* Version of the puppetserver container.
+* Version of the puppetdb container.
+* Anonymized IP address is used by Google Analytics for Geolocation data, but the IP address is not collected.
+
+### Why does pupperware collect data?
+
+We collect data to help us understand how the containers are used and make decisions about upcoming changes.
+
+### How can I opt out of pupperware container data collection?
+
+Create a `.env` file in this directory with the contents:
+
+```
+PUPPERWARE_ANALYTICS_ENABLED=false
+```
+
+This file is in the `.gitignore` file and will not be managed or changed by pupperware.
+
 ## License
 
 See [LICENSE](LICENSE) file.
