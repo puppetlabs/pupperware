@@ -6,51 +6,28 @@ shared_examples 'a running pupperware cluster' do
 
   include Helpers
 
-  def get_container_status(container)
-    result = run_command("docker inspect \"#{container}\" --format '{{.State.Health.Status}}'")
-    status = result[:stdout].chomp
-    STDOUT.puts "queried health status of #{container}: #{status}"
-    return status
-  end
-
-  def get_service_container(service, timeout = 120)
-    result = run_command("docker-compose --no-ansi ps --quiet #{service}")
-    container = result[:stdout].chomp
-    Timeout::timeout(timeout) do
-      while container.empty?
-        sleep(1)
-        result = run_command("docker-compose --no-ansi ps --quiet #{service}")
-        container = result[:stdout].chomp
-      end
-    end
-
-    STDOUT.puts("service named '#{service}' is hosted in container: '#{container}'")
-    return container
-  rescue Timeout::Error
-    STDOUT.puts("docker-compose never started a service named '#{service}'")
-    return ''
-  end
-
-  def get_service_base_uri(service, port)
-    @mapped_ports["#{service}:#{port}"] ||= begin
-      result = run_command("docker-compose --no-ansi port #{service} #{port}")
-      service_ip_port = result[:stdout].chomp
-      uri = URI("http://#{service_ip_port}")
-      uri.host = 'localhost' if uri.host == '0.0.0.0'
-      STDOUT.puts "determined #{service} endpoint for port #{port}: #{uri}"
-      uri
-    end
-    @mapped_ports["#{service}:#{port}"]
-  end
-
   def get_puppetdb_state
+    # make sure PDB container hasn't stopped
+    get_service_container('puppetdb', 5)
+    # now query its status endpoint
     pdb_uri = URI::join(get_service_base_uri('puppetdb', 8080), '/status/v1/services/puppetdb-status')
-    status = Net::HTTP.get_response(pdb_uri).body
-    STDOUT.puts "retrieved raw puppetdb status: #{status}"
-    return JSON.parse(status)['state'] unless status.empty?
+    response = Net::HTTP.get_response(pdb_uri)
+    STDOUT.puts "retrieved raw puppetdb status: #{response.body}"
+    case response
+      when Net::HTTPSuccess then
+        return JSON.parse(response.body)['state']
+      else
+       return ''
+    end
+  rescue Errno::ECONNREFUSED, Errno::ECONNRESET, EOFError => e
+    STDOUT.puts "PDB not accepting connections yet #{pdb_uri}: #{e}"
+    return ''
+  rescue JSON::ParserError
+    STDOUT.puts "Invalid JSON response: #{e}"
+    return ''
   rescue
     STDOUT.puts "Failure querying #{pdb_uri}: #{$!}"
-    return ''
+    raise
   end
 
   def start_puppetserver
@@ -61,9 +38,6 @@ shared_examples 'a running pupperware cluster' do
       sleep(1)
       status = get_container_status(container)
     end
-
-    # work around SERVER-2354
-    run_command('docker-compose --no-ansi exec puppet puppet config set server puppet')
 
     return status
   end
@@ -131,7 +105,7 @@ shared_examples 'a running pupperware cluster' do
     end
   rescue Timeout::Error
     STDOUT.puts('puppetdb never entered running state')
-    return ''
+    raise
   else
     return status
   end
