@@ -4,5 +4,5 @@ services:
   postgres:
     image: postgres:9.6
     volumes:
-      - ./volumes/puppetdb-postgres/data:/var/lib/postgresql/data/
+      - ${VOLUME_ROOT:-.}/volumes/puppetdb-postgres/data:/var/lib/postgresql/data/
       - ./postgres-custom:/docker-entrypoint-initdb.d

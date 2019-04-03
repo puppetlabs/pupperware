@@ -60,13 +60,9 @@ steps:
     bundle install --with test --path '.bundle/gems'
     # make sure windows yml slots in as the default override
     Copy-Item ./docker-compose.windows.yml ./docker-compose.override.yml -Force
-    Write-Host 'Forcibly removing previous cluster config / data'
-    Remove-Item 'volumes' -Force -Recurse -ErrorAction SilentlyContinue;
-    New-Item 'volumes' -Type Directory
-    Push-Location 'volumes'
-    'code', 'puppet', 'serverdata', 'puppetdb\ssl', 'puppetdb-postgres\data' |
-      % { New-Item $_ -Type Directory }
-    Pop-Location
+    # set an Azure variable for temp volumes root
+    $tempVolumeRoot = Join-Path -Path $ENV:TEMP -ChildPath ([System.IO.Path]::GetRandomFileName())
+    Write-Host "##vso[task.setvariable variable=TempVolumeRoot]$tempVolumeRoot"
   displayName: Prepare Test Environment
   name: test_prepare
 
@@ -77,6 +73,7 @@ steps:
     Write-Host 'Writing compose config to disk'
     $content = @"
     AZURE_DOMAIN=$domain
+    VOLUME_ROOT=$ENV:TempVolumeRoot
     "@
     $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
     [System.IO.File]::WriteAllLines(".env", $content, $Utf8NoBomEncoding)
@@ -100,6 +97,8 @@ steps:
     docker container prune --force
     Write-Host 'Pruning images'
     docker image prune --filter "dangling=true" --force
+    Write-Host "Cleaning up temporary volume: $ENV:TempVolumeRoot"
+    Remove-Item $ENV:TempVolumeRoot -Force -Recurse -ErrorAction Continue
   displayName: Container Cleanup
   timeoutInMinutes: 3
   condition: always()
