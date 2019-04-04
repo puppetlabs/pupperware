@@ -5,6 +5,7 @@ The ecosystem surrounding Docker container support for Linux containers on Windo
 The Pupperware project is being tested against the latest [LCOW (Linux Containers on Windows)](https://github.com/linuxkit/lcow) support available from Docker and Microsoft, and as such has a number of pre-requisites. At a high level, this support enables running Linux and Windows containers side-by-side on the same host and relies on:
 
 * A build of Windows newer than Windows 10, Build 1709
+  - Per [Moby Issue 33850 Comment](https://github.com/moby/moby/issues/33850#issuecomment-478192332) from Mar 29 2019, LCOW will only support V2 HCS APIs which require RS4 / RS5 builds (Windows 10 1803+, Windows Server 2016 1803+, Windows Server 2019+)
 * Docker edge release 18.02 with experimental features enabled, nightly currently preferred
 * A LinuxKit based kernel image
 * docker-compose binaries
@@ -26,26 +27,26 @@ Some of these instructions are updated from the [A sneak peek at LCOW](https://s
 
 At the time of this writing, the Windows 10 Build 1809 test host returns the following Docker versions:
 
-````
+```
 Client:
- Version:           master-dockerproject-2019-02-28
+ Version:           master-dockerproject-2019-04-03
  API version:       1.40
- Go version:        go1.11.5
- Git commit:        2178fea8
- Built:             Thu Feb 28 23:51:38 2019
+ Go version:        go1.12.1
+ Git commit:        c500b534
+ Built:             Wed Apr  3 23:43:39 2019
  OS/Arch:           windows/amd64
  Experimental:      false
 
 Server:
  Engine:
-  Version:          master-dockerproject-2019-02-28
+  Version:          master-dockerproject-2019-04-03
   API version:      1.40 (minimum version 1.24)
-  Go version:       go1.11.5
-  Git commit:       5c152ea
-  Built:            Thu Feb 28 23:59:11 2019
+  Go version:       go1.12.1
+  Git commit:       bcaa613
+  Built:            Wed Apr  3 23:50:30 2019
   OS/Arch:          windows/amd64
   Experimental:     true
-````
+```
 
 ### Additional Reference
 
@@ -55,7 +56,7 @@ Server:
 
 ## Provision a Windows host with LCOW support
 
-As mentioned, Windows 10 Build 1709+, Windows Server 2019 or newer builds are necessary to support LCOW.
+As mentioned, Windows 10 Build 1709+, Windows Server 2016 1709+ or newer builds are necessary to support LCOW. It is preferred to use RS5+ builds like Windows 10 1809+ or Windows Server 2019 in preparation for upcoming LCOW v2.
 
 If the host is provisioned in Azure, the host must be a `v3` SKU to support nested virtualization, like `Standard_D4s_v3`. Other cloud providers or virtualized infrastructure will have similar requirements / configuration needed to enable nested virtualization.
 
@@ -92,7 +93,8 @@ Invoke-WebRequest -OutFile docker-master.zip https://master.dockerproject.com/wi
 Stop-Service docker -ErrorAction SilentlyContinue
 Expand-Archive -Path docker-master.zip -DestinationPath $Env:ProgramFiles -Force
 
-# register the service to start with system and enable experimental
+# unregister / reregister the service to start with system and enable experimental
+& $Env:ProgramFiles\docker\dockerd.exe --unregister-service
 & $Env:ProgramFiles\docker\dockerd.exe --register-service --experimental
 
 # allow Docker CLI commands to be run from any command line (only add if not present)
@@ -110,18 +112,18 @@ Expand-Archive -Path lcow-kernel.zip -DestinationPath "${Env:ProgramFiles}\Linux
 Start-Service docker
 ```
 
-### Build an updated LCOW kernel (Optional)
+### Build an updated LCOW kernel
 
 In the previous step, an LCOW kernel image [last published release 4.14.35-0.3.9](https://github.com/linuxkit/lcow/releases) was installed to the expected location for Docker. That artifact included files  `initrd.img` and `kernel` that are copied to `$Env:Program Files\Linux Containers`
 
-While not strictly necessary, an updated kernel image can be built
-with the [linuxkit](https://github.com/linuxkit/linuxkit) tooling. As of March 2019, this step is not necessary, but may be again in the future depending on changes to the Linux kernel or [opengcs](https://github.com/Microsoft/opengcs).
+Since this contains an old kernel, runc and opengcs, an updated kernel image should be built
+with the [linuxkit](https://github.com/linuxkit/linuxkit) tooling. This is the current status as of April 2019 based on changes in the [opengcs](https://github.com/Microsoft/opengcs) project, per https://github.com/linuxkit/lcow/pull/41. No builds yet exist.
 
 #### Building on Windows
 
 Windows can be used to build the kernel image. 
 
-Building from source requires `git`, `make` and `docker` itself. Docker must have LCOW support enabled and must have a valid kernel image installed as in the previous step (otherwise the build will fail with a message like `Error: No such image: docker.io/linuxkit/kernel:4.14.35`)
+Building from source requires `git`, `make`, `go` and `docker` itself. Docker must have LCOW support enabled and must have a valid kernel image installed as in the previous step (otherwise the build will fail with a message like `Error: No such image: docker.io/linuxkit/kernel:4.14.35`)
 
 Run the following PowerShell script to:
 
@@ -132,8 +134,11 @@ Run the following PowerShell script to:
 * Deploy LCOW kernel image to host
 
 ```powershell
+# set process execution policy
+Set-ExecutionPolicy Bypass -Scope Process -Force
+
 # install Chocolatey
-Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 
 # install build tooling
 choco install -y git golang make
@@ -146,8 +151,8 @@ Update-SessionEnvironment
 
 # use `go get` to clone and build linuxkit source
 # verbose output since this will generally take a while
-# https://github.com/linuxkit/linuxkit/issues/3207 follows the upstream issue
-go get -v -u github.com/Iristyle/linuxkit/src/cmd/linuxkit
+go get -v -u github.com/linuxkit/linuxkit/src/cmd/linuxkit
+# GOPATH location is documented by running `go env`
 
 # verify linuxkit built
 # go copies binaries to $Env:GOPATH by default unless explicitly configured
@@ -168,23 +173,21 @@ Copy-Item .\lcow-kernel "$Env:ProgramFiles\Linux Containers\kernel"
 # write version info to sidecar text file for posterity
 git rev-parse head > "${Env:ProgramFiles}\Linux Containers\versions.txt"
 type .\lcow.yml >> "${Env:ProgramFiles}\Linux Containers\versions.txt"
-```
 
-Note: This uses a fork of the linuxkit master from Oct 17 2018 at https://github.com/linuxkit/linuxkit/commit/73dd7b219d239d038567cbd8ee23a2771d270a8a
-that updates compatible Docker API version from 1.23 to 1.24 with commit https://github.com/Iristyle/linuxkit/commit/4daf9158491bb3effd0a258c2231c042921cc780
-which is necessary for the Docker version installed earlier. This issue has been reported to the LinuxKit project at https://github.com/linuxkit/linuxkit/issues/3207.
+Restart-Service docker
+```
 
 If everything is configured correctly, the `linuxkit build lcow.yml` output should be similar to the following:
 
 ```
 PS C:\Users\puppet\AppData\Local\Temp\lcow> linuxkit build lcow.yml
-Extract kernel image: linuxkit/kernel:4.14.35
-Pull image: docker.io/linuxkit/kernel:4.14.35@sha256:3bef6da5bdd9412954b1c971ef43e06bcb1445438e336daf73e681324c58343c
+Extract kernel image: linuxkit/kernel:4.19.27
+Pull image: docker.io/linuxkit/kernel:4.19.27@sha256:64012346855139ee3efeff2cf137f12f251fa6593204a59e142e86de5d39ef97
 Add init containers:
-Process init image: linuxkit/init-lcow:0b6d22dcead2548c4ba8761f0fccb728553ebd06
-Pull image: docker.io/linuxkit/init-lcow:0b6d22dcead2548c4ba8761f0fccb728553ebd06@sha256:6756c19a2be2f68ee20f01bf5736c3e6f24ddb282345feb2d7ac5c3885972734
-Process init image: linuxkit/runc:v0.5
-Pull image: docker.io/linuxkit/runc:v0.5@sha256:9782c306200ad7d3dcbe52ac7b01f2594b9e970c46e002f6a5af407dc8c24165
+Process init image: linuxkit/init-lcow:15f50743b68117f4db1158c89530d47affbbd07b
+Pull image: docker.io/linuxkit/init-lcow:15f50743b68117f4db1158c89530d47affbbd07b@sha256:471fcc1af0a8d3723a7cf40dd28f765d81391d04cedfd8f311c7c0474b2220a5
+Process init image: linuxkit/runc:606971451ea29b4238029804ca638f9f85caf5af
+Pull image: docker.io/linuxkit/runc:606971451ea29b4238029804ca638f9f85caf5af@sha256:aed31e546e3bfa36f575b912f836f7d02b4340698c93c89df4ec6617a5f8ebf2
 Add files:
   etc/linuxkit.yml
 Create outputs:
@@ -199,14 +202,14 @@ Alternatively, it may be simpler to do this on OSX with the help of Homebrew, as
 
 To provision the compose files in this repository also requires a working `docker-compose.exe`. Windows nightly builds are not available ([issue 6308 filed](https://github.com/docker/compose/issues/6308)), but reasonably release builds are available at the [docker-compose GitHub releases page](https://github.com/docker/compose/releases/). Run the following PowerShell script to:
 
-* Download the 1.24.0-rc1 build of docker-compose
+* Download the 1.24.0 build of docker-compose
 * Install it to expected location
 
 ```powershell
-# download docker-compose 1.24.0-rc1 from Jan 14 2019
+# download docker-compose 1.24.0 from Mar 28 2019
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-Invoke-WebRequest -OutFile "${ENV:ProgramFiles}\docker\docker-compose.exe" https://github.com/docker/compose/releases/download/1.24.0-rc1/docker-compose-Windows-x86_64.exe
+Invoke-WebRequest -OutFile "${ENV:ProgramFiles}\docker\docker-compose.exe" https://github.com/docker/compose/releases/download/1.24.0/docker-compose-Windows-x86_64.exe
 ```
 
 ### Build the docker-compose binaries (Alternate Build Workflow)
@@ -253,17 +256,19 @@ PS> docker info
 
 Client:
  Debug Mode: false
+ Plugins:
+  app: Docker Application Packages (Docker Inc., v0.6.0-148-ge797c906f6)
 
 Server:
  Containers: 0
   Running: 0
   Paused: 0
   Stopped: 0
- Images: 50
- Server Version: master-dockerproject-2019-02-28
- Storage Driver: windowsfilter (windows) lcow (linux)
-  Windows:
+ Images: 56
+ Server Version: master-dockerproject-2019-04-03
+ Storage Driver: lcow (linux) windowsfilter (windows)
   LCOW:
+  Windows:
  Logging Driver: json-file
  Plugins:
   Volume: local
@@ -272,13 +277,13 @@ Server:
  Swarm: inactive
  Default Isolation: hyperv
  Kernel Version: 10.0 17763 (17763.1.amd64fre.rs5_release.180914-1434)
- Operating System: Windows 10 Enterprise Version 1809 (OS Build 17763.316)
+ Operating System: Windows 10 Enterprise Version 1809 (OS Build 17763.379)
  OSType: windows
  Architecture: x86_64
  CPUs: 2
  Total Memory: 16GiB
  Name: ci-lcow-prod-1
- ID: F4O4:AX7K:ES5U:EQ74:2VJW:HZ2J:6TJK:474M:Q35F:RT2M:UGBW:PW5W
+ ID: 0ac02c9d-aaba-42f4-8749-5a64af3068d8
  Docker Root Dir: C:\ProgramData\docker
  Debug Mode: false
  Registry: https://index.docker.io/v1/
@@ -294,10 +299,10 @@ Docker-compose should also provide information like:
 ```
 PS> docker-compose version
 
-docker-compose version 1.24.0-rc1, build 0f3d4dda
-docker-py version: 3.7.0
-CPython version: 3.6.6
-OpenSSL version: OpenSSL 1.0.2o  27 Mar 2018
+docker-compose version 1.24.0, build 0aa59064
+docker-py version: 3.7.2
+CPython version: 3.6.8
+OpenSSL version: OpenSSL 1.0.2q  20 Nov 2018
 ```
 
 With all of the LCOW setup verified, it should now be possible to launch side-by-side
