@@ -40,12 +40,14 @@ describe 'The docker-compose file works' do
     @test_agent = "puppet_test#{Random.rand(1000)}"
     @mapped_ports = {}
     @timestamps = []
-    status = run_command('docker-compose --no-ansi --help')[:status]
+    status = run_command('docker-compose --no-ansi version')[:status]
     if status.exitstatus != 0
       fail "`docker-compose` must be installed and available in your PATH"
     end
     teardown_cluster()
     create_volumes()
+    # ensure all containers are latest versions
+    run_command('docker-compose --no-ansi pull --quiet')
   end
 
   after(:all) do
