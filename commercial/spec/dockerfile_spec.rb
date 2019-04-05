@@ -46,6 +46,8 @@ describe 'The docker-compose file works' do
     end
     teardown_cluster()
     create_volumes()
+    # ensure all containers are latest versions
+    run_command('docker-compose --no-ansi pull --quiet')
   end
 
   after(:all) do
