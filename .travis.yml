@@ -8,7 +8,7 @@ language:
 
 env:
   global:
-    - DOCKER_COMPOSE_VERSION=1.22.0
+    - DOCKER_COMPOSE_VERSION=1.24.0
     - COMPOSE_PROJECT_NAME=pupperware
 
 before_install:
