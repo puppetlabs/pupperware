@@ -18,7 +18,7 @@ LABEL org.label-schema.maintainer="Puppet Release Team <release@puppet.com>" \
 
 RUN apk add --no-cache $PACKAGES
 COPY shared/ssl.sh /ssl.sh
-COPY shared/getcerts.sh /getcerts.sh
+COPY ssl-sidecar/getcerts.sh /getcerts.sh
 ENTRYPOINT ["/getcerts.sh"]
 
 COPY ssl-sidecar/Dockerfile /
