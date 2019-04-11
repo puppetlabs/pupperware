@@ -58,8 +58,6 @@ steps:
 
 - powershell: |
     bundle install --with test --path '.bundle/gems'
-    # make sure windows yml slots in as the default override
-    Copy-Item ./docker-compose.windows.yml ./docker-compose.override.yml -Force
     # set an Azure variable for temp volumes root
     $tempVolumeRoot = Join-Path -Path $ENV:TEMP -ChildPath ([System.IO.Path]::GetRandomFileName())
     Write-Host "##vso[task.setvariable variable=VOLUME_ROOT]$tempVolumeRoot"
