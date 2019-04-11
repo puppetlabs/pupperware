@@ -41,6 +41,16 @@ module Helpers
     end
   end
 
+  # Windows requires directories to exist prior, whereas Linux will create them
+  def create_host_volume_targets(root, volumes)
+    return unless !!File::ALT_SEPARATOR
+
+    STDOUT.puts("Creating volumes directory structure in #{root}")
+    volumes.each { |subdir| FileUtils.mkdir_p(File.join(root, subdir)) }
+    # Hack: grant all users access to this temp dir for the sake of Docker daemon
+    run_command("icacls \"#{root}\" /grant Users:\"(OI)(CI)F\" /T")
+  end
+
   def get_containers
     result = run_command('docker-compose --no-ansi --log-level INFO ps -q')
     ids = result[:stdout].chomp

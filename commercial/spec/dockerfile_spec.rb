@@ -6,25 +6,12 @@ describe 'The docker-compose file works' do
   include Helpers
 
   VOLUMES = [
-    'code',
-    'puppet',
-    'serverdata',
-    'puppetdb/ssl',
-    'puppetdb-postgres/data'
+    'volumes/code',
+    'volumes/puppet',
+    'volumes/serverdata',
+    'volumes/puppetdb/ssl',
+    'volumes/puppetdb-postgres/data'
   ]
-
-  DEFAULT_VOLUME_ROOT = File.join(File.dirname(__FILE__), '..')
-  VOLUME_ROOT = File.join(ENV['TempVolumeRoot'] || DEFAULT_VOLUME_ROOT, 'volumes')
-
-  def create_volumes()
-    STDOUT.puts("Creating volumes directory structure in #{VOLUME_ROOT}")
-    VOLUMES.each { |subdir| FileUtils.mkdir_p(File.join(VOLUME_ROOT, subdir)) }
-
-    if !!File::ALT_SEPARATOR
-      # Hack: grant all users access to this temp dir for the sake of Docker daemon
-      run_command("icacls \"#{VOLUME_ROOT}\" /grant Users:\"(OI)(CI)F\" /T")
-    end
-  end
 
   def teardown_cluster
     STDOUT.puts("Tearing down test cluster")
@@ -45,7 +32,8 @@ describe 'The docker-compose file works' do
       fail "`docker-compose` must be installed and available in your PATH"
     end
     teardown_cluster()
-    create_volumes()
+    # LCOW requires directories to exist
+    create_host_volume_targets(ENV['VOLUME_ROOT'], VOLUMES)
     # ensure all containers are latest versions
     run_command('docker-compose --no-ansi pull --quiet')
   end
