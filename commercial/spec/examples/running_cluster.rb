@@ -93,21 +93,13 @@ shared_examples 'a running pupperware cluster' do
     return result[:status].exitstatus
   end
 
-  def start_puppetdb
-    status = get_puppetdb_state
+  def wait_on_puppetdb_status(seconds = 240)
     # since pdb doesn't have a proper healthcheck yet, this could spin forever
     # add a timeout so it eventually returns.
-    Timeout::timeout(240) do
-      while status != 'running'
-        sleep(1)
-        status = get_puppetdb_state
-      end
+    return retry_block_up_to_timeout(seconds) do
+      get_puppetdb_state() == 'running' ? 'running' :
+        raise('puppetdb never entered running state')
     end
-  rescue Timeout::Error
-    STDOUT.puts('puppetdb never entered running state')
-    raise
-  else
-    return status
   end
 
   it 'should start all of the cluster services' do
@@ -128,8 +120,7 @@ shared_examples 'a running pupperware cluster' do
   end
 
   it 'should start puppetdb' do
-    status = start_puppetdb
-    expect(status).to eq('running')
+    expect(wait_on_puppetdb_status()).to eq('running')
   end
 
   it 'should include postgres extensions' do
