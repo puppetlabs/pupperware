@@ -7,9 +7,11 @@ module Helpers
 
     Open3.popen3(command) do |stdin, stdout, stderr, wait_thread|
       Thread.new do
+        Thread.current.report_on_exception = false
         stdout.each { |l| stdout_string << l; STDOUT.puts l }
       end
       Thread.new do
+        Thread.current.report_on_exception = false
         stderr.each { |l| STDOUT.puts l }
       end
 
