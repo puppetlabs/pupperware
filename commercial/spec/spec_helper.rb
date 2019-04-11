@@ -76,22 +76,15 @@ module Helpers
   end
 
   def get_service_container(service, timeout = 120)
-    result = run_command("docker-compose --no-ansi ps --quiet #{service}")
-    container = result[:stdout].chomp
-    Timeout::timeout(timeout) do
-      while container.empty?
-        sleep(1)
-        result = run_command("docker-compose --no-ansi ps --quiet #{service}")
-        container = result[:stdout].chomp
+    return retry_block_up_to_timeout(timeout) do
+      container = run_command("docker-compose --no-ansi ps --quiet #{service}")[:stdout].chomp
+      if container.empty?
+        raise "docker-compose never started a service named '#{service}' in #{timeout} seconds"
       end
-    end
 
-    STDOUT.puts("service named '#{service}' is hosted in container: '#{container}'")
-    return container
-  rescue Timeout::Error
-    msg = "docker-compose never started a service named '#{service}'"
-    STDOUT.puts(msg)
-    raise msg
+      STDOUT.puts("service named '#{service}' is hosted in container: '#{container}'")
+      container
+    end
   end
 
   def get_service_base_uri(service, port)

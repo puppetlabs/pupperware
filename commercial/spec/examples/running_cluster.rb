@@ -1,5 +1,4 @@
 shared_examples 'a running pupperware cluster' do
-  require 'timeout'
   require 'json'
   require 'rspec/core'
   require 'net/http'
@@ -62,27 +61,18 @@ shared_examples 'a running pupperware cluster' do
     domain = result[:stdout].chomp
     body = "{ \"query\": \"nodes { certname = \\\"#{agent_name}.#{domain}\\\" } \" }"
 
-    out = ''
-    Timeout::timeout(120) do
+    return retry_block_up_to_timeout(120) do
       Net::HTTP.start(pdb_uri.hostname, pdb_uri.port) do |http|
-        while out.empty?
-          req = Net::HTTP::Post.new(pdb_uri)
-          req.content_type = 'application/json'
-          req.body = body
-          res =  http.request(req)
-          out = res.body if res.code == '200' && !res.body.empty?
-          STDOUT.puts "retrieved agent #{agent_name} report info from #{req.uri}: HTTP #{res.code} /  #{res.body}"
-          sleep(1) if out.empty?
-        end
-        return JSON.parse(out).first['report_timestamp']
+        req = Net::HTTP::Post.new(pdb_uri)
+        req.content_type = 'application/json'
+        req.body = body
+        res =  http.request(req)
+        out = res.body if res.code == '200' && !res.body.empty?
+        STDOUT.puts "retrieved agent #{agent_name} report info from #{req.uri}: HTTP #{res.code} /  #{res.body}"
+        raise('empty PDB report received') if out.nil? || out.empty?
+        JSON.parse(out).first['report_timestamp']
       end
     end
-  rescue Timeout::Error
-    STDOUT.puts("failed to retrieve report for #{agent_name} due to timeout")
-    return ''
-  rescue
-    STDOUT.puts("failed to retrieve report for #{agent_name}: #{$!}")
-    return ''
   end
 
   def clean_certificate(agent_name)
