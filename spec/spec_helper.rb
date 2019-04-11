@@ -109,4 +109,14 @@ module Helpers
     end
     @mapped_ports["#{service}:#{port}"]
   end
+
+  def teardown_cluster
+    STDOUT.puts("Tearing down test cluster")
+    get_containers.each do |id|
+      STDOUT.puts("Killing container #{id}")
+      run_command("docker container kill #{id}")
+    end
+    # still needed to remove network / provide failsafe
+    run_command('docker-compose --no-ansi down --volumes')
+  end
 end
