@@ -98,6 +98,7 @@ module Helpers
   end
 
   def get_service_base_uri(service, port)
+    @mapped_ports ||= {}
     @mapped_ports["#{service}:#{port}"] ||= begin
       result = run_command("docker-compose --no-ansi port #{service} #{port}")
       service_ip_port = result[:stdout].chomp
