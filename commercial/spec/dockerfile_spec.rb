@@ -13,16 +13,6 @@ describe 'The docker-compose file works' do
     'volumes/puppetdb-postgres/data'
   ]
 
-  def teardown_cluster
-    STDOUT.puts("Tearing down test cluster")
-    get_containers.each do |id|
-      STDOUT.puts("Killing container #{id}")
-      run_command("docker container kill #{id}")
-    end
-    # still needed to remove network / provide failsafe
-    run_command('docker-compose --no-ansi down --volumes')
-  end
-
   before(:all) do
     @test_agent = "puppet_test#{Random.rand(1000)}"
     @mapped_ports = {}
