@@ -41,11 +41,26 @@ shared_examples 'a running pupperware cluster' do
     return status
   end
 
+  def count_postgres_database(database)
+    cmd = "docker-compose --no-ansi exec -T postgres psql -t --username=puppetdb --command=\"SELECT count(datname) FROM pg_database where datname = '#{database}'\""
+    run_command(cmd)[:stdout].strip
+  end
+
+  def wait_on_postgres_db(database, seconds = 240)
+    return retry_block_up_to_timeout(seconds) do
+      count_postgres_database('puppetdb') == '1' ? '1' :
+        raise("database #{database} never created")
+    end
+  end
+
   def get_postgres_extensions
-    result = run_command('docker-compose --no-ansi exec -T postgres psql --username=puppetdb --command="SELECT * FROM pg_extension"')
-    extensions = result[:stdout].chomp
-    STDOUT.puts("retrieved extensions: #{extensions}")
-    extensions
+    return retry_block_up_to_timeout(30) do
+      query = 'docker-compose --no-ansi exec -T postgres psql --username=puppetdb --command="SELECT * FROM pg_extension"'
+      extensions = run_command(query)[:stdout].chomp
+      raise('failed to retrieve extensions') if extensions.empty?
+      STDOUT.puts("retrieved extensions: #{extensions}")
+      extensions
+    end
   end
 
   def run_agent(agent_name)
@@ -94,6 +109,8 @@ shared_examples 'a running pupperware cluster' do
 
   it 'should start all of the cluster services' do
     run_command('docker-compose --no-ansi up --detach')
+    wait_on_postgres_db('puppetdb')
+
     result = run_command('docker-compose --no-ansi ps puppet')
     expect(result[:status].exitstatus).to eq(0), "service puppet not found: #{result[:stdout].chomp}"
 
