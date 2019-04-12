@@ -200,5 +200,26 @@ module SpecHelpers
     end
   end
 
+  ######################################################################
+  # Puppetserver Helpers
+  ######################################################################
+
+  def wait_on_puppetserver_status(seconds = 180)
+    # puppetserver has a healthcheck, we can let that deal with timeouts
+    return retry_block_up_to_timeout(seconds) do
+      status = get_container_status(get_service_container('puppet'))
+      (status == 'healthy' || status == "'healthy'") ? 'healthy' :
+        raise("puppetserver stuck in #{status}")
+    end
+  end
+
+  def clean_certificate(agent_name)
+    result = run_command('docker-compose --no-ansi exec -T puppet facter domain')
+    domain = result[:stdout].chomp
+    STDOUT.puts "cleaning cert for #{agent_name}.#{domain}"
+    result = run_command("docker-compose --no-ansi exec -T puppet puppetserver ca clean --certname #{agent_name}.#{domain}")
+    return result[:status].exitstatus
+  end
+
 end
 end

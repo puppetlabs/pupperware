@@ -5,15 +5,6 @@ shared_examples 'a running pupperware cluster' do
 
   include Pupperware::SpecHelpers
 
-  def wait_on_puppetserver_status(seconds = 180)
-    # puppetserver has a healthcheck, we can let that deal with timeouts
-    return retry_block_up_to_timeout(seconds) do
-      status = get_container_status(get_service_container('puppet'))
-      (status == 'healthy' || status == "'healthy'") ? 'healthy' :
-        raise("puppetserver stuck in #{status}")
-    end
-  end
-
   def run_agent(agent_name)
     # setting up a Windows TTY is difficult, so we don't
     # allocating a TTY will show container pull output on Linux, but that's not good for tests
@@ -39,14 +30,6 @@ shared_examples 'a running pupperware cluster' do
         JSON.parse(out).first['report_timestamp']
       end
     end
-  end
-
-  def clean_certificate(agent_name)
-    result = run_command('docker-compose --no-ansi exec -T puppet facter domain')
-    domain = result[:stdout].chomp
-    STDOUT.puts "cleaning cert for #{agent_name}.#{domain}"
-    result = run_command("docker-compose --no-ansi exec -T puppet puppetserver ca clean --certname #{agent_name}.#{domain}")
-    return result[:status].exitstatus
   end
 
   it 'should start all of the cluster services' do
