@@ -1,3 +1,4 @@
+require_relative './version'
 require 'json'
 require 'net/http'
 require 'open3'
