@@ -1,7 +1,13 @@
 require 'open3'
 require 'timeout'
 
-module Helpers
+module Pupperware
+module SpecHelpers
+
+  ######################################################################
+  # General Ruby Helpers
+  ######################################################################
+
   def run_command(env = ENV.to_h, command)
     stdout_string = ''
     status = nil
@@ -41,6 +47,10 @@ module Helpers
     end
   end
 
+  ######################################################################
+  # Docker Compose Helpers
+  ######################################################################
+
   # Windows requires directories to exist prior, whereas Linux will create them
   def create_host_volume_targets(root, volumes)
     return unless !!File::ALT_SEPARATOR
@@ -56,33 +66,6 @@ module Helpers
     ids = result[:stdout].chomp
     STDOUT.puts("Retrieved running container ids:\n#{ids}")
     ids.lines.map(&:chomp)
-  end
-
-  def inspect_container(container, query)
-    result = run_command("docker inspect \"#{container}\" --format \"#{query}\"")
-    status = result[:stdout].chomp
-    STDOUT.puts "queried #{query} of #{container}: #{status}"
-    return status
-  end
-
-  def get_container_status(container)
-    inspect_container(container, '{{.State.Health.Status}}')
-  end
-
-  def get_container_name(container)
-    inspect_container(container, '{{.Name}}')
-  end
-
-  def emit_log(container)
-    container_name = get_container_name(container)
-    STDOUT.puts("#{'*' * 80}\nContainer logs for #{container_name} / #{container}\n#{'*' * 80}\n")
-    logs = run_command("docker logs --details --timestamps #{container}")[:stdout]
-    STDOUT.puts(logs)
-  end
-
-  def emit_logs
-    STDOUT.puts("Emitting container logs")
-    get_containers.each { |id| emit_log(id) }
   end
 
   def get_service_container(service, timeout = 120)
@@ -120,4 +103,36 @@ module Helpers
     # still needed to remove network / provide failsafe
     run_command('docker-compose --no-ansi down --volumes')
   end
+
+  ######################################################################
+  # Docker Helpers
+  ######################################################################
+
+  def inspect_container(container, query)
+    result = run_command("docker inspect \"#{container}\" --format \"#{query}\"")
+    status = result[:stdout].chomp
+    STDOUT.puts "queried #{query} of #{container}: #{status}"
+    return status
+  end
+
+  def get_container_status(container)
+    inspect_container(container, '{{.State.Health.Status}}')
+  end
+
+  def get_container_name(container)
+    inspect_container(container, '{{.Name}}')
+  end
+
+  def emit_log(container)
+    container_name = get_container_name(container)
+    STDOUT.puts("#{'*' * 80}\nContainer logs for #{container_name} / #{container}\n#{'*' * 80}\n")
+    logs = run_command("docker logs --details --timestamps #{container}")[:stdout]
+    STDOUT.puts(logs)
+  end
+
+  def emit_logs
+    STDOUT.puts("Emitting container logs")
+    get_containers.each { |id| emit_log(id) }
+  end
+end
 end

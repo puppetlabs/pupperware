@@ -3,7 +3,7 @@
 require "#{File.join(File.dirname(__FILE__), 'examples', 'running_cluster.rb')}"
 
 describe 'The docker-compose file works' do
-  include Helpers
+  include Pupperware::SpecHelpers
 
   VOLUMES = [
     'volumes/code',
