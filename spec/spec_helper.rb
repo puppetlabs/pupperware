@@ -221,5 +221,36 @@ module SpecHelpers
     return result[:status].exitstatus
   end
 
+  ######################################################################
+  # Puppet Agent Helpers
+  ######################################################################
+
+  def run_agent(agent_name)
+    # setting up a Windows TTY is difficult, so we don't
+    # allocating a TTY will show container pull output on Linux, but that's not good for tests
+    result = run_command("docker run --rm --network pupperware_default --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine")
+    return result[:status].exitstatus
+  end
+
+  def check_report(agent_name)
+    pdb_uri = URI::join(get_service_base_uri('puppetdb', 8080), '/pdb/query/v4')
+    result = run_command("docker-compose --no-ansi exec -T puppet facter domain")
+    domain = result[:stdout].chomp
+    body = "{ \"query\": \"nodes { certname = \\\"#{agent_name}.#{domain}\\\" } \" }"
+
+    return retry_block_up_to_timeout(120) do
+      Net::HTTP.start(pdb_uri.hostname, pdb_uri.port) do |http|
+        req = Net::HTTP::Post.new(pdb_uri)
+        req.content_type = 'application/json'
+        req.body = body
+        res =  http.request(req)
+        out = res.body if res.code == '200' && !res.body.empty?
+        STDOUT.puts "retrieved agent #{agent_name} report info from #{req.uri}: HTTP #{res.code} /  #{res.body}"
+        raise('empty PDB report received') if out.nil? || out.empty?
+        JSON.parse(out).first['report_timestamp']
+      end
+    end
+  end
+
 end
 end
