@@ -3,7 +3,7 @@ shared_examples 'a running pupperware cluster' do
   require 'rspec/core'
   require 'net/http'
 
-  include Helpers
+  include Pupperware::SpecHelpers
 
   def get_puppetdb_state
     # make sure PDB container hasn't stopped
