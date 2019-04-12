@@ -16,7 +16,7 @@ shared_examples 'a running pupperware cluster' do
       when Net::HTTPSuccess then
         return JSON.parse(response.body)['state']
       else
-       return ''
+        return ''
     end
   rescue Errno::ECONNREFUSED, Errno::ECONNRESET, EOFError => e
     STDOUT.puts "PDB not accepting connections yet #{pdb_uri}: #{e}"
