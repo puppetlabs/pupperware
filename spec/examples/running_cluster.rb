@@ -7,14 +7,9 @@ shared_examples 'a running pupperware cluster' do
     run_command('docker-compose --no-ansi up --detach')
     wait_on_postgres_db('puppetdb')
 
-    result = run_command('docker-compose --no-ansi ps puppet')
-    expect(result[:status].exitstatus).to eq(0), "service puppet not found: #{result[:stdout].chomp}"
-
-    result = run_command('docker-compose --no-ansi ps puppetdb')
-    expect(result[:status].exitstatus).to eq(0), "service puppetdb not found: #{result[:stdout].chomp}"
-
-    result = run_command('docker-compose --no-ansi ps postgres')
-    expect(result[:status].exitstatus).to eq(0), "service postgres not found: #{result[:stdout].chomp}"
+    expect(get_service_container('puppet', 120)).to_not be_empty
+    expect(get_service_container('postgres', 60)).to_not be_empty
+    expect(get_service_container('puppetdb', 60)).to_not be_empty
   end
 
   it 'should start puppetserver' do
