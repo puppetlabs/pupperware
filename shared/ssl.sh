@@ -57,6 +57,7 @@ PRIVKEYFILE="${PRIVKEYDIR}/${CERTNAME}.pem"
 CSRFILE="${CSRDIR}/${CERTNAME}.pem"
 CERTFILE="${CERTDIR}/${CERTNAME}.pem"
 CACERTFILE="${CERTDIR}/ca.pem"
+CRLFILE="${SSLDIR}/crl.pem"
 
 CA="https://${PUPPETSERVER_HOSTNAME}:8140/puppet-ca/v1"
 CERTSUBJECT="/CN=${CERTNAME}"
@@ -64,10 +65,11 @@ CERTHEADER="-----BEGIN CERTIFICATE-----"
 CURLFLAGS="--silent --show-error --cacert ${CACERTFILE}"
 
 ### Print configuration for troubleshooting
-msg "Getting signed certificate for '${CERTNAME}' (${CERTSUBJECT})"
-msg "Using Puppet CA at '${CA}'"
-msg "Saving SSL files in '${SSLDIR}'"
-msg "Waiting up to ${WAITFORCERT} seconds for certificate to be signed"
+msg "Using configuration values:"
+msg "* Certname: '${CERTNAME}' (${CERTSUBJECT})"
+msg "* CA: '${CA}'"
+msg "* SSLDIR: '${SSLDIR}'"
+msg "* WAITFORCERT: '${WAITFORCERT}' seconds"
 
 ### Get the CA certificate for use with subsequent requests
 ### Fail-fast if curl errors or the CA certificate can't be parsed
@@ -76,6 +78,12 @@ if [ $? -ne 0 ]; then
     error "cannot reach CA host '${PUPPETSERVER_HOSTNAME}'"
 elif ! openssl x509 -subject -issuer -noout -in "${CACERTFILE}"; then
     error "invalid CA certificate"
+fi
+
+### Get the CRL from the CA for use with client-side validation
+curl ${CURLFLAGS} --output "${CRLFILE}" "${CA}/certificate_revocation_list/ca"
+if ! openssl crl -text -noout -in "${CRLFILE}" > /dev/null; then
+    error "invalid CRL"
 fi
 
 ### Check the CA does not already have a signed certificate for this host
