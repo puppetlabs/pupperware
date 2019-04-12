@@ -5,16 +5,13 @@ shared_examples 'a running pupperware cluster' do
 
   include Pupperware::SpecHelpers
 
-  def start_puppetserver
-    container = get_service_container('puppet')
-    status = get_container_status(container)
+  def wait_on_puppetserver_status(seconds = 180)
     # puppetserver has a healthcheck, we can let that deal with timeouts
-    while (status == 'starting' || status == "'starting'")
-      sleep(1)
-      status = get_container_status(container)
+    return retry_block_up_to_timeout(seconds) do
+      status = get_container_status(get_service_container('puppet'))
+      (status == 'healthy' || status == "'healthy'") ? 'healthy' :
+        raise("puppetserver stuck in #{status}")
     end
-
-    return status
   end
 
   def run_agent(agent_name)
@@ -67,8 +64,7 @@ shared_examples 'a running pupperware cluster' do
   end
 
   it 'should start puppetserver' do
-    status = start_puppetserver
-    expect(status).to match(/\'?healthy\'?/)
+    expect(wait_on_puppetserver_status()).to match(/\'?healthy\'?/)
   end
 
   it 'should start puppetdb' do
