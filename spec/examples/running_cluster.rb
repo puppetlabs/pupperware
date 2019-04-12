@@ -1,12 +1,18 @@
+shared_context "running_cluster", :shared_context => :metadata do
+  include Pupperware::SpecHelpers
+
+  before(:each) do
+    run_command('docker-compose --no-ansi up --detach')
+    wait_on_postgres_db('puppetdb')
+  end
+end
+
 shared_examples 'a running pupperware cluster' do
   require 'rspec/core'
 
-  include Pupperware::SpecHelpers
+  include_context 'running_cluster'
 
   it 'should start all of the cluster services' do
-    run_command('docker-compose --no-ansi up --detach')
-    wait_on_postgres_db('puppetdb')
-
     expect(get_service_container('puppet', 120)).to_not be_empty
     expect(get_service_container('postgres', 60)).to_not be_empty
     expect(get_service_container('puppetdb', 60)).to_not be_empty
