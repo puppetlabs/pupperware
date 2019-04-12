@@ -1,3 +1,5 @@
+require 'json'
+require 'net/http'
 require 'open3'
 require 'timeout'
 
@@ -158,6 +160,43 @@ module SpecHelpers
       raise('failed to retrieve extensions') if extensions.empty?
       STDOUT.puts("retrieved extensions: #{extensions}")
       extensions
+    end
+  end
+
+  ######################################################################
+  # PuppetDB Helpers
+  ######################################################################
+
+  def get_puppetdb_state
+    # make sure PDB container hasn't stopped
+    get_service_container('puppetdb', 5)
+    # now query its status endpoint
+    pdb_uri = URI::join(get_service_base_uri('puppetdb', 8080), '/status/v1/services/puppetdb-status')
+    response = Net::HTTP.get_response(pdb_uri)
+    STDOUT.puts "retrieved raw puppetdb status: #{response.body}"
+    case response
+      when Net::HTTPSuccess then
+        return JSON.parse(response.body)['state']
+      else
+        return ''
+    end
+  rescue Errno::ECONNREFUSED, Errno::ECONNRESET, EOFError => e
+    STDOUT.puts "PDB not accepting connections yet #{pdb_uri}: #{e}"
+    return ''
+  rescue JSON::ParserError
+    STDOUT.puts "Invalid JSON response: #{e}"
+    return ''
+  rescue
+    STDOUT.puts "Failure querying #{pdb_uri}: #{$!}"
+    raise
+  end
+
+  def wait_on_puppetdb_status(seconds = 240)
+    # since pdb doesn't have a proper healthcheck yet, this could spin forever
+    # add a timeout so it eventually returns.
+    return retry_block_up_to_timeout(seconds) do
+      get_puppetdb_state() == 'running' ? 'running' :
+        raise('puppetdb never entered running state')
     end
   end
 
