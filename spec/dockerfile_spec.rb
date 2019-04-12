@@ -44,11 +44,9 @@ describe 'The docker-compose file works' do
     # don't run this on Windows because compose down takes forever
     # https://github.com/docker/for-win/issues/629
     it 'should stop the cluster', :if => File::ALT_SEPARATOR.nil? do
-      ps = run_command('docker-compose --no-ansi ps')[:stdout].chomp
-      expect(ps.match('puppet')).not_to eq(nil)
+      expect(get_containers()).not_to be_empty
       run_command('docker-compose --no-ansi down')
-      ps = run_command('docker-compose --no-ansi ps')[:stdout].chomp
-      expect(ps.match('puppet')).to eq(nil)
+      expect(get_containers()).to be_empty
     end
 
     include_examples 'a running pupperware cluster'
