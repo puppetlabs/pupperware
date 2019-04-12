@@ -134,5 +134,32 @@ module SpecHelpers
     STDOUT.puts("Emitting container logs")
     get_containers.each { |id| emit_log(id) }
   end
+
+  ######################################################################
+  # Postgres Helpers
+  ######################################################################
+
+  def count_postgres_database(database)
+    cmd = "docker-compose --no-ansi exec -T postgres psql -t --username=puppetdb --command=\"SELECT count(datname) FROM pg_database where datname = '#{database}'\""
+    run_command(cmd)[:stdout].strip
+  end
+
+  def wait_on_postgres_db(database, seconds = 240)
+    return retry_block_up_to_timeout(seconds) do
+      count_postgres_database('puppetdb') == '1' ? '1' :
+        raise("database #{database} never created")
+    end
+  end
+
+  def get_postgres_extensions
+    return retry_block_up_to_timeout(30) do
+      query = 'docker-compose --no-ansi exec -T postgres psql --username=puppetdb --command="SELECT * FROM pg_extension"'
+      extensions = run_command(query)[:stdout].chomp
+      raise('failed to retrieve extensions') if extensions.empty?
+      STDOUT.puts("retrieved extensions: #{extensions}")
+      extensions
+    end
+  end
+
 end
 end
