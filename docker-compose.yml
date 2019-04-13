@@ -14,6 +14,7 @@ services:
       - DNS_ALT_NAMES=puppet,${DNS_ALT_NAMES:-}
       - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
       - PUPPETDB_SERVER_URLS=https://puppetdb:8081
+      - PUPPETDB_WAITFORPOSTGRES_SECONDS=150
     volumes:
       - ${VOLUME_ROOT:-.}/volumes/code:/etc/puppetlabs/code/
       - ${VOLUME_ROOT:-.}/volumes/puppet:/etc/puppetlabs/puppet/
