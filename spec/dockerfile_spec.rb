@@ -36,21 +36,22 @@ describe 'The docker-compose file works' do
     include_examples 'a running pupperware cluster'
   end
 
-  describe 'the cluster restarts' do
-    before(:all) do
-      @mapped_ports = {}
-    end
-
-    # don't run this on Windows because compose down takes forever
-    # https://github.com/docker/for-win/issues/629
-    it 'should stop the cluster', :if => File::ALT_SEPARATOR.nil? do
+  # TODO: rework this business so that the stop / start happens in a single spec
+  describe 'after the cluster restarts' do
+    before(:each) do
       expect(get_containers()).not_to be_empty
+
+      # TOOD: probably need to adjust this
+      # don't run this on Windows because compose down takes forever
+      # https://github.com/docker/for-win/issues/629
       run_command('docker-compose --no-ansi down')
+      @mapped_ports = {}
       expect(get_containers()).to be_empty
     end
 
-    include_examples 'a running pupperware cluster'
-
+    # TODO: rework this as it assumes a prior run has been made
+    # @timestamps should probably be axed completely in favor looking at PDB or similar?
+    # TODO: this still has an ordering problem
     it 'should have a different report than earlier' do
       expect(@timestamps.size).to eq(2)
       expect(@timestamps.first).not_to eq(@timestamps.last)
