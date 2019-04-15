@@ -58,11 +58,9 @@ steps:
 
 - powershell: |
     bundle install --with test --path '.bundle/gems'
-    # make sure windows yml slots in as the default override
-    Copy-Item ./docker-compose.windows.yml ./docker-compose.override.yml -Force
     # set an Azure variable for temp volumes root
     $tempVolumeRoot = Join-Path -Path $ENV:TEMP -ChildPath ([System.IO.Path]::GetRandomFileName())
-    Write-Host "##vso[task.setvariable variable=TempVolumeRoot]$tempVolumeRoot"
+    Write-Host "##vso[task.setvariable variable=VOLUME_ROOT]$tempVolumeRoot"
   displayName: Prepare Test Environment
   name: test_prepare
 
@@ -97,8 +95,12 @@ steps:
     docker container prune --force
     Write-Host 'Pruning images'
     docker image prune --filter "dangling=true" --force
+    Write-Host "Pruning Volumes"
+    docker volume prune
+    Write-Host "Pruning Networks"
+    docker network prune
     Write-Host "Cleaning up temporary volume: $ENV:TempVolumeRoot"
-    Remove-Item $ENV:TempVolumeRoot -Force -Recurse -ErrorAction Continue
+    Remove-Item $ENV:VOLUME_ROOT -Force -Recurse -ErrorAction Continue
   displayName: Container Cleanup
   timeoutInMinutes: 3
   condition: always()

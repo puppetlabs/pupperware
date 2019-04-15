@@ -4,4 +4,8 @@ group(:test) do
   gem 'json'
   gem 'rspec', '~> 3.0'
   gem 'rspec_junit_formatter'
+  gem 'pupperware',
+    :git => 'https://github.com/puppetlabs/pupperware.git',
+    :ref => 'master',
+    :glob => 'gem/*.gemspec'
 end
