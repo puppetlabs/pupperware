@@ -1,4 +1,4 @@
---require spec_helper
+--require ./gem/lib/pupperware/spec_helper.rb
 --format RspecJunitFormatter
 --out TEST-rspec.xml
 --format documentation
