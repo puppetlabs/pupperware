@@ -226,10 +226,10 @@ module SpecHelpers
   # Puppet Agent Helpers
   ######################################################################
 
-  def run_agent(agent_name)
+  def run_agent(agent_name, network)
     # setting up a Windows TTY is difficult, so we don't
     # allocating a TTY will show container pull output on Linux, but that's not good for tests
-    result = run_command("docker run --rm --network pupperware_default --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine")
+    result = run_command("docker run --rm --network #{network} --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine")
     return result[:status].exitstatus
   end
 
