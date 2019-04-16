@@ -40,6 +40,8 @@ services:
     image: puppet/puppetdb
     environment:
       - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
+      # This name is an FQDN so the short name puppet doesn't collide outside compose network
+      - PUPPETSERVER_HOSTNAME=puppet.${AZURE_DOMAIN:-}
       - PUPPETDB_PASSWORD=puppetdb
       - PUPPETDB_USER=puppetdb
     ports:
