@@ -126,6 +126,17 @@ module SpecHelpers
     inspect_container(container, '{{.Name}}')
   end
 
+  def get_container_hostname(container)
+    # '{{json .NetworkSettings.Networks}}' useful in debug
+    # returns all aliases in a Go array like [foo bar baz], so turn into Ruby array to inspect
+    aliases = inspect_container(container, '{{range .NetworkSettings.Networks}}{{.Aliases}}{{end}}')
+    aliases = (aliases || '').slice(1, aliases.length - 2).split(/\s/)
+    # find the first alias that at least looks like foo.bar
+    fqdn = aliases.find { |a| a.match /.+\..+/ }
+
+    return fqdn || inspect_container(container, '{{.Config.Hostname}}')
+  end
+
   def emit_log(container)
     container_name = get_container_name(container)
     STDOUT.puts("#{'*' * 80}\nContainer logs for #{container_name} / #{container}\n#{'*' * 80}\n")
@@ -226,10 +237,11 @@ module SpecHelpers
   # Puppet Agent Helpers
   ######################################################################
 
-  def run_agent(agent_name, network)
+  def run_agent(agent_name, network, server = get_container_hostname(get_service_container('puppet')))
     # setting up a Windows TTY is difficult, so we don't
     # allocating a TTY will show container pull output on Linux, but that's not good for tests
-    result = run_command("docker run --rm --network #{network} --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine")
+    STDOUT.puts("running agent #{agent_name} in network #{network} against #{server}")
+    result = run_command("docker run --rm --network #{network} --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine agent --verbose --onetime --no-daemonize --summarize --server #{server}")
     return result[:status].exitstatus
   end
 
