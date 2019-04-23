@@ -13,6 +13,9 @@ Gem::Specification.new do |spec|
   spec.description   = %q{Shared testing code for Pupperware projects}
   spec.homepage      = "https://github.com/puppetlabs/pupperware"
 
+  # Need Ruby 2.5+ for timeout-related features
+  spec.required_ruby_version = '>= 2.5'
+
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
   # to allow pushing to a single host or delete this section to allow pushing to any host.
   if spec.respond_to?(:metadata)
