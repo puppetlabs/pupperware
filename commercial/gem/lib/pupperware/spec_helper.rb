@@ -225,11 +225,10 @@ module SpecHelpers
     end
   end
 
+  # agent_name is the fully qualified name of the node
   def clean_certificate(agent_name)
-    result = run_command('docker-compose --no-ansi exec -T puppet facter domain')
-    domain = result[:stdout].chomp
-    STDOUT.puts "cleaning cert for #{agent_name}.#{domain}"
-    result = run_command("docker-compose --no-ansi exec -T puppet puppetserver ca clean --certname #{agent_name}.#{domain}")
+    STDOUT.puts "cleaning cert for #{agent_name}"
+    result = run_command("docker-compose --no-ansi exec -T puppet puppetserver ca clean --certname #{agent_name}")
     return result[:status].exitstatus
   end
 
@@ -253,11 +252,10 @@ module SpecHelpers
     return result[:status].exitstatus
   end
 
+  # agent_name is the fully qualified name of the node
   def check_report(agent_name)
     pdb_uri = URI::join(get_service_base_uri('puppetdb', 8080), '/pdb/query/v4')
-    result = run_command("docker-compose --no-ansi exec -T puppet facter domain")
-    domain = result[:stdout].chomp
-    body = "{ \"query\": \"nodes { certname = \\\"#{agent_name}.#{domain}\\\" } \" }"
+    body = "{ \"query\": \"nodes { certname = \\\"#{agent_name}\\\" } \" }"
 
     return retry_block_up_to_timeout(120) do
       Net::HTTP.start(pdb_uri.hostname, pdb_uri.port) do |http|
