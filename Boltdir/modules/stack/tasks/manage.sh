@@ -7,7 +7,7 @@ die() {
 
 pdb_running() {
     docker-compose exec -T puppet \
-        curl -s 'http://puppetdb:8080/status/v1/services/puppetdb-status' | \
+        curl -s 'http://puppetdb.internal:8080/status/v1/services/puppetdb-status' | \
     python -c 'import json, sys; print json.load(sys.stdin)["state"]'
 }
 
@@ -27,7 +27,7 @@ wait_for_it() {
 cd pupperware || die no-repo "run the clone task first to set up pupperware"
 
 host=$(getent hosts "$(hostname -s)")
-export DNS_ALT_NAMES="puppet,${host##* }"
+export DNS_ALT_NAMES="puppet,puppet.internal,${host##* }"
 
 case $PT_action in
     up)
