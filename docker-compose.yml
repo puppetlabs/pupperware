@@ -61,7 +61,7 @@ services:
 
   puppetdb:
     hostname: puppetdb
-    image: puppet/puppetdb
+    image: underscorgan/puppetdb:6.3.2
     environment:
       - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
       # This name is an FQDN so the short name puppet doesn't collide outside compose network
