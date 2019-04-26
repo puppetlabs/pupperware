@@ -10,7 +10,7 @@ services:
     environment:
       CONSUL_BIND_INTERFACE: 'eth0'
       CONSUL_ALLOW_PRIVILEGED_PORTS: 'true'
-      CONSUL_LOCAL_CONFIG: '{ "ports": { "dns": 53 }, "recursors": [ "8.8.8.8" ] }'
+      CONSUL_LOCAL_CONFIG: '{ "ports": { "dns": 53 }, "recursors": [ "127.0.0.11" ] }'
     volumes:
       - ${VOLUME_ROOT:-.}/volumes/consul:/consul/data:rw
     networks:
@@ -35,9 +35,6 @@ services:
       - consul
     dns:
       - ${CONSUL_IP:-172.22.0.100}
-      # need to add this to work around https://github.com/moby/moby/issues/38932
-      # for windows
-      - 127.0.0.11
     volumes:
       - ${VOLUME_ROOT:-.}/volumes/code:/etc/puppetlabs/code/
       - ${VOLUME_ROOT:-.}/volumes/puppet:/etc/puppetlabs/puppet/
@@ -77,9 +74,6 @@ services:
       - puppet
     dns:
       - ${CONSUL_IP:-172.22.0.100}
-      # need to add this to work around https://github.com/moby/moby/issues/38932
-      # for windows
-      - 127.0.0.11
     volumes:
       - ${VOLUME_ROOT:-.}/volumes/puppetdb/ssl:/etc/puppetlabs/puppet/ssl/
 
