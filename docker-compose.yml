@@ -12,7 +12,7 @@ services:
       CONSUL_ALLOW_PRIVILEGED_PORTS: 'true'
       CONSUL_LOCAL_CONFIG: '{ "ports": { "dns": 53 }, "recursors": [ "8.8.8.8" ] }'
     volumes:
-      - ./volumes/consul:/consul/data:rw
+      - ${VOLUME_ROOT:-.}/volumes/consul:/consul/data:rw
     networks:
       default:
         ipv4_address: ${CONSUL_IP:-172.22.0.100}
