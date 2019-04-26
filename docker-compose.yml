@@ -35,6 +35,7 @@ services:
       - consul
     dns:
       - ${CONSUL_IP:-172.22.0.100}
+      - 8.8.8.8
     volumes:
       - ${VOLUME_ROOT:-.}/volumes/code:/etc/puppetlabs/code/
       - ${VOLUME_ROOT:-.}/volumes/puppet:/etc/puppetlabs/puppet/
@@ -74,6 +75,7 @@ services:
       - puppet
     dns:
       - ${CONSUL_IP:-172.22.0.100}
+      - 8.8.8.8
     volumes:
       - ${VOLUME_ROOT:-.}/volumes/puppetdb/ssl:/etc/puppetlabs/puppet/ssl/
 
