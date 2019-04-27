@@ -53,6 +53,11 @@ services:
       - POSTGRES_DB=puppetdb
     expose:
       - 5432
+    depends_on:
+      - consul
+    dns:
+      - ${CONSUL_IP:-172.22.0.100}
+      - 8.8.8.8
     volumes:
       - ${VOLUME_ROOT:-.}/volumes/puppetdb-postgres/data:/var/lib/postgresql/data
       - ./postgres-custom:/docker-entrypoint-initdb.d
@@ -71,6 +76,7 @@ services:
       - 8080
       - 8081
     depends_on:
+      - consul
       - postgres
       - puppet
     dns:
