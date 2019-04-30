@@ -62,7 +62,7 @@ CRLFILE="${SSLDIR}/crl.pem"
 CA="https://${PUPPETSERVER_HOSTNAME}:8140/puppet-ca/v1"
 CERTSUBJECT="/CN=${CERTNAME}"
 CERTHEADER="-----BEGIN CERTIFICATE-----"
-CURLFLAGS="--silent --show-error --cacert ${CACERTFILE}"
+CURLFLAGS="--silent --show-error --cacert ${CACERTFILE} --retry 5 --retry-connrefused --retry-delay 2"
 
 ### Print configuration for troubleshooting
 msg "Using configuration values:"
@@ -73,7 +73,7 @@ msg "* WAITFORCERT: '${WAITFORCERT}' seconds"
 
 ### Get the CA certificate for use with subsequent requests
 ### Fail-fast if curl errors or the CA certificate can't be parsed
-curl --insecure --silent --show-error --output "${CACERTFILE}" "${CA}/certificate/ca"
+curl --insecure --silent --show-error --output "${CACERTFILE}" --retry 5 --retry-connrefused --retry-delay 2 "${CA}/certificate/ca"
 if [ $? -ne 0 ]; then
     error "cannot reach CA host '${PUPPETSERVER_HOSTNAME}'"
 elif ! openssl x509 -subject -issuer -noout -in "${CACERTFILE}"; then
