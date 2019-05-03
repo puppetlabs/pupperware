@@ -137,6 +137,11 @@ module SpecHelpers
     return fqdn || inspect_container(container, '{{.Config.Hostname}}')
   end
 
+  # this only works when a container has a single network
+  def get_container_ip(container)
+    inspect_container(container, '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
+  end
+
   def emit_log(container)
     container_name = get_container_name(container)
     STDOUT.puts("#{'*' * 80}\nContainer logs for #{container_name} / #{container}\n#{'*' * 80}\n")
