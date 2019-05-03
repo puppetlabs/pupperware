@@ -237,11 +237,19 @@ module SpecHelpers
   # Puppet Agent Helpers
   ######################################################################
 
+  # When testing with the `puppet/puppet-agent-alpine` image on windows
+  # systems with LCOW we had intermittent failures in DNS resolution that
+  # occurred fairly regularly. It seems to be specifically interaction
+  # between the base alpine (3.8 and 3.9) images with windows/LCOW.
+  #
+  # Two issues related to this issue are
+  # https://github.com/docker/libnetwork/issues/2371 and
+  # https://github.com/Microsoft/opengcs/issues/303
   def run_agent(agent_name, network, server = get_container_hostname(get_service_container('puppet')), ca = get_container_hostname(get_service_container('puppet')))
     # setting up a Windows TTY is difficult, so we don't
     # allocating a TTY will show container pull output on Linux, but that's not good for tests
     STDOUT.puts("running agent #{agent_name} in network #{network} against #{server}")
-    result = run_command("docker run --rm --network #{network} --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-alpine agent --verbose --onetime --no-daemonize --summarize --server #{server} --ca_server #{ca}")
+    result = run_command("docker run --rm --network #{network} --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-ubuntu agent --verbose --onetime --no-daemonize --summarize --server #{server} --ca_server #{ca}")
     return result[:status].exitstatus
   end
 
