@@ -14,9 +14,9 @@ describe 'The docker-compose file works' do
   ]
 
   before(:all) do
-    # append .internal to ensure domain suffix for Docker DNS resolver is used
+    # append .internal (or user domain) to ensure domain suffix for Docker DNS resolver is used
     # since search domains are not appended to /etc/resolv.conf
-    @test_agent = "puppet_test#{Random.rand(1000)}.internal"
+    @test_agent = "puppet_test#{Random.rand(1000)}.#{ENV['DOMAIN'] || 'internal'}"
     @timestamps = []
     status = run_command('docker-compose --no-ansi version')[:status]
     if status.exitstatus != 0
