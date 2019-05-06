@@ -65,12 +65,8 @@ steps:
   name: test_prepare
 
 - powershell: |
-    $domain = Get-WmiObject -Class Win32_NetworkAdapterConfiguration |
-      Select -ExpandProperty DNSDomain |
-      Select -First 1
     Write-Host 'Writing compose config to disk'
     $content = @"
-    AZURE_DOMAIN=$domain
     VOLUME_ROOT=$ENV:TempVolumeRoot
     "@
     $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
