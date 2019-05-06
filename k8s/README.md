@@ -14,7 +14,7 @@ running Kubernetes via Docker for Mac, this will be the FQDN of your Mac. Note t
 
 ```yaml
   - name: DNS_ALT_NAMES
-    value: puppet,myworkstation.domain.net
+    value: puppet,puppet.internal,myworkstation.domain.net
 ```
 
 Then create the Pupperware resources:

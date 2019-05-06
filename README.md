@@ -31,12 +31,21 @@ Once you have Docker Compose installed, you can start the stack on Linux with:
 
 The value of `DNS_ALT_NAMES` must list all the names, as a comma-separated
 list, under which the Puppet server in the stack can be reached from
-agents. It will have `puppet` prepended to it as that name is used by PuppetDB
-to communicate with the Puppet server. The value of `DNS_ALT_NAMES` only has an
-effect the first time you start the stack, as it is placed into the server's SSL
-certificate. If you need to change it after that, you will need to properly
-revoke the server's certificate and restart the stack with the changed
-`DNS_ALT_NAMES` value.
+agents. It will have `puppet` and `puppet.internal` prepended to it as that
+name is used by PuppetDB to communicate with the Puppet server. The value of
+`DNS_ALT_NAMES` only has an effect the first time you start the stack, as it
+is placed into the server's SSL certificate. If you need to change it after
+that, you will need to properly revoke the server's certificate and restart
+the stack with the changed `DNS_ALT_NAMES` value.
+
+Optionally, you may also provide a desired `DOMAIN` value, other than default
+value of `internal` to further define how the service hosts are named. It is
+not necessary to change `DNS_ALT_NAMES` as the default value already takes into
+account any custom domain.
+
+```
+    DOMAIN=foo docker-compose up -d
+```
 
 When you first start the Puppet Infrastructure, the stack will create a
 `volumes/` directory with a number of sub-directories to store the

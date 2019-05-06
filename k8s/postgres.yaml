@@ -44,6 +44,7 @@ spec:
         app: pupperware
         svc: postgres
     spec:
+      hostname: postgres.internal
       containers:
         - image: puppet/puppetdb-postgres
           name: postgres
