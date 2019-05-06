@@ -71,15 +71,19 @@ spec:
         app: pupperware
         svc: puppet
     spec:
-      hostname: puppet
+      hostname: puppet.internal
       containers:
         - image: puppet/puppetserver
           name: puppet
           env:
+            # necessary to set certname and server in puppet.conf, required by
+            # puppetserver ca cli application
+            - name: PUPPETSERVER_HOSTNAME
+              value: puppet.internal
             - name: DNS_ALT_NAMES
-              value: puppet
+              value: puppet,puppet.internal
             - name: PUPPETDB_SERVER_URLS
-              value: https://puppetdb:8081
+              value: https://puppetdb.internal:8081
           ports:
             - containerPort: 8140
           volumeMounts:
