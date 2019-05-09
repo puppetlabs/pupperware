@@ -67,7 +67,7 @@ steps:
 - powershell: |
     Write-Host 'Writing compose config to disk'
     $content = @"
-    VOLUME_ROOT=$ENV:TempVolumeRoot
+    VOLUME_ROOT=$ENV:VOLUME_ROOT
     "@
     $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
     [System.IO.File]::WriteAllLines(".env", $content, $Utf8NoBomEncoding)
@@ -95,7 +95,7 @@ steps:
     docker volume prune
     Write-Host "Pruning Networks"
     docker network prune
-    Write-Host "Cleaning up temporary volume: $ENV:TempVolumeRoot"
+    Write-Host "Cleaning up temporary volume: $ENV:VOLUME_ROOT"
     Remove-Item $ENV:VOLUME_ROOT -Force -Recurse -ErrorAction Continue
   displayName: Container Cleanup
   timeoutInMinutes: 3
