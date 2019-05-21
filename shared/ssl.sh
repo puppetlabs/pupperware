@@ -100,9 +100,11 @@ openssl genrsa -out "${PRIVKEYFILE}" 4096
 openssl rsa -in "${PRIVKEYFILE}" -pubout -out "${PUBKEYFILE}"
 openssl req -new -key "${PRIVKEYFILE}" -out "${CSRFILE}" -subj "${CERTSUBJECT}"
 
-### Submit CSR
-curl ${CURLFLAGS} -X PUT -H "Content-Type: text/plain" \
-    --data-binary "@${CSRFILE}" "${CA}/certificate_request/${CERTNAME}"
+### Submit CSR and fail if one already exists on the CA
+output="$(curl ${CURLFLAGS} -X PUT -H "Content-Type: text/plain" \
+               --data-binary "@${CSRFILE}" "${CA}/certificate_request/${CERTNAME}")"
+already_exists="${CERTNAME} already has a requested certificate; ignoring certificate request"
+[ "${output}" = "${already_exists}" ] && error "unsigned CSR for '${CERTNAME}' already exists on CA"
 
 ### Retrieve signed certificate; wait and try again with a timeout
 sleeptime=10
