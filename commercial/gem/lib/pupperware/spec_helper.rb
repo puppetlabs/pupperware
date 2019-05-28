@@ -125,7 +125,7 @@ module SpecHelpers
     inspect_container(container, '{{.Name}}')
   end
 
-  def get_container_status(container)
+  def get_container_state(container)
     inspect_container(container, '{{.State.Status}}')
   end
 
@@ -135,7 +135,7 @@ module SpecHelpers
 
   def wait_on_container_exit(container, timeout = 60)
     return retry_block_up_to_timeout(timeout) do
-      get_container_status(container) == 'exited' ? 'exited' :
+      get_container_state(container) == 'exited' ? 'exited' :
         raise('container never exited')
     end
   end
