@@ -47,15 +47,15 @@ spec:
         app: pupperware
         svc: puppetdb
     spec:
-      hostname: puppetdb.internal
+      hostname: puppetdb
       containers:
         - image: puppet/puppetdb
           name: puppetdb
           env:
             - name: PUPPETSERVER_HOSTNAME
-              value: puppet.internal
+              value: puppet
             - name: PUPPETDB_POSTGRES_HOSTNAME
-              value: postgres.internal
+              value: postgres
             - name: PUPPETDB_PASSWORD
               valueFrom:
                 secretKeyRef:
