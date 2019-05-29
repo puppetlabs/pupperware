@@ -231,6 +231,15 @@ module SpecHelpers
   end
 
   ######################################################################
+  # PE Console Services Helper
+  ######################################################################
+  def unrevoke_console_admin_user(postgres_container_name="postgres")
+    query = "docker-compose --no-ansi exec -T #{postgres_container_name} psql --username=puppetdb --dbname=pe-rbac --command \"UPDATE subjects SET is_revoked = 'f' WHERE login='admin';\""
+    output = run_command(query)[:stdout].chomp
+    raise('failed to unrevoke the admin account') if ! output.eql? "UPDATE 1"
+  end
+
+  ######################################################################
   # Puppetserver Helpers
   ######################################################################
 
