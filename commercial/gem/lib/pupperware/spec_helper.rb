@@ -172,8 +172,8 @@ module SpecHelpers
   ######################################################################
 
   def count_postgres_database(database)
-    cmd = "docker-compose --no-ansi exec -T postgres psql -t --username=puppetdb --command=\"SELECT count(datname) FROM pg_database where datname = '#{database}'\""
-    run_command(cmd)[:stdout].strip
+    cmd = "exec -T postgres psql -t --username=puppetdb --command=\"SELECT count(datname) FROM pg_database where datname = '#{database}'\""
+    docker_compose(cmd)[:stdout].strip
   end
 
   def wait_on_postgres_db(database, seconds = 240)
@@ -185,8 +185,8 @@ module SpecHelpers
 
   def get_postgres_extensions
     return retry_block_up_to_timeout(30) do
-      query = 'docker-compose --no-ansi exec -T postgres psql --username=puppetdb --command="SELECT * FROM pg_extension"'
-      extensions = run_command(query)[:stdout].chomp
+      query = 'exec -T postgres psql --username=puppetdb --command="SELECT * FROM pg_extension"'
+      extensions = docker_compose(query)[:stdout].chomp
       raise('failed to retrieve extensions') if extensions.empty?
       STDOUT.puts("retrieved extensions: #{extensions}")
       extensions
@@ -234,8 +234,8 @@ module SpecHelpers
   # PE Console Services Helper
   ######################################################################
   def unrevoke_console_admin_user(postgres_container_name="postgres")
-    query = "docker-compose --no-ansi exec -T #{postgres_container_name} psql --username=puppetdb --dbname=pe-rbac --command \"UPDATE subjects SET is_revoked = 'f' WHERE login='admin';\""
-    output = run_command(query)[:stdout].chomp
+    query = "exec -T #{postgres_container_name} psql --username=puppetdb --dbname=pe-rbac --command \"UPDATE subjects SET is_revoked = 'f' WHERE login='admin';\""
+    output = docker_compose(query)[:stdout].chomp
     raise('failed to unrevoke the admin account') if ! output.eql? "UPDATE 1"
   end
 
