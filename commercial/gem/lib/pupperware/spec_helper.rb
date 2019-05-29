@@ -7,6 +7,8 @@ require 'timeout'
 module Pupperware
 module SpecHelpers
 
+  IS_WINDOWS = !!File::ALT_SEPARATOR
+
   ######################################################################
   # General Ruby Helpers
   ######################################################################
@@ -54,9 +56,20 @@ module SpecHelpers
   # Docker Compose Helpers
   ######################################################################
 
+  def docker_compose(command_and_args)
+    overrides = IS_WINDOWS ?
+                  'docker-compose.windows.yml' :
+                  'docker-compose.override.yml'
+    # Only use overrides file if it exists
+    file_arg = File.file?(overrides) ? "--file #{overrides}" : ''
+    run_command("docker-compose --file docker-compose.yml #{file_arg} \
+                                --no-ansi \
+                                #{command_and_args}")
+  end
+
   # Windows requires directories to exist prior, whereas Linux will create them
   def create_host_volume_targets(root, volumes)
-    return unless !!File::ALT_SEPARATOR
+    return unless IS_WINDOWS
 
     STDOUT.puts("Creating volumes directory structure in #{root}")
     volumes.each { |subdir| FileUtils.mkdir_p(File.join(root, subdir)) }
@@ -65,7 +78,7 @@ module SpecHelpers
   end
 
   def get_containers
-    result = run_command('docker-compose --no-ansi --log-level INFO ps -q')
+    result = docker_compose('--log-level INFO ps -q')
     ids = result[:stdout].chomp
     STDOUT.puts("Retrieved running container ids:\n#{ids}")
     ids.lines.map(&:chomp)
@@ -73,7 +86,7 @@ module SpecHelpers
 
   def get_service_container(service, timeout = 120)
     return retry_block_up_to_timeout(timeout) do
-      container = run_command("docker-compose --no-ansi ps --quiet #{service}")[:stdout].chomp
+      container = docker_compose("ps --quiet #{service}")[:stdout].chomp
       if container.empty?
         raise "docker-compose never started a service named '#{service}' in #{timeout} seconds"
       end
@@ -86,7 +99,7 @@ module SpecHelpers
   def get_service_base_uri(service, port)
     @mapped_ports ||= {}
     @mapped_ports["#{service}:#{port}"] ||= begin
-      result = run_command("docker-compose --no-ansi port #{service} #{port}")
+      result = docker_compose("port #{service} #{port}")
       service_ip_port = result[:stdout].chomp
       raise "Could not retrieve service endpoint for #{service}:#{port}" if service_ip_port == ''
       uri = URI("http://#{service_ip_port}")
@@ -103,7 +116,7 @@ module SpecHelpers
       teardown_container(id)
     end
     # still needed to remove network / provide failsafe
-    run_command('docker-compose --no-ansi down --volumes')
+    docker_compose('down --volumes')
   end
 
   ######################################################################
@@ -178,8 +191,8 @@ module SpecHelpers
   ######################################################################
 
   def count_postgres_database(database)
-    cmd = "docker-compose --no-ansi exec -T postgres psql -t --username=puppetdb --command=\"SELECT count(datname) FROM pg_database where datname = '#{database}'\""
-    run_command(cmd)[:stdout].strip
+    cmd = "exec -T postgres psql -t --username=puppetdb --command=\"SELECT count(datname) FROM pg_database where datname = '#{database}'\""
+    docker_compose(cmd)[:stdout].strip
   end
 
   def wait_on_postgres_db(database, seconds = 240)
@@ -191,8 +204,8 @@ module SpecHelpers
 
   def get_postgres_extensions
     return retry_block_up_to_timeout(30) do
-      query = 'docker-compose --no-ansi exec -T postgres psql --username=puppetdb --command="SELECT * FROM pg_extension"'
-      extensions = run_command(query)[:stdout].chomp
+      query = 'exec -T postgres psql --username=puppetdb --command="SELECT * FROM pg_extension"'
+      extensions = docker_compose(query)[:stdout].chomp
       raise('failed to retrieve extensions') if extensions.empty?
       STDOUT.puts("retrieved extensions: #{extensions}")
       extensions
@@ -237,6 +250,15 @@ module SpecHelpers
   end
 
   ######################################################################
+  # PE Console Services Helper
+  ######################################################################
+  def unrevoke_console_admin_user(postgres_container_name="postgres")
+    query = "exec -T #{postgres_container_name} psql --username=puppetdb --dbname=pe-rbac --command \"UPDATE subjects SET is_revoked = 'f' WHERE login='admin';\""
+    output = docker_compose(query)[:stdout].chomp
+    raise('failed to unrevoke the admin account') if ! output.eql? "UPDATE 1"
+  end
+
+  ######################################################################
   # Puppetserver Helpers
   ######################################################################
 
@@ -252,7 +274,7 @@ module SpecHelpers
   # agent_name is the fully qualified name of the node
   def clean_certificate(agent_name)
     STDOUT.puts "cleaning cert for #{agent_name}"
-    result = run_command("docker-compose --no-ansi exec -T puppet puppetserver ca clean --certname #{agent_name}")
+    result = docker_compose("exec -T puppet puppetserver ca clean --certname #{agent_name}")
     return result[:status].exitstatus
   end
 
