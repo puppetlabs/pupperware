@@ -2,7 +2,8 @@ version: '3'
 
 services:
   puppet:
-    hostname: puppet.${DOMAIN:-internal}
+    hostname: puppet
+    domainname: ${DOMAIN:-internal}
     image: puppet/puppetserver
     ports:
       - 8140:8140
@@ -45,7 +46,8 @@ services:
          - postgres.${DOMAIN:-internal}
 
   puppetdb:
-    hostname: puppetdb.${DOMAIN:-internal}
+    hostname: puppetdb
+    domainname: ${DOMAIN:-internal}
     image: puppet/puppetdb
     environment:
       - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
@@ -54,6 +56,7 @@ services:
       - PUPPETDB_POSTGRES_HOSTNAME=postgres.${DOMAIN:-internal}
       - PUPPETDB_PASSWORD=puppetdb
       - PUPPETDB_USER=puppetdb
+      - CERTNAME=puppetdb.${DOMAIN:-internal}
     ports:
       - 8080
       - 8081
