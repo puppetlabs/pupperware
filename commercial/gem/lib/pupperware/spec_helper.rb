@@ -100,8 +100,7 @@ module SpecHelpers
   def teardown_cluster
     STDOUT.puts("Tearing down test cluster")
     get_containers.each do |id|
-      STDOUT.puts("Killing container #{id}")
-      run_command("docker container kill #{id}")
+      teardown_container(id)
     end
     # still needed to remove network / provide failsafe
     run_command('docker-compose --no-ansi down --volumes')
@@ -126,6 +125,21 @@ module SpecHelpers
     inspect_container(container, '{{.Name}}')
   end
 
+  def get_container_state(container)
+    inspect_container(container, '{{.State.Status}}')
+  end
+
+  def get_container_exit_code(container)
+    inspect_container(container, '{{.State.ExitCode}}').to_i
+  end
+
+  def wait_on_container_exit(container, timeout = 60)
+    return retry_block_up_to_timeout(timeout) do
+      get_container_state(container) == 'exited' ? 'exited' :
+        raise('container never exited')
+    end
+  end
+
   def get_container_hostname(container)
     # '{{json .NetworkSettings.Networks}}' useful in debug
     # returns all aliases in a Go array like [foo bar baz], so turn into Ruby array to inspect
@@ -147,6 +161,11 @@ module SpecHelpers
     STDOUT.puts("#{'*' * 80}\nContainer logs for #{container_name} / #{container}\n#{'*' * 80}\n")
     logs = run_command("docker logs --details --timestamps #{container}")[:stdout]
     STDOUT.puts(logs)
+  end
+
+  def teardown_container(container)
+    STDOUT.puts("Tearing down test container")
+    run_command("docker container rm --force #{container}")
   end
 
   def emit_logs
