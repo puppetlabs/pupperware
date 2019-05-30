@@ -24,7 +24,7 @@ which you will run your Puppet Infrastructure.
 
 ## Provisioning
 
-Once you have Docker Compose installed, you can start the stack on Linux with:
+Once you have Docker Compose installed, you can start the stack on Linux or macOS with:
 ```
     DNS_ALT_NAMES=host.example.com docker-compose up -d
 ```
