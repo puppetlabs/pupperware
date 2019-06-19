@@ -9,6 +9,19 @@ module SpecHelpers
 
   IS_WINDOWS = !!File::ALT_SEPARATOR
 
+  def require_test_image()
+    image = ENV['PUPPET_TEST_DOCKER_IMAGE']
+    if image.nil?
+      fail <<-MSG
+* * * * *
+  PUPPET_TEST_DOCKER_IMAGE environment variable must be set so we
+  know which image to test against!
+* * * * *
+      MSG
+    end
+    image
+  end
+
   ######################################################################
   # General Ruby Helpers
   ######################################################################
