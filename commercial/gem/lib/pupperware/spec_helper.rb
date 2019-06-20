@@ -109,6 +109,14 @@ module SpecHelpers
     end
   end
 
+  def pull_images(ignore_service)
+    puts "Pulling images (ignoring image for #{ignore_service}):"
+    services = docker_compose('config --services')[:stdout].chomp
+    services = services.gsub(ignore_service, '')
+    services = services.gsub("\n", ' ')
+    docker_compose("pull --quiet #{services}")
+  end
+
   def get_service_base_uri(service, port)
     @mapped_ports ||= {}
     @mapped_ports["#{service}:#{port}"] ||= begin
@@ -269,6 +277,54 @@ module SpecHelpers
     query = "exec -T #{postgres_container_name} psql --username=puppetdb --dbname=pe-rbac --command \"UPDATE subjects SET is_revoked = 'f' WHERE login='admin';\""
     output = docker_compose(query)[:stdout].chomp
     raise('failed to unrevoke the admin account') if ! output.eql? "UPDATE 1"
+  end
+
+  def curl_pe_console_services(end_point)
+    uri = URI.parse(URI.encode("https://localhost:4433/#{end_point}"))
+    request = Net::HTTP::Get.new(uri)
+    request["X-Authentication"] = @rbac_token
+    req_options = {
+      use_ssl: uri.scheme == "https",
+      verify_mode: OpenSSL::SSL::VERIFY_NONE,
+    }
+    response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
+      http.request(request)
+    end
+    response.body
+  end
+
+  def get_pe_console_services_status()
+    curl_pe_console_services("status/v1/simple")
+  end
+
+  def wait_for_pe_console_services()
+    # 5 minute timeout to wait for a fresh "install" of PE
+    timeout = 5 * 60
+    puts "Waiting for pe-console-services to be ready ..."
+    return retry_block_up_to_timeout(timeout) do
+      get_pe_console_services_status == 'running' ? 'running' :
+        raise("pe-console-services was not ready after #{timeout} seconds")
+    end
+  end
+
+  def generate_rbac_token()
+    uri = URI.parse("https://localhost:4433/rbac-api/v1/auth/token")
+    request = Net::HTTP::Post.new(uri)
+    request.content_type = "application/json"
+    request.body = JSON.dump({
+                               "login" => "admin",
+                               "password" => "admin",
+                               "lifetime" => "1h"
+                             })
+    req_options = {
+      use_ssl: uri.scheme == "https",
+      verify_mode: OpenSSL::SSL::VERIFY_NONE,
+    }
+    response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
+      http.request(request)
+    end
+
+    @rbac_token = JSON.parse(response.body)['token']
   end
 
   ######################################################################
