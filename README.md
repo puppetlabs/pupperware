@@ -49,9 +49,9 @@ account any custom domain.
 
 When you first start the Puppet Infrastructure, the stack will create a
 `volumes/` directory with a number of sub-directories to store the
-persistent data that should survive the restart of your infrastructure. This
-directory is created right next to the Docker Compose file and contains the
-following sub-directories:
+persistent data that should survive the restart of your
+infrastructure. By default This directory is created right next to the
+Docker Compose file and contains the following sub-directories:
 
 * `code/`: the Puppet code directory.
 * `puppet/`: Puppet configuration files, including `puppet/ssl/` containing
@@ -67,6 +67,13 @@ PuppetDB
 * Note: On OSX, you must add the `volumes` directory to "File Sharing" under
   `Preferences>File Sharing` in order for these directories to be created
   and volume-mounted automatically. There is no need to add each sub directory.
+
+The default can be overridden with the `VOLUME_ROOT` environement
+variable in the `.env` file (see *Environment* below)
+
+```
+VOLUME_ROOT=/container_data/pupperware
+```
 
 ## Pupperware on Windows (using LCOW)
 
@@ -166,6 +173,36 @@ PUPPERWARE_ANALYTICS_ENABLED=false
 ```
 
 This file is in the `.gitignore` file and will not be managed or changed by pupperware.
+
+## Environment
+
+Environment variables may be specified in `.env` file in this
+directory.
+
+### DNS_ALT_NAMES
+
+See *Provisioning* above.
+
+### DOMAIN
+
+See *Provisioning* above.
+
+### PUPPETWARE_ANALYTICS_ENABLED
+
+See *Analytics Data Collection* below
+
+### PUPPETSERVER_PORT
+
+Overrides the host port.  To bind to a specific IP address.  For
+example to bind to the address `172.25.29.31` instead of `0.0.0.0` use:
+
+```
+PUPPETSERVER_PORT=172.25.29.31:8140
+```
+
+### VOLUME_ROOT
+
+See *Provisioning* above.
 
 ## License
 

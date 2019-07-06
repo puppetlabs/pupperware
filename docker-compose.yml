@@ -5,7 +5,7 @@ services:
     hostname: puppet.${DOMAIN:-internal}
     image: puppet/puppetserver
     ports:
-      - 8140:8140
+      - ${PUPPETSERVER_PORT:-8140}:8140
     environment:
       # necessary to set certname and server in puppet.conf, required by
       # puppetserver ca cli application
@@ -17,6 +17,7 @@ services:
       - DNS_ALT_NAMES=puppet,puppet.${DOMAIN:-internal},${DNS_ALT_NAMES:-}
       - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
       - PUPPETDB_SERVER_URLS=https://puppetdb.${DOMAIN:-internal}:8081
+      - PUPPETSERVER_PORT=8140
     volumes:
       - ${VOLUME_ROOT:-.}/volumes/code:/etc/puppetlabs/code/
       - ${VOLUME_ROOT:-.}/volumes/puppet:/etc/puppetlabs/puppet/
