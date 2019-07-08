@@ -328,6 +328,41 @@ module SpecHelpers
   end
 
   ######################################################################
+  # PE Orchestrator Helpers
+  ######################################################################
+
+  def curl_pe_orchestration_services(end_point)
+    uri = URI.parse(URI.encode("https://localhost:8143/#{end_point}"))
+    request = Net::HTTP::Get.new(uri)
+    request["X-Authentication"] = @rbac_token
+    req_options = {
+      use_ssl: uri.scheme == "https",
+      verify_mode: OpenSSL::SSL::VERIFY_NONE,
+    }
+    response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
+      http.request(request)
+    end
+    response.body
+  end
+
+  def get_pe_orchestration_services_status()
+    curl_pe_orchestration_services("orchestrator/v1")
+  end
+
+  def wait_for_pe_orchestration_services()
+    wait_for_pe_console_services()
+    unrevoke_console_admin_user()
+    generate_rbac_token()
+    timeout = 2 * 60
+    puts "Waiting for pe-orchestration-services to be ready ..."
+    return retry_block_up_to_timeout(timeout) do
+      unless get_pe_orchestration_services_status.include? "Application Management API"
+        raise("pe-orchestration-services was not ready after #{timeout} seconds")
+      end
+    end
+  end
+
+  ######################################################################
   # Puppetserver Helpers
   ######################################################################
 
