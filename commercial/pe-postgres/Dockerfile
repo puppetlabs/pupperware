@@ -3,6 +3,15 @@ FROM postgres:9.6
 ARG version
 ARG vcs_ref
 ARG build_date
+
+ENV POSTGRES_PASSWORD puppetdb
+ENV POSTGRES_USER puppetdb
+ENV POSTGRES_DB puppetdb
+ENV SSLDIR /etc/postgresql/ssl
+ENV CERTNAME postgres
+ENV PE_CONSOLE_SERVICES_HOSTNAME pe-console-services
+ENV PE_ORCHESTRATION_SERVICES_HOSTNAME pe-orchestration-services
+
 LABEL org.label-schema.maintainer="Puppet Release Team <release@puppet.com>" \
       org.label-schema.vendor="Puppet" \
       org.label-schema.url="https://github.com/puppetlabs/pupperware-commercial" \
@@ -15,21 +24,16 @@ LABEL org.label-schema.maintainer="Puppet Release Team <release@puppet.com>" \
       org.label-schema.schema-version="1.0" \
       org.label-schema.dockerfile="/Dockerfile"
 
-ENV POSTGRES_PASSWORD puppetdb
-ENV POSTGRES_USER puppetdb
-ENV POSTGRES_DB puppetdb
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gettext && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY config /etc/postgresql/config
+RUN chmod 777 /etc/postgresql/config
 COPY postgres-custom /docker-entrypoint-initdb.d
 
-CMD ["postgres", \
-    "-c", "hba_file=/etc/postgresql/config/pg_hba.conf", \
-    "-c", "ident_file=/etc/postgresql/config/pg_ident.conf", \
-    "-c", "ssl=on", \
-    "-c", "ssl_cert_file=/etc/postgresql/ssl/certs/postgres.test.pem", \
-    "-c", "ssl_key_file=/etc/postgresql/ssl/private_keys/postgres.test.pem", \
-    "-c", "ssl_ca_file=/etc/postgresql/ssl/certs/ca.pem", \
-    "-c", "max_connections=400"]
+CMD ["postgres", "-c", "config_file=/etc/postgresql/config/postgresql.conf"]
 
 EXPOSE 5432
 

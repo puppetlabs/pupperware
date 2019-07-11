@@ -3,15 +3,16 @@ VERSION ?= latest
 vcs_ref := $(shell git rev-parse HEAD)
 build_date := $(shell date -u +%FT%T)
 hadolint_available := $(shell hadolint --help > /dev/null 2>&1; echo $$?)
-hadolint_command := hadolint
-#--ignore DL3008 --ignore DL3018 --ignore DL4000 --ignore DL4001
+hadolint_command := hadolint --ignore DL3008
+#--ignore DL3018 --ignore DL4000 --ignore DL4001
 
 lint:
 ifeq ($(hadolint_available),0)
 	@$(hadolint_command) Dockerfile
 else
 	@docker pull hadolint/hadolint:latest
-	@docker run --rm -i hadolint/hadolint:latest < Dockerfile
+	@docker run --rm -v $(PWD)/Dockerfile:/Dockerfile \
+		-i hadolint/hadolint:latest $(hadolint_command) Dockerfile
 endif
 
 build:
