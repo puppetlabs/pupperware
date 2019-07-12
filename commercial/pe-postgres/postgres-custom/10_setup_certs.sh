@@ -1,6 +1,5 @@
 #!/bin/sh
 
-SSLDIR=/etc/postgresql/ssl
 CERTNAME=${CERTNAME:-${HOSTNAME}}
 
 # Wait for the sidecar container to volume-mount our cert
