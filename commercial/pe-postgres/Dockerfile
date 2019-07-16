@@ -9,8 +9,8 @@ ENV POSTGRES_USER puppetdb
 ENV POSTGRES_DB puppetdb
 ENV SSLDIR /etc/postgresql/ssl
 ENV CERTNAME postgres
-ENV PE_CONSOLE_SERVICES_HOSTNAME pe-console-services
-ENV PE_ORCHESTRATION_SERVICES_HOSTNAME pe-orchestration-services
+ENV PE_CONSOLE_SERVICES_CERTNAME pe-console-services
+ENV PE_ORCHESTRATION_SERVICES_CERTNAME pe-orchestration-services
 
 LABEL org.label-schema.maintainer="Puppet Release Team <release@puppet.com>" \
       org.label-schema.vendor="Puppet" \
