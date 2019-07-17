@@ -1,57 +1,63 @@
-version: '3'
-
+version: '3.7'
 services:
   puppet:
-    hostname: puppet.${DOMAIN:-internal}
-    image: puppet/puppetserver
+    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-puppetserver:2019.1.0.92
+    hostname: puppet.test
+    environment:
+      - PUPPETDB_HOSTNAME=puppetdb.test
+      - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
     ports:
       - 8140:8140
-    environment:
-      # necessary to set certname and server in puppet.conf, required by
-      # puppetserver ca cli application
-      - PUPPETSERVER_HOSTNAME=puppet.${DOMAIN:-internal}
-      # DNS_ALT_NAMES must be set before starting the stack the first time,
-      # and must list all the names under which the puppetserver can be
-      # reached. 'puppet.${DOMAIN:-internal}' must be one of them, otherwise puppetdb won't be
-      # able to get a cert. Add other names as a comma-separated list
-      - DNS_ALT_NAMES=puppet,puppet.${DOMAIN:-internal},${DNS_ALT_NAMES:-}
-      - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
-      - PUPPETDB_SERVER_URLS=https://puppetdb.${DOMAIN:-internal}:8081
-    volumes:
-      - ${VOLUME_ROOT:-.}/volumes/code:/etc/puppetlabs/code/
-      - ${VOLUME_ROOT:-.}/volumes/puppet:/etc/puppetlabs/puppet/
-      - ${VOLUME_ROOT:-.}/volumes/serverdata:/opt/puppetlabs/server/data/puppetserver/
-    dns_search: ${DOMAIN:-internal}
+    dns_search: test
     networks:
-      default:
+      test:
         aliases:
-         - puppet.${DOMAIN:-internal}
-
-  postgres:
-    image: postgres:9.6
+         - puppet.test
+  pe-orchestration-services:
+    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-orchestration-services:2019.1.1.11
+    hostname: pe-orchestration-services.test
     environment:
-      - POSTGRES_PASSWORD=puppetdb
-      - POSTGRES_USER=puppetdb
-      - POSTGRES_DB=puppetdb
-    expose:
-      - 5432
-    volumes:
-      - ${VOLUME_ROOT:-.}/volumes/puppetdb-postgres/data:/var/lib/postgresql/data
-      - ./postgres-custom:/docker-entrypoint-initdb.d
-    dns_search: ${DOMAIN:-internal}
+      - PUPPETSERVER_HOSTNAME=puppet.test
+      - PUPPETDB_HOSTNAME=puppetdb.test
+      - POSTGRES_HOSTNAME=postgres.test
+      - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
+    ports:
+      - 8142:8142
+      - 8143:8143
+    depends_on:
+      - puppet
+    dns_search: test
     networks:
-      default:
+      test:
         aliases:
-         - postgres.${DOMAIN:-internal}
-
+         - pe-orchestration-services.test
+  pe-console-services:
+    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-console-services:2019.1.2.0
+    hostname: pe-console-services.test
+    environment:
+      - PUPPETSERVER_HOSTNAME=puppet.test
+      - PUPPETDB_HOSTNAME=puppetdb.test
+      - POSTGRES_HOSTNAME=postgres.test
+      - PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services.test
+    ports:
+      - 443:4431
+      - 4430:4430
+      - 4432:4432
+      - 4433:4433
+    depends_on:
+      - postgres
+      - puppet
+    dns_search: test
+    networks:
+      test:
+        aliases:
+          - pe-console-services.test
   puppetdb:
-    hostname: puppetdb.${DOMAIN:-internal}
     image: puppet/puppetdb
+    hostname: puppetdb.test
     environment:
-      - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
-      # This name is an FQDN so the short name puppet doesn't collide outside compose network
-      - PUPPETSERVER_HOSTNAME=puppet.${DOMAIN:-internal}
-      - PUPPETDB_POSTGRES_HOSTNAME=postgres.${DOMAIN:-internal}
+      - PUPPETSERVER_HOSTNAME=puppet.test
+      - PUPPETDB_POSTGRES_HOSTNAME=postgres.test
       - PUPPETDB_PASSWORD=puppetdb
       - PUPPETDB_USER=puppetdb
     ports:
@@ -60,10 +66,42 @@ services:
     depends_on:
       - postgres
       - puppet
-    volumes:
-      - ${VOLUME_ROOT:-.}/volumes/puppetdb/ssl:/etc/puppetlabs/puppet/ssl/
-    dns_search: ${DOMAIN:-internal}
+    dns_search: test
     networks:
-      default:
+      test:
         aliases:
-         - puppetdb.${DOMAIN:-internal}
+          - puppetdb.test
+  postgres:
+    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-postgres
+    hostname: postgres.test
+    environment:
+      - CERTNAME=postgres.test
+      - PUPPETSERVER_HOSTNAME=puppet.test
+    expose:
+      - 5432
+    dns_search: test
+    networks:
+      test:
+        aliases:
+          - postgres.test
+  puppet-agent:
+    image: puppet/puppet-agent-ubuntu
+    hostname: puppet-agent.test
+    networks:
+      test:
+        aliases:
+          - puppet-agent.test
+    entrypoint: /bin/bash
+    command: -c "echo 'waiting for orchestration services to be up' &&
+                 while true; do if curl -k --fail --silent https://pe-orchestration-services.test:8143/status/v1/simple; then break; fi; done &&
+                 puppet config set server puppet.test &&
+                 puppet agent -t &&
+                 echo 'starting pxp services' &&
+                 pxp-agent --broker-ws-uri wss://pe-orchestration-services.test:8142/pcp2/
+                           --ssl-ca-cert /etc/puppetlabs/puppet/ssl/certs/ca.pem
+                           --ssl-cert /etc/puppetlabs/puppet/ssl/certs/puppet-agent.test.pem
+                           --ssl-key /etc/puppetlabs/puppet/ssl/private_keys/puppet-agent.test.pem
+                           --pcp-version 2"
+networks:
+  test:
+    name: pupperware-commercial

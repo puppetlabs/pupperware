@@ -1,3 +1,31 @@
+# pupperware-commercial
+
+Run a container-based deployment of Puppet Enterprise.
+
+To get started, you will need an installation of
+[Docker Compose](https://docs.docker.com/compose/install/) on the host on
+which you will run your Puppet Infrastructure.
+
+### Running
+
+1. Run `docker-compose up` (or `make up`)
+2. Go to https://localhost in your browser
+3. Login with `admin/admin`
+
+To see things working, try doing a puppet-job run against the agent node:
+```shell
+docker run --rm --network pupperware-commercial \
+  -e RBAC_USERNAME=admin -e RBAC_PASSWORD=admin \
+  -e PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test \
+  artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:19.1.3 \
+  puppet-job run --nodes puppet-agent.test --service-url https://pe-orchestration-services.test:8143/
+```
+
+### Tests
+
+Make sure the stack isn't already running, then: `make test`
+
+----
 
 # pupperware
 

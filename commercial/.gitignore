@@ -1,12 +1,6 @@
-volumes/
-code/
-puppet/
-puppetdb/
-puppetdb-postgres/
-serverdata/
+.bundle
 Gemfile.lock
-.bundle/
-.ruby-version
+TEST-*.xml
 
 # .env will allow end-users to customize variables
 # for their compose stack in a way that won't be
