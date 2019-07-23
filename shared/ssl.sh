@@ -3,7 +3,7 @@
 # Get a signed certificate for this host.
 #
 # Uses OpenSSL and curl directly to generate a new CSR and get it signed by the
-# Puppet Server CA. Does not support custom CSR extensions at the moment.
+# Puppet Server CA.
 #
 # Intended to be used in place of a full-blown puppet agent run that is solely
 # for getting SSL certificates onto the host.
@@ -11,20 +11,29 @@
 # Files will be placed in the same default directory location and structure
 # that the puppet agent would put them, which is /etc/puppetlabs/puppet/ssl.
 #
-# Fails under the following conditions:
-# - CA host cannot be reached
-# - CA already has signed certificate for this host
-# - SSL files already exist on this host
+# The certname can be provided as the first argument to this script, or
+# as the CERTNAME environment variable. If both are found, the argument
+# takes precedence over the environment variable. If neither are found,
+# the HOSTNAME will be used.
+#
+# Supports DNS alt names via the DNS_ALT_NAMES environment variable, which
+# is a comma-separated string of names. The Puppet Server CA must be configured
+# to allow subject alt names, by default it will reject certificate requests
+# with them.
 #
 # Arguments:
-#   $1  (Optional) Certname to use, defaults to $HOSTNAME
+#   $1  (Optional) Certname to use. Overrides the CERTNAME environment variable.
+#                  If neither are set, the $HOSTNAME will be used.
 #
 # Optional environment variables:
+#   CERTNAME               Certname to use, unless an argument is passed in
 #   WAITFORCERT            Number of seconds to wait for certificate to be
 #                          signed, defaults to 120
 #   PUPPETSERVER_HOSTNAME  Hostname of Puppet Server CA, defaults to "puppet"
 #   SSLDIR                 Root directory to write files to, defaults to
 #                          "/etc/puppetlabs/puppet/ssl"
+#   DNS_ALT_NAMES          Comma-separated string of DNS subject alternative
+#                          names, defaults to none
 
 msg() {
     echo "($0) $1"
@@ -40,11 +49,12 @@ error() {
 ! command -v curl > /dev/null && error "curl not found on PATH"
 
 ### Verify options are valid
-CERTNAME="${1:-${HOSTNAME}}"
+CERTNAME="${1:-${CERTNAME:-${HOSTNAME}}}"
 [ -z "${CERTNAME}" ] && error "certificate name must be non-empty value"
 PUPPETSERVER_HOSTNAME="${PUPPETSERVER_HOSTNAME:-puppet}"
 SSLDIR="${SSLDIR:-/etc/puppetlabs/puppet/ssl}"
 WAITFORCERT=${WAITFORCERT:-120}
+DNS_ALT_NAMES=${DNS_ALT_NAMES}
 
 ### Create directories and files
 PUBKEYDIR="${SSLDIR}/public_keys"
@@ -64,9 +74,31 @@ CERTSUBJECT="/CN=${CERTNAME}"
 CERTHEADER="-----BEGIN CERTIFICATE-----"
 CURLFLAGS="--silent --show-error --cacert ${CACERTFILE} --retry 5 --retry-connrefused --retry-delay 2"
 
+### Handle certificate extensions
+# NOTE If we want to expand support for more extensions, it would be better
+# to define them in a .conf file rather than directly on the CLI.
+# That would also work on older versions of openssl that don't support
+# the `-addext` flag.
+# For now, we explicitly handle DNS alt names because it's simpler.
+CERTEXTENSIONS=""
+if [ -n "${DNS_ALT_NAMES}" ]; then
+    names=""
+    first=true
+    for name in $(echo "${DNS_ALT_NAMES}" | tr "," " "); do
+        if $first; then
+            first=false
+            names="DNS:${name}"
+        else
+            names="${names},DNS:${name}"
+        fi
+    done
+    CERTEXTENSIONS="-addext subjectAltName=${names}"
+fi
+
 ### Print configuration for troubleshooting
 msg "Using configuration values:"
-msg "* Certname: '${CERTNAME}' (${CERTSUBJECT})"
+msg "* CERTNAME: '${CERTNAME}' (${CERTSUBJECT})"
+msg "* DNS_ALT_NAMES: '${DNS_ALT_NAMES}'"
 msg "* CA: '${CA}'"
 msg "* SSLDIR: '${SSLDIR}'"
 msg "* WAITFORCERT: '${WAITFORCERT}' seconds"
@@ -98,13 +130,20 @@ fi
 [ -s "${CSRFILE}" ] && error "certificate request '${CSRFILE}' already exists"
 openssl genrsa -out "${PRIVKEYFILE}" 4096
 openssl rsa -in "${PRIVKEYFILE}" -pubout -out "${PUBKEYFILE}"
-openssl req -new -key "${PRIVKEYFILE}" -out "${CSRFILE}" -subj "${CERTSUBJECT}"
+openssl req -new -key "${PRIVKEYFILE}" -out "${CSRFILE}" -subj "${CERTSUBJECT}" ${CERTEXTENSIONS}
 
-### Submit CSR and fail if one already exists on the CA
+### Submit CSR and fail gracefully on certain error conditions
 output="$(curl ${CURLFLAGS} -X PUT -H "Content-Type: text/plain" \
                --data-binary "@${CSRFILE}" "${CA}/certificate_request/${CERTNAME}")"
-already_exists="${CERTNAME} already has a requested certificate; ignoring certificate request"
-[ "${output}" = "${already_exists}" ] && error "unsigned CSR for '${CERTNAME}' already exists on CA"
+if [ -n "${output}" ]; then
+    cert_already_exists="${CERTNAME} already has a requested certificate; ignoring certificate request"
+    altnames_disallowed="CSR '${CERTNAME}' contains subject alternative names*which are disallowed*"
+    case "${output}" in
+        $cert_already_exists) error "unsigned CSR for '${CERTNAME}' already exists on CA" ;;
+        $altnames_disallowed) error "DNS Alt Names not allowed by the CA" ;;
+        *) msg "[WARNING] CSR response: ${output}" ;;
+    esac
+fi
 
 ### Retrieve signed certificate; wait and try again with a timeout
 sleeptime=10
