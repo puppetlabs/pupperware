@@ -65,6 +65,21 @@ module SpecHelpers
     end
   end
 
+  # Returns response object with `.body` and `.status` fields
+  def curl(hostname, port, endpoint)
+    uri = URI.parse(URI.encode("https://#{hostname}:#{port}/#{endpoint}"))
+    request = Net::HTTP::Get.new(uri)
+    request['X-Authentication'] = @rbac_token
+    req_options = {
+      use_ssl: uri.scheme == 'https',
+      verify_mode: OpenSSL::SSL::VERIFY_NONE,
+    }
+    response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
+      http.request(request)
+    end
+    response
+  end
+
   ######################################################################
   # Docker Compose Helpers
   ######################################################################
@@ -280,17 +295,7 @@ module SpecHelpers
   end
 
   def curl_pe_console_services(end_point)
-    uri = URI.parse(URI.encode("https://localhost:4433/#{end_point}"))
-    request = Net::HTTP::Get.new(uri)
-    request["X-Authentication"] = @rbac_token
-    req_options = {
-      use_ssl: uri.scheme == "https",
-      verify_mode: OpenSSL::SSL::VERIFY_NONE,
-    }
-    response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
-      http.request(request)
-    end
-    response.body
+    curl('localhost', 4443, end_point).body
   end
 
   def get_pe_console_services_status()
@@ -332,17 +337,7 @@ module SpecHelpers
   ######################################################################
 
   def curl_pe_orchestration_services(end_point)
-    uri = URI.parse(URI.encode("https://localhost:8143/#{end_point}"))
-    request = Net::HTTP::Get.new(uri)
-    request["X-Authentication"] = @rbac_token
-    req_options = {
-      use_ssl: uri.scheme == "https",
-      verify_mode: OpenSSL::SSL::VERIFY_NONE,
-    }
-    response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
-      http.request(request)
-    end
-    response.body
+    curl('localhost', 8143, end_point).body
   end
 
   def get_pe_orchestration_services_status()
@@ -366,12 +361,28 @@ module SpecHelpers
   # Puppetserver Helpers
   ######################################################################
 
+  # Waits for the container healthcheck to return 'healthy'
+  # See also: `wait_for_puppetserver`
   def wait_on_puppetserver_status(seconds = 180, service_name = 'puppet')
     # puppetserver has a healthcheck, we can let that deal with timeouts
     return retry_block_up_to_timeout(seconds) do
       status = get_container_status(get_service_container(service_name))
       (status == 'healthy' || status == "'healthy'") ? 'healthy' :
         raise("puppetserver stuck in #{status}")
+    end
+  end
+
+  def get_puppetserver_status()
+    curl('localhost', 8140, 'status/v1/simple').body
+  end
+
+  # Waits for the `status/v1/simple` endpoint to return 'running'
+  # See also: `wait_on_puppetserver_status`
+  def wait_for_puppetserver(timeout: 180)
+    puts "Waiting for puppetserver to be ready ..."
+    return retry_block_up_to_timeout(timeout) do
+      get_puppetserver_status == 'running' ? 'running' :
+        raise("puppetserver was not ready after #{timeout} seconds")
     end
   end
 
