@@ -33,4 +33,7 @@ push-image:
 
 publish: push-image
 
-.PHONY: lint build test publish push-image
+pull:
+	@docker pull $(NAMESPACE)/pe-postgres:$(VERSION)
+
+.PHONY: lint build test publish push-image pull
