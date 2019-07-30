@@ -262,6 +262,7 @@ module SpecHelpers
   # PuppetDB Helpers
   ######################################################################
 
+  # @deprecated - remove method once all callers are updated
   def get_puppetdb_state
     # make sure PDB container hasn't stopped
     get_service_container('puppetdb', 5)
@@ -286,13 +287,9 @@ module SpecHelpers
     raise
   end
 
+  # @deprecated - remove method once all callers are updated
   def wait_on_puppetdb_status(seconds = 240)
-    # since pdb doesn't have a proper healthcheck yet, this could spin forever
-    # add a timeout so it eventually returns.
-    return retry_block_up_to_timeout(seconds) do
-      get_puppetdb_state() == 'running' ? 'running' :
-        raise('puppetdb never entered running state')
-    end
+    wait_on_service_health('puppetdb', seconds)
   end
 
   ######################################################################
