@@ -190,6 +190,15 @@ module SpecHelpers
     end
   end
 
+  def wait_on_service_health(service, seconds = 180)
+    # services with healthcheck should deal with their own timeouts
+    return retry_block_up_to_timeout(seconds) do
+      status = get_container_status(get_service_container(service))
+      (status == 'healthy' || status == "'healthy'") ? 'healthy' :
+        raise("#{service} is not healthy - currently #{status}")
+    end
+  end
+
   def get_container_hostname(container)
     # '{{json .NetworkSettings.Networks}}' useful in debug
     # returns all aliases in a Go array like [foo bar baz], so turn into Ruby array to inspect
@@ -362,15 +371,11 @@ module SpecHelpers
   # Puppetserver Helpers
   ######################################################################
 
+  # @deprecated - remove method once all callers are updated
   # Waits for the container healthcheck to return 'healthy'
   # See also: `wait_for_puppetserver`
   def wait_on_puppetserver_status(seconds = 180, service_name = 'puppet')
-    # puppetserver has a healthcheck, we can let that deal with timeouts
-    return retry_block_up_to_timeout(seconds) do
-      status = get_container_status(get_service_container(service_name))
-      (status == 'healthy' || status == "'healthy'") ? 'healthy' :
-        raise("puppetserver stuck in #{status}")
-    end
+    wait_on_service_health(service_name, seconds)
   end
 
   def get_puppetserver_status()

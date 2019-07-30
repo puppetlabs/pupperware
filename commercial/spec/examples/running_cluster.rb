@@ -19,7 +19,7 @@ shared_examples 'a running pupperware cluster' do
   end
 
   it 'should start puppetserver' do
-    expect(wait_on_puppetserver_status()).to match(/\'?healthy\'?/)
+    expect(wait_on_service_health('puppet')).to eq('healthy')
   end
 
   it 'should start puppetdb' do
