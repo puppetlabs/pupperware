@@ -296,7 +296,7 @@ module SpecHelpers
   end
 
   def curl_pe_console_services(end_point)
-    curl('localhost', 4443, end_point).body
+    curl('localhost', 4433, end_point).body
   end
 
   def get_pe_console_services_status()
