@@ -37,13 +37,6 @@ steps:
   name: test_prepare
 
 - powershell: |
-    Write-Host 'Writing compose config to disk'
-    $content = @"
-    VOLUME_ROOT=$ENV:VOLUME_ROOT
-    "@
-    $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
-    [System.IO.File]::WriteAllLines(".env", $content, $Utf8NoBomEncoding)
-    Get-Content -Path '.env'
     Write-Host 'Executing Pupperware specs'
     bundle exec rspec --version
     bundle exec rspec spec --fail-fast
