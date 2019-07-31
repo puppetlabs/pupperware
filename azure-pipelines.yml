@@ -27,9 +27,12 @@ steps:
 
 - powershell: |
     bundle install --with test --path '.bundle/gems'
-    # set an Azure variable for temp volumes root
-    $tempVolumeRoot = Join-Path -Path $ENV:TEMP -ChildPath ([System.IO.Path]::GetRandomFileName())
-    Write-Host "##vso[task.setvariable variable=VOLUME_ROOT]$tempVolumeRoot"
+  displayName: Fetch Dependencies
+  name: fetch_deps
+
+- powershell: |
+    . gem/ci/build.ps1
+    Initialize-TestEnv
   displayName: Prepare Test Environment
   name: test_prepare
 
