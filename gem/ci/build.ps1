@@ -109,7 +109,7 @@ function Clear-ContainerBuilds(
     $Force = $false
 )
 {
-    Write-Output 'Pruning Containers'
+    Write-Host 'Pruning Containers'
     docker container prune --force
 
     # delete directory if ENV variable is defined and directory actually exists
@@ -118,39 +118,48 @@ function Clear-ContainerBuilds(
         Remove-Item $ENV:VOLUME_ROOT -Force -Recurse -ErrorAction Continue
     }
 
-    # this provides example data which ConvertFrom-String infers parsing structure with
-    $template = @'
+    Write-Host "`nPruning Volumes"
+    docker volume prune
+
+    Write-Host "`nPruning Networks"
+    docker network prune
+
+    if ($Name -ne $null)
+    {
+        # this provides example data which ConvertFrom-String infers parsing structure with
+        $template = @'
 {Version*:10.2.3*} {ID:5b84704c1d01} {[DateTime]Created:2019-02-07 18:24:51} +0000 GMT
 {Version*:latest} {ID:0123456789ab} {[DateTime]Created:2019-01-29 00:05:33} +0000 GMT
 '@
-    $output = docker images --filter=reference="$Namespace/${Name}" --format "{{.Tag}} {{.ID}} {{.CreatedAt}}"
-    Write-Output @"
+        $output = docker images --filter=reference="$Namespace/${Name}" --format "{{.Tag}} {{.ID}} {{.CreatedAt}}"
+        Write-Host @"
 
 Found $Namespace/${Name} images:
 $($output | Out-String)
 
 "@
 
-    if ($output -eq $null) { return }
+        if ($output -eq $null) { return }
 
-    Write-Output "Filtering removal candidates..."
-    # docker image prune supports filter until= but not repository like 'puppetlabs/foo'
-    # must use label= style filtering which is a bit more inconvenient
-    # that output is also not user-friendly!
-    # engine doesn't maintain "last used" or "last pulled" metadata, which would be more useful
-    # https://github.com/moby/moby/issues/4237
-    $output |
-      ConvertFrom-String -TemplateContent $template |
-      ? { $_.Created -lt $OlderThan } |
-      # ensure 'latest' are listed first
-      Sort-Object -Property Version -Descending |
-      % {
-        Write-Output "Removing Old $Namespace/${Name} Image $($_.Version) ($($_.ID)) Created On $($_.Created)"
-        $forcecli = if ($Force) { '-f' } else { '' }
-        docker image rm $_.ID $forcecli
-      }
+        Write-Host 'Filtering removal candidates...'
+        # docker image prune supports filter until= but not repository like 'puppetlabs/foo'
+        # must use label= style filtering which is a bit more inconvenient
+        # that output is also not user-friendly!
+        # engine doesn't maintain "last used" or "last pulled" metadata, which would be more useful
+        # https://github.com/moby/moby/issues/4237
+        $output |
+          ConvertFrom-String -TemplateContent $template |
+          ? { $_.Created -lt $OlderThan } |
+          # ensure 'latest' are listed first
+          Sort-Object -Property Version -Descending |
+          % {
+            Write-Host "Removing Old $Namespace/${Name} Image $($_.Version) ($($_.ID)) Created On $($_.Created)"
+            $forcecli = if ($Force) { '-f' } else { '' }
+            docker image rm $_.ID $forcecli
+          }
+    }
 
-    Write-Output "`nPruning Dangling Images"
+    Write-Host "`nPruning Dangling Images"
     docker image prune --filter "dangling=true" --force
 }
 
