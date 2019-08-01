@@ -65,7 +65,7 @@ function Build-Container(
         $docker_args += '--pull'
     }
 
-    Write-Output "docker build $docker_args $Context"
+    Write-Host "docker build $docker_args $Context"
 
     docker build $docker_args $Context
 }
