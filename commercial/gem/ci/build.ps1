@@ -31,9 +31,13 @@ function Lint-Dockerfile(
         $ignores += '--ignore', $code
     }
 
-    Write-Output "hadolint $ignores $Path"
+    Write-Host "& cmd.exe /c docker run --rm -i hadolint/hadolint hadolint $ignores -< $Path"
 
-    hadolint $ignores $Path
+    # while a simpler method works locally, there appears to be a bug with stdin in Azure injecting BOMs?
+    # https://developercommunity.visualstudio.com/content/problem/451239/powershell-build-step-in-azure-devops-fails-when-p.html
+    # https://github.com/microsoft/botbuilder-tools/pull/1046
+    & cmd.exe /c docker run --rm -i hadolint/hadolint hadolint $ignores -< $Path
+    if ($LASTEXITCODE -ne 0) { throw "ERROR: Linting $Path" }
 }
 
 function Build-Container(
@@ -181,6 +185,13 @@ function Write-HostDiagnostics()
     docker info
     docker-compose version
     sc.exe qc docker
+    Write-Host "`n`n$line`nLinter`n$line`n"
+    #
+    # Linter
+    #
+    docker pull hadolint/hadolint:latest
+    # --pull=always crashes hard in Azure CI agent for some reason
+    docker run --rm hadolint/hadolint:latest hadolint --version
     #
     # Ruby
     #
