@@ -52,16 +52,8 @@ steps:
   condition: always()
 
 - powershell: |
-    Write-Host 'Pruning containers'
-    docker container prune --force
-    Write-Host 'Pruning images'
-    docker image prune --filter "dangling=true" --force
-    Write-Host "Pruning Volumes"
-    docker volume prune
-    Write-Host "Pruning Networks"
-    docker network prune
-    Write-Host "Cleaning up temporary volume: $ENV:VOLUME_ROOT"
-    Remove-Item $ENV:VOLUME_ROOT -Force -Recurse -ErrorAction Continue
+    . gem/ci/build.ps1
+    Clear-ContainerBuilds
   displayName: Container Cleanup
   timeoutInMinutes: 3
   condition: always()
