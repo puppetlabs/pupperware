@@ -49,7 +49,8 @@ function Build-Container(
     $Context = "docker/$Name",
     $Version = (Get-ContainerVersion),
     $Vcs_ref = $(git rev-parse HEAD),
-    $Pull = $true)
+    $Pull = $true,
+    $AdditionalOptions = @())
 {
     $build_date = (Get-Date).ToUniversalTime().ToString('o')
     $docker_args = @(
@@ -59,7 +60,7 @@ function Build-Container(
         '--build-arg', "namespace=$Namespace",
         '--file', "$Dockerfile",
         '--tag', "$Namespace/${Name}:$Version"
-    )
+    ) + $AdditionalOptions
 
     if ($Pull) {
         $docker_args += '--pull'
