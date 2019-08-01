@@ -288,7 +288,7 @@ module SpecHelpers
   end
 
   # @deprecated - remove method once all callers are updated
-  def wait_on_puppetdb_status(seconds = 240)
+  def wait_on_puppetdb_status(seconds = 300)
     wait_on_service_health('puppetdb', seconds)
   end
 
