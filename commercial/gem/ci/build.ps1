@@ -46,7 +46,9 @@ function Build-Container(
     $Name,
     $Namespace = 'puppet',
     $Dockerfile = "docker/$Name/Dockerfile",
-    $Context = "docker/$Name",
+    # Context alias set for backward compatibility, but deprecated
+    [Alias('Context')]
+    $PathOrUri = "docker/$Name",
     $Version = (Get-ContainerVersion),
     $Vcs_ref = $(git rev-parse HEAD),
     $Pull = $true,
@@ -66,9 +68,10 @@ function Build-Container(
         $docker_args += '--pull'
     }
 
-    Write-Host "docker build $docker_args $Context"
+    Write-Host "docker build $docker_args $PathOrUri"
 
-    docker build $docker_args $Context
+    # https://docs.docker.com/engine/reference/commandline/build/
+    docker build $docker_args $PathOrUri
 }
 
 # set an Azure variable for temp volumes root
