@@ -236,21 +236,21 @@ module SpecHelpers
   # Postgres Helpers
   ######################################################################
 
-  def count_postgres_database(database)
-    cmd = "exec -T postgres psql -t --username=puppetdb --command=\"SELECT count(datname) FROM pg_database where datname = '#{database}'\""
+  def count_postgres_database(database, service = 'postgres')
+    cmd = "exec -T #{service} psql -t --username=puppetdb --command=\"SELECT count(datname) FROM pg_database where datname = '#{database}'\""
     docker_compose(cmd)[:stdout].strip
   end
 
-  def wait_on_postgres_db(database, seconds = 240)
+  def wait_on_postgres_db(database = 'puppetdb', seconds = 240, service = 'postgres')
     return retry_block_up_to_timeout(seconds) do
-      count_postgres_database('puppetdb') == '1' ? '1' :
+      count_postgres_database(database, service) == '1' ? '1' :
         raise("database #{database} never created")
     end
   end
 
-  def get_postgres_extensions
+  def get_postgres_extensions(service: 'postgres')
     return retry_block_up_to_timeout(30) do
-      query = 'exec -T postgres psql --username=puppetdb --command="SELECT * FROM pg_extension"'
+      query = "exec -T #{service} psql --username=puppetdb --command=\"SELECT * FROM pg_extension\""
       extensions = docker_compose(query)[:stdout].chomp
       raise('failed to retrieve extensions') if extensions.empty?
       STDOUT.puts("retrieved extensions: #{extensions}")
@@ -295,7 +295,7 @@ module SpecHelpers
   ######################################################################
   # PE Console Services Helper
   ######################################################################
-  def unrevoke_console_admin_user(postgres_container_name="postgres")
+  def unrevoke_console_admin_user(postgres_container_name = "postgres")
     query = "exec -T #{postgres_container_name} psql --username=puppetdb --dbname=pe-rbac --command \"UPDATE subjects SET is_revoked = 'f' WHERE login='admin';\""
     output = docker_compose(query)[:stdout].chomp
     raise('failed to unrevoke the admin account') if ! output.eql? "UPDATE 1"
@@ -390,9 +390,9 @@ module SpecHelpers
   end
 
   # agent_name is the fully qualified name of the node
-  def clean_certificate(agent_name)
+  def clean_certificate(agent_name, service: 'puppet')
     STDOUT.puts "cleaning cert for #{agent_name}"
-    result = docker_compose("exec -T puppet puppetserver ca clean --certname #{agent_name}")
+    result = docker_compose("exec -T #{service} puppetserver ca clean --certname #{agent_name}")
     return result[:status].exitstatus
   end
 
@@ -438,10 +438,10 @@ module SpecHelpers
     end
   end
 
-  def wait_for_pxp_agent_to_connect()
+  def wait_for_pxp_agent_to_connect(service: 'puppet-agent')
     puts "Waiting for the puppet-agent's pxp-agent to connect to the pe-orchestration-service"
     return retry_block_up_to_timeout(100) do
-      command = 'puppet-agent cat /var/log/puppetlabs/pxp-agent/pxp-agent.log'
+      command = "#{service} cat /var/log/puppetlabs/pxp-agent/pxp-agent.log"
       output = docker_compose("exec -T #{command}")
       raise('pxp-agent has not connected after 180 seconds') if !output[:stdout].include?('Starting the monitor task')
     end
