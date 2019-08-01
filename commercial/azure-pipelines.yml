@@ -52,7 +52,7 @@ steps:
 
 - powershell: |
     . gem/ci/build.ps1
-    Clear-ContainerBuilds
-  displayName: Container Cleanup
+    Clear-BuildState
+  displayName: Build Cleanup
   timeoutInMinutes: 3
   condition: always()

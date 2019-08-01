@@ -104,6 +104,44 @@ function Invoke-ContainerTest(
     Pop-Location
 }
 
+# removes docker compose volumes / networks
+# deletes any allocated builds from ENV:VOLUME_ROOT
+# removes unused containers, and prunes images
+function Clear-BuildState(
+    $Name,
+    $Namespace = 'puppet',
+    $OlderThan = [DateTime]::Now.Subtract([TimeSpan]::FromDays(14)),
+    [Switch]
+    $Force = $false
+)
+{
+    Clear-ComposeLeftOvers
+    Remove-ContainerVolumeRoot
+    Clear-ContainerBuilds @PSBoundParameters
+    Clear-DanglingImages
+}
+
+function Clear-ComposeLeftOvers
+{
+    Write-Host "`nPruning Volumes"
+    docker volume prune
+
+    Write-Host "`nPruning Networks"
+    docker network prune
+
+    Write-Host "`nPruning Containers"
+    docker container prune --force
+}
+
+function Remove-ContainerVolumeRoot
+{
+    # delete directory if ENV variable is defined and directory actually exists
+    if (($ENV:VOLUME_ROOT) -and (Test-Path "$ENV:VOLUME_ROOT")) {
+        Write-Host "Cleaning up temporary volume: $ENV:VOLUME_ROOT"
+        Remove-Item $ENV:VOLUME_ROOT -Force -Recurse -ErrorAction Continue
+    }
+}
+
 # removes temporary layers / containers / images used during builds
 # removes $Namespace/$Name images > 14 days old by default
 function Clear-ContainerBuilds(
@@ -114,56 +152,46 @@ function Clear-ContainerBuilds(
     $Force = $false
 )
 {
-    Write-Host 'Pruning Containers'
-    docker container prune --force
+    # given no name, no images to remove
+    if ($Name -eq $null) { return }
 
-    # delete directory if ENV variable is defined and directory actually exists
-    if (($ENV:VOLUME_ROOT) -and (Test-Path "$ENV:VOLUME_ROOT")) {
-        Write-Host "Cleaning up temporary volume: $ENV:VOLUME_ROOT"
-        Remove-Item $ENV:VOLUME_ROOT -Force -Recurse -ErrorAction Continue
-    }
+    Write-Host "`nLooking for ${Namespace}/${Name} image candidates for removal"
 
-    Write-Host "`nPruning Volumes"
-    docker volume prune
-
-    Write-Host "`nPruning Networks"
-    docker network prune
-
-    if ($Name -ne $null)
-    {
-        # this provides example data which ConvertFrom-String infers parsing structure with
-        $template = @'
+    # this provides example data which ConvertFrom-String infers parsing structure with
+    $template = @'
 {Version*:10.2.3*} {ID:5b84704c1d01} {[DateTime]Created:2019-02-07 18:24:51} +0000 GMT
 {Version*:latest} {ID:0123456789ab} {[DateTime]Created:2019-01-29 00:05:33} +0000 GMT
 '@
-        $output = docker images --filter=reference="$Namespace/${Name}" --format "{{.Tag}} {{.ID}} {{.CreatedAt}}"
-        Write-Host @"
+    $output = docker images --filter=reference="$Namespace/${Name}" --format "{{.Tag}} {{.ID}} {{.CreatedAt}}"
+    Write-Host @"
 
 Found $Namespace/${Name} images:
 $($output | Out-String)
 
 "@
 
-        if ($output -eq $null) { return }
+    if ($output -eq $null) { return }
 
-        Write-Host 'Filtering removal candidates...'
-        # docker image prune supports filter until= but not repository like 'puppetlabs/foo'
-        # must use label= style filtering which is a bit more inconvenient
-        # that output is also not user-friendly!
-        # engine doesn't maintain "last used" or "last pulled" metadata, which would be more useful
-        # https://github.com/moby/moby/issues/4237
-        $output |
-          ConvertFrom-String -TemplateContent $template |
-          ? { $_.Created -lt $OlderThan } |
-          # ensure 'latest' are listed first
-          Sort-Object -Property Version -Descending |
-          % {
-            Write-Host "Removing Old $Namespace/${Name} Image $($_.Version) ($($_.ID)) Created On $($_.Created)"
-            $forcecli = if ($Force) { '-f' } else { '' }
-            docker image rm $_.ID $forcecli
-          }
-    }
+    Write-Host 'Filtering removal candidates...'
+    # docker image prune supports filter until= but not repository like 'puppetlabs/foo'
+    # must use label= style filtering which is a bit more inconvenient
+    # that output is also not user-friendly!
+    # engine doesn't maintain "last used" or "last pulled" metadata, which would be more useful
+    # https://github.com/moby/moby/issues/4237
+    $output |
+      ConvertFrom-String -TemplateContent $template |
+      ? { $_.Created -lt $OlderThan } |
+      # ensure 'latest' are listed first
+      Sort-Object -Property Version -Descending |
+      % {
+        Write-Host "Removing Old $Namespace/${Name} Image $($_.Version) ($($_.ID)) Created On $($_.Created)"
+        $forcecli = if ($Force) { '-f' } else { '' }
+        docker image rm $_.ID $forcecli
+      }
+}
 
+function Clear-DanglingImages
+{
     Write-Host "`nPruning Dangling Images"
     docker image prune --filter "dangling=true" --force
 }
