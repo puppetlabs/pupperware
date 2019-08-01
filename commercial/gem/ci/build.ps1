@@ -17,7 +17,9 @@ function Get-ContainerVersion
         git fetch origin 'refs/tags/*:refs/tags/*'
     }
 
-    (git describe) -replace '-.*', ''
+    $gitver = git describe
+    if ($LASTEXITCODE -ne 0) { return '0.0.0' }
+    $gitver -replace '-.*', ''
 }
 
 # only need to specify -Name or -Path when calling
@@ -89,8 +91,11 @@ function Invoke-ContainerTest(
     Push-Location (Split-Path "$Specs")
     $specdir = Split-Path -Leaf "$Specs"
 
-    $ENV:PUPPET_TEST_DOCKER_IMAGE = "$Namespace/${Name}:$Version"
-    Write-Host "Testing against image: ${ENV:PUPPET_TEST_DOCKER_IMAGE}"
+    if ($Name -ne $null)
+    {
+        $ENV:PUPPET_TEST_DOCKER_IMAGE = "$Namespace/${Name}:$Version"
+        Write-Host "Testing against image: ${ENV:PUPPET_TEST_DOCKER_IMAGE}"
+    }
     bundle exec rspec --version
 
     Write-Host "bundle exec rspec --options $Options $specdir"

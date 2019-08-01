@@ -37,9 +37,8 @@ steps:
   name: test_prepare
 
 - powershell: |
-    Write-Host 'Executing Pupperware specs'
-    bundle exec rspec --version
-    bundle exec rspec spec --fail-fast
+    . gem/ci/build.ps1
+    Invoke-ContainerTest -Specs spec
   displayName: Test pupperware
   name: test_pupperware
 
