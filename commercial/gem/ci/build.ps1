@@ -58,7 +58,7 @@ function Build-Container(
         '--build-arg', "vcs_ref=$Vcs_ref",
         '--build-arg', "build_date=$build_date",
         '--build-arg', "namespace=$Namespace",
-        '--file', "$Dockerfile",
+        '--file', $Dockerfile,
         '--tag', "$Namespace/${Name}:$Version"
     ) + $AdditionalOptions
 
@@ -89,8 +89,8 @@ function Invoke-ContainerTest(
     # NOTE our shared `docker_compose` Ruby method assumes the
     # docker-compose.yml files are in the current working directory,
     # so we assume they're in the same directory as the specdir
-    Push-Location (Split-Path "$Specs")
-    $specdir = Split-Path -Leaf "$Specs"
+    Push-Location (Split-Path $Specs)
+    $specdir = Split-Path -Leaf $Specs
 
     if ($Name -ne $null)
     {
@@ -137,7 +137,7 @@ function Clear-ComposeLeftOvers
 function Remove-ContainerVolumeRoot
 {
     # delete directory if ENV variable is defined and directory actually exists
-    if (($ENV:VOLUME_ROOT) -and (Test-Path "$ENV:VOLUME_ROOT")) {
+    if (($ENV:VOLUME_ROOT) -and (Test-Path $ENV:VOLUME_ROOT)) {
         Write-Host "Cleaning up temporary volume: $ENV:VOLUME_ROOT"
         Remove-Item $ENV:VOLUME_ROOT -Force -Recurse -ErrorAction Continue
     }
