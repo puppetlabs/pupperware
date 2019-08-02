@@ -8,9 +8,9 @@ pr:
     - '*'
 
 pool:
-  # self-hosted agent on Windows 10 1709 environment
+  # self-hosted agent on Windows 10 1903 environment
   # includes newer Docker engine with LCOW enabled, new build of LCOW image
-  # includes Ruby 2.5, Go 1.10, Node.js 10.10, hadolint
+  # includes Ruby 2.5, Go 1.10, Node.js 10.10
   name: Internal LCOW
 
 variables:
@@ -20,92 +20,43 @@ steps:
 - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
   clean: true  # whether to fetch clean each time
 - powershell: |
-    $line = '=' * 80
-    Write-Host "$line`nWindows`n$line`n"
-    Get-ComputerInfo |
-      select WindowsProductName, WindowsVersion, OsHardwareAbstractionLayer |
-      Out-String |
-      Write-Host
-    #
-    # Azure
-    #
-    $assetTag = Get-WmiObject -class Win32_SystemEnclosure -namespace root\CIMV2 |
-      Select -ExpandProperty SMBIOSAssetTag
+    $gemfile = Join-Path -Path (Get-Location) -ChildPath 'Gemfile'
+    $gempath = Join-Path -Path (Get-Location) -ChildPath '.bundle/gems'
+    bundle config --local gemfile $gemfile
+    bundle config --local path $gempath
+    bundle install
+  displayName: Fetch Dependencies
+  name: fetch_deps
 
-    # only Azure VMs have this hard-coded DMI value
-    if ($assetTag -eq '7783-7084-3265-9085-8269-3286-77')
-    {
-      Write-Host "`n`n$line`nAzure`n$line`n"
-      Invoke-RestMethod -Headers @{'Metadata'='true'} -URI http://169.254.169.254/metadata/instance?api-version=2017-12-01 -Method Get |
-        ConvertTo-Json -Depth 10 |
-        Write-Host
-    }
-    #
-    # Docker
-    #
-    Write-Host "`n`n$line`nDocker`n$line`n"
-    docker version
-    docker images
-    docker info
-    docker-compose version
-    sc.exe qc docker
-    #
-    # Ruby
-    #
-    Write-Host "`n`n$line`nRuby`n$line`n"
-    ruby --version
-    gem --version
-    gem env
-    bundle --version
-    #
-    # Environment
-    #
-    Write-Host "`n`n$line`nEnvironment`n$line`n"
-    Get-ChildItem Env: | % { Write-Host "$($_.Key): $($_.Value)"  }
+- powershell: |
+    . "$(bundle show pupperware)/ci/build.ps1"
+    Write-HostDiagnostics
   displayName: Diagnostic Host Information
   name: hostinfo
 
 - powershell: |
-    bundle install --with test --path '.bundle/gems'
-    # set an Azure variable for temp volumes root
-    $tempVolumeRoot = Join-Path -Path $ENV:TEMP -ChildPath ([System.IO.Path]::GetRandomFileName())
-    Write-Host "##vso[task.setvariable variable=VOLUME_ROOT]$tempVolumeRoot"
+    . "$(bundle show pupperware)/ci/build.ps1"
+    Initialize-TestEnv
   displayName: Prepare Test Environment
   name: test_prepare
 
 - powershell: |
-    Write-Host 'Writing compose config to disk'
-    $content = @"
-    VOLUME_ROOT=$ENV:VOLUME_ROOT
-    "@
-    $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
-    [System.IO.File]::WriteAllLines(".env", $content, $Utf8NoBomEncoding)
-    Get-Content -Path '.env'
-    Write-Host 'Executing Pupperware specs'
-    bundle exec rspec --version
-    bundle exec rspec spec --fail-fast
-  displayName: Test pupperware
-  name: test_pupperware
+    . "$(bundle show pupperware)/ci/build.ps1"
+    Invoke-ContainerTest -Specs spec
+  displayName: Test $(COMPOSE_PROJECT_NAME)
+  name: test
 
 - task: PublishTestResults@2
-  displayName: Publish pupperware test results
+  displayName: Publish $(COMPOSE_PROJECT_NAME) test results
   inputs:
     testResultsFormat: 'JUnit'
     testResultsFiles: 'TEST-rspec.xml'
-    testRunTitle: pupperware Test Results
+    testRunTitle: $(COMPOSE_PROJECT_NAME) Test Results
   condition: always()
 
 - powershell: |
-    Write-Host 'Pruning containers'
-    docker container prune --force
-    Write-Host 'Pruning images'
-    docker image prune --filter "dangling=true" --force
-    Write-Host "Pruning Volumes"
-    docker volume prune
-    Write-Host "Pruning Networks"
-    docker network prune
-    Write-Host "Cleaning up temporary volume: $ENV:VOLUME_ROOT"
-    Remove-Item $ENV:VOLUME_ROOT -Force -Recurse -ErrorAction Continue
-  displayName: Container Cleanup
+    . "$(bundle show pupperware)/ci/build.ps1"
+    Clear-BuildState
+  displayName: Build Cleanup
   timeoutInMinutes: 3
   condition: always()
