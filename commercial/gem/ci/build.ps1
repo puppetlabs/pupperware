@@ -17,8 +17,13 @@ function Get-ContainerVersion
         git fetch origin 'refs/tags/*:refs/tags/*'
     }
 
-    $gitver = git describe
-    if ($LASTEXITCODE -ne 0) { return '0.0.0' }
+    # in a repo with no tags, --always returns a 8 character SHA
+    # when at a specific tag, we get just that number like 2019.2.0.9
+    # otherwise we get something like 2019.1.0.93-6-g4c72515
+    $gitver = git describe --always
+    # most Dockerfiles *don't* build from source, and need
+    # this version to find packages, so remove the -#-gXXXXXX portion
+    # for repos without tags like pupperware, nothing is built, so short SHA is fine
     $gitver -replace '-.*', ''
 }
 
