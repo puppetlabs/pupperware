@@ -19,15 +19,22 @@ setup_login() {
         -c "UPDATE subjects SET is_revoked = 'f' WHERE login='admin' AND is_revoked = 't'"
 }
 
-try_setup_until_succeeds() {
+try_until_success_or_timeout() {
+    sleeptime=2
+    timewaited=0
+    timeout=600 # 10 minutes
     while true; do
+        if [ $timewaited -ge $timeout ]; then
+            echo "Admin login not created after $timeout seconds" >&2
+            break
+        fi
         if [ "$(setup_login)" = "UPDATE 1" ]; then
             echo "Admin login successfully created" >&2
             break
-        else
-            sleep 2
         fi
+        sleep $sleeptime
+        timewaited=$((timewaited+sleeptime))
     done
 }
 
-try_setup_until_succeeds &
+try_until_success_or_timeout &
