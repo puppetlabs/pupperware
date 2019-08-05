@@ -4,6 +4,7 @@ ARG version
 ARG vcs_ref
 ARG build_date
 
+ENV PGDATA /pgdata
 ENV POSTGRES_PASSWORD puppetdb
 ENV POSTGRES_USER puppetdb
 ENV POSTGRES_DB puppetdb
