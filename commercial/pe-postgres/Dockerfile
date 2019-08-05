@@ -8,7 +8,13 @@ ENV POSTGRES_PASSWORD puppetdb
 ENV POSTGRES_USER puppetdb
 ENV POSTGRES_DB puppetdb
 ENV SSLDIR /etc/postgresql/ssl
+ENV SSLDIR_UID 999
+ENV SSLDIR_GID 999
 ENV CERTNAME postgres
+ENV CONSUL_ENABLED false
+ENV CONSUL_HOSTNAME consul
+ENV CONSUL_PORT 8500
+ENV PUPPETSERVER_HOSTNAME puppet
 ENV PE_CONSOLE_SERVICES_CERTNAME pe-console-services
 ENV PE_ORCHESTRATION_SERVICES_CERTNAME pe-orchestration-services
 
@@ -24,10 +30,14 @@ LABEL org.label-schema.maintainer="Puppet Release Team <release@puppet.com>" \
       org.label-schema.schema-version="1.0" \
       org.label-schema.dockerfile="/Dockerfile"
 
+ENV PACKAGES curl openssl ca-certificates gettext
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gettext && \
+    apt-get install -y --no-install-recommends $PACKAGES && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+ADD https://raw.githubusercontent.com/puppetlabs/pupperware/8cdc056be09c44ed1ba96f963d71bd074d063b17/shared/ssl.sh /ssl.sh
+RUN chmod 555 /ssl.sh
 
 COPY config /etc/postgresql/config
 RUN chmod 777 /etc/postgresql/config
