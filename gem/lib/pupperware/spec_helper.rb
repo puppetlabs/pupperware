@@ -368,9 +368,8 @@ module SpecHelpers
   # PE Bolt Server Helpers
   ######################################################################
 
-  def curl_job_number(job_number)
+  def curl_job_number(job_number, timeout = 30)
     #Wait for 30 seconds for the task to run
-    timeout = 30
     puts "Waiting for the task to run..."
     return retry_block_up_to_timeout(timeout) do
       output = curl('localhost', 443, "api/jobs/#{job_number}").body
@@ -381,14 +380,14 @@ module SpecHelpers
     return output
   end
 
-  def curl_console_task()
+  def curl_console_task(target_nodes)
     uri = URI.parse("https://localhost:443/api/tasks/create")
     request = Net::HTTP::Post.new(uri)
     request.content_type = "application/json"
     request["X-Authentication"] = @rbac_token
     request.body = JSON.dump({
                                "nodes" => [
-                                 "test_sshd.test"
+                                 target_nodes
                                ],
                                "targets" => [
                                  {
@@ -396,7 +395,7 @@ module SpecHelpers
                                    "user" => "root",
                                    "password" => "root",
                                    "hostnames" => [
-                                     "test_sshd.test"
+                                     target_nodes
                                    ]
                                  }
                                ],
