@@ -60,7 +60,6 @@ function Build-Container(
         '--build-arg', "version=$Version",
         '--build-arg', "vcs_ref=$Vcs_ref",
         '--build-arg', "build_date=$build_date",
-        '--build-arg', "namespace=$Namespace",
         '--file', $Dockerfile,
         '--tag', "$Namespace/${Name}:$Version"
     ) + $AdditionalOptions
