@@ -441,8 +441,8 @@ module SpecHelpers
   def wait_for_pxp_agent_to_connect(service: 'puppet-agent')
     puts "Waiting for the puppet-agent's pxp-agent to connect to the pe-orchestration-service"
     return retry_block_up_to_timeout(100) do
-      command = "#{service} cat /var/log/puppetlabs/pxp-agent/pxp-agent.log"
-      output = docker_compose("exec -T #{command}")
+      command = "cat /var/log/puppetlabs/pxp-agent/pxp-agent.log 2> /dev/null"
+      output = docker_compose("exec -T #{service} #{command}")
       raise('pxp-agent has not connected after 180 seconds') if !output[:stdout].include?('Starting the monitor task')
     end
   end
