@@ -365,6 +365,65 @@ module SpecHelpers
   end
 
   ######################################################################
+  # PE Bolt Server Helpers
+  ######################################################################
+
+  def curl_job_number(job_number:, timeout: 30)
+    #Wait for 30 seconds for the task to run
+    puts "Waiting for the task to run..."
+    return retry_block_up_to_timeout(timeout) do
+      output = curl('localhost', 443, "api/jobs/#{job_number}").body
+      puts output
+      output !~ /running/ ? output :
+        raise("Job was still running after #{timeout} seconds")
+    end
+    return output
+  end
+
+  def curl_console_task(target_nodes:)
+    uri = URI.parse("https://localhost:443/api/tasks/create")
+    request = Net::HTTP::Post.new(uri)
+    request.content_type = "application/json"
+    request["X-Authentication"] = @rbac_token
+    request.body = JSON.dump({
+                               "nodes" => [
+                                 target_nodes
+                               ],
+                               "targets" => [
+                                 {
+                                   "transport" => "ssh",
+                                   "user" => "root",
+                                   "password" => "root",
+                                   "hostnames" => [
+                                     target_nodes
+                                   ]
+                                 }
+                               ],
+                               "task" => "service",
+                               "params" => [
+                                 {
+                                   "name" => "action",
+                                   "value" => "status"
+                                 },
+                                 {
+                                   "name" => "name",
+                                   "value" => "sshd"
+                                 }
+                               ]
+                             })
+    req_options = {
+      use_ssl: uri.scheme == "https",
+      verify_mode: OpenSSL::SSL::VERIFY_NONE,
+    }
+
+    response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
+      http.request(request)
+    end
+
+    return response.body
+  end
+
+  ######################################################################
   # Puppetserver Helpers
   ######################################################################
 
