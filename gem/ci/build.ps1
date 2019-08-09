@@ -127,14 +127,20 @@ function Clear-BuildState(
 
 function Clear-ComposeLeftOvers
 {
+    # NOTE these calls need to be in a certain order to make sure
+    # things like volumes for stopped containers are removed.
+    #
+    # We should also consider collapsing all these calls into:
+    #
+    #   docker system prune --volumes --force
+    Write-Host "`nPruning Containers"
+    docker container prune --force
+
     Write-Host "`nPruning Volumes"
     docker volume prune
 
     Write-Host "`nPruning Networks"
     docker network prune
-
-    Write-Host "`nPruning Containers"
-    docker container prune --force
 }
 
 function Remove-ContainerVolumeRoot
