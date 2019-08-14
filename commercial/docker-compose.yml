@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   puppet:
-    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-puppetserver:2019.1.0.92
+    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-puppetserver:kearney-latest
     hostname: puppet.test
     environment:
       - PUPPETDB_HOSTNAME=puppetdb.test
@@ -14,7 +14,7 @@ services:
         aliases:
          - puppet.test
   pe-orchestration-services:
-    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-orchestration-services:2019.1.1.11
+    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-orchestration-services:kearney-latest
     hostname: pe-orchestration-services.test
     environment:
       - PUPPETSERVER_HOSTNAME=puppet.test
@@ -32,7 +32,7 @@ services:
         aliases:
          - pe-orchestration-services.test
   pe-console-services:
-    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-console-services:2019.1.2.0
+    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-console-services:kearney-latest
     hostname: pe-console-services.test
     environment:
       - PUPPETSERVER_HOSTNAME=puppet.test
@@ -53,13 +53,14 @@ services:
         aliases:
           - pe-console-services.test
   puppetdb:
-    image: puppet/puppetdb
+    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-puppetdb:kearney-latest
     hostname: puppetdb.test
     environment:
       - PUPPETSERVER_HOSTNAME=puppet.test
       - PUPPETDB_POSTGRES_HOSTNAME=postgres.test
       - PUPPETDB_PASSWORD=puppetdb
       - PUPPETDB_USER=puppetdb
+      - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
     ports:
       - 8080
       - 8081
