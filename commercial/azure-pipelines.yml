@@ -17,7 +17,7 @@ variables:
   COMPOSE_PROJECT_NAME: pupperware
 
 workspace:
-  clean: all
+  clean: resources
 
 steps:
 - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
