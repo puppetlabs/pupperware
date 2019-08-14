@@ -259,40 +259,6 @@ module SpecHelpers
   end
 
   ######################################################################
-  # PuppetDB Helpers
-  ######################################################################
-
-  # @deprecated - remove method once all callers are updated
-  def get_puppetdb_state
-    # make sure PDB container hasn't stopped
-    get_service_container('puppetdb', 5)
-    # now query its status endpoint
-    pdb_uri = URI::join(get_service_base_uri('puppetdb', 8080), '/status/v1/services/puppetdb-status')
-    response = Net::HTTP.get_response(pdb_uri)
-    STDOUT.puts "retrieved raw puppetdb status: #{response.body}"
-    case response
-      when Net::HTTPSuccess then
-        return JSON.parse(response.body)['state']
-      else
-        return ''
-    end
-  rescue Errno::ECONNREFUSED, Errno::ECONNRESET, EOFError => e
-    STDOUT.puts "PDB not accepting connections yet #{pdb_uri}: #{e}"
-    return ''
-  rescue JSON::ParserError
-    STDOUT.puts "Invalid JSON response: #{e}"
-    return ''
-  rescue
-    STDOUT.puts "Failure querying #{pdb_uri}: #{$!}"
-    raise
-  end
-
-  # @deprecated - remove method once all callers are updated
-  def wait_on_puppetdb_status(seconds = 300)
-    wait_on_service_health('puppetdb', seconds)
-  end
-
-  ######################################################################
   # PE Console Services Helper
   ######################################################################
   def unrevoke_console_admin_user(postgres_container_name = "postgres")
@@ -303,20 +269,6 @@ module SpecHelpers
 
   def curl_pe_console_services(end_point)
     curl('localhost', 4433, end_point).body
-  end
-
-  def get_pe_console_services_status()
-    curl_pe_console_services("status/v1/simple")
-  end
-
-  def wait_for_pe_console_services()
-    # 5 minute timeout to wait for a fresh "install" of PE
-    timeout = 5 * 60
-    puts "Waiting for pe-console-services to be ready ..."
-    return retry_block_up_to_timeout(timeout) do
-      get_pe_console_services_status == 'running' ? 'running' :
-        raise("pe-console-services was not ready after #{timeout} seconds")
-    end
   end
 
   def generate_rbac_token()
@@ -345,23 +297,6 @@ module SpecHelpers
 
   def curl_pe_orchestration_services(end_point)
     curl('localhost', 8143, end_point).body
-  end
-
-  def get_pe_orchestration_services_status()
-    curl_pe_orchestration_services("orchestrator/v1")
-  end
-
-  def wait_for_pe_orchestration_services()
-    wait_for_pe_console_services()
-    unrevoke_console_admin_user()
-    generate_rbac_token()
-    timeout = 2 * 60
-    puts "Waiting for pe-orchestration-services to be ready ..."
-    return retry_block_up_to_timeout(timeout) do
-      unless get_pe_orchestration_services_status.include? "Application Management API"
-        raise("pe-orchestration-services was not ready after #{timeout} seconds")
-      end
-    end
   end
 
   ######################################################################
@@ -426,27 +361,6 @@ module SpecHelpers
   ######################################################################
   # Puppetserver Helpers
   ######################################################################
-
-  # @deprecated - remove method once all callers are updated
-  # Waits for the container healthcheck to return 'healthy'
-  # See also: `wait_for_puppetserver`
-  def wait_on_puppetserver_status(seconds = 180, service_name = 'puppet')
-    wait_on_service_health(service_name, seconds)
-  end
-
-  def get_puppetserver_status()
-    curl('localhost', 8140, 'status/v1/simple').body
-  end
-
-  # Waits for the `status/v1/simple` endpoint to return 'running'
-  # See also: `wait_on_puppetserver_status`
-  def wait_for_puppetserver(timeout: 180)
-    puts "Waiting for puppetserver to be ready ..."
-    return retry_block_up_to_timeout(timeout) do
-      get_puppetserver_status == 'running' ? 'running' :
-        raise("puppetserver was not ready after #{timeout} seconds")
-    end
-  end
 
   # agent_name is the fully qualified name of the node
   def clean_certificate(agent_name, service: 'puppet')
