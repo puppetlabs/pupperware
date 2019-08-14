@@ -18,6 +18,7 @@ ENV CONSUL_PORT 8500
 ENV PUPPETSERVER_HOSTNAME puppet
 ENV PE_CONSOLE_SERVICES_CERTNAME pe-console-services
 ENV PE_ORCHESTRATION_SERVICES_CERTNAME pe-orchestration-services
+ENV PUPPETDB_CERTNAME pe-puppetdb
 
 LABEL org.label-schema.maintainer="Puppet Release Team <release@puppet.com>" \
       org.label-schema.vendor="Puppet" \
