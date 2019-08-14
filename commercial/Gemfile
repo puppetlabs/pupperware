@@ -1,11 +1,8 @@
-source ENV['GEM_SOURCE'] || "https://rubygems.org"
+source 'https://rubygems.org'
 
-group(:test) do
-  gem 'json'
-  gem 'rspec', '~> 3.0'
-  gem 'rspec_junit_formatter'
-  gem 'pupperware',
+gem 'rspec'
+gem 'rspec_junit_formatter'
+gem 'pupperware',
     :git => 'https://github.com/puppetlabs/pupperware.git',
-    :ref => 'master',
+    :branch => 'master',
     :glob => 'gem/*.gemspec'
-end

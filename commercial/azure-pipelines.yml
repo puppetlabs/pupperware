@@ -14,7 +14,7 @@ pool:
   name: Internal LCOW
 
 variables:
-  COMPOSE_PROJECT_NAME: pupperware
+  COMPOSE_PROJECT_NAME: pupperware-commercial
 
 workspace:
   clean: resources
@@ -45,15 +45,17 @@ steps:
 
 - powershell: |
     . "$(bundle show pupperware)/ci/build.ps1"
-    Invoke-ContainerTest -Specs spec
+    Write-Host "Pulling images..."
+    docker-compose pull --quiet
+    bundle exec rspec spec/
   displayName: Test $(COMPOSE_PROJECT_NAME)
   name: test
 
 - task: PublishTestResults@2
-  displayName: Publish $(COMPOSE_PROJECT_NAME) test results
+  displayName: Publish $(COMPOSE_PROJECT_NAME) Test Results
   inputs:
     testResultsFormat: 'JUnit'
-    testResultsFiles: 'TEST-rspec.xml'
+    testResultsFiles: 'TEST-*.xml'
     testRunTitle: $(COMPOSE_PROJECT_NAME) Test Results
   condition: always()
 
