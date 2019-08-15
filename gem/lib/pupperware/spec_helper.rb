@@ -215,6 +215,11 @@ module SpecHelpers
     inspect_container(container, '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
   end
 
+  # this only works when a container has a single network
+  def get_container_network(container)
+    inspect_container(container, '{{range .NetworkSettings.Networks}}{{.NetworkID}}{{end}}')
+  end
+
   def emit_log(container)
     container_name = get_container_name(container)
     STDOUT.puts("#{'*' * 80}\nContainer logs for #{container_name} / #{container}\n#{'*' * 80}\n")
@@ -224,6 +229,8 @@ module SpecHelpers
 
   def teardown_container(container)
     STDOUT.puts("Tearing down test container")
+    network_id = get_container_network(container)
+    run_command("docker network disconnect -f #{network_id} #{container}")
     run_command("docker container rm --force #{container}")
   end
 
