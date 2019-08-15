@@ -18,7 +18,7 @@ describe 'The docker-compose file works' do
     # since search domains are not appended to /etc/resolv.conf
     @test_agent = "puppet_test#{Random.rand(1000)}.#{ENV['DOMAIN'] || 'internal'}"
     @timestamps = []
-    status = run_command('docker-compose --no-ansi version')[:status]
+    status = docker_compose('version')[:status]
     if status.exitstatus != 0
       fail "`docker-compose` must be installed and available in your PATH"
     end
@@ -26,7 +26,7 @@ describe 'The docker-compose file works' do
     # LCOW requires directories to exist
     create_host_volume_targets(ENV['VOLUME_ROOT'], VOLUMES)
     # ensure all containers are latest versions
-    run_command('docker-compose --no-ansi pull --quiet')
+    docker_compose('pull --quiet')
   end
 
   after(:all) do
@@ -47,7 +47,8 @@ describe 'The docker-compose file works' do
     # https://github.com/docker/for-win/issues/629
     it 'should stop the cluster', :if => File::ALT_SEPARATOR.nil? do
       expect(get_containers()).not_to be_empty
-      run_command('docker-compose --no-ansi down')
+      # don't use shared helper as it removes volumes
+      docker_compose('down')
       expect(get_containers()).to be_empty
     end
 
