@@ -103,6 +103,15 @@ module SpecHelpers
     docker_compose('ps')
   end
 
+  def docker_compose_down()
+    docker_compose('down --volumes')
+    STDOUT.puts("Running containers in compose:")
+    # TODO: use --all when docker-compose fixes https://github.com/docker/compose/issues/6579
+    docker_compose('ps')
+    STDOUT.puts("Running containers in system:")
+    run_command('docker ps --all')
+  end
+
   # Windows requires directories to exist prior, whereas Linux will create them
   def create_host_volume_targets(root, volumes)
     return unless IS_WINDOWS
@@ -160,7 +169,7 @@ module SpecHelpers
       teardown_container(id)
     end
     # still needed to remove network / provide failsafe
-    docker_compose('down --volumes')
+    docker_compose_down()
   end
 
   ######################################################################
