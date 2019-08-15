@@ -96,6 +96,13 @@ module SpecHelpers
                                 #{command_and_args}")
   end
 
+  def docker_compose_up()
+    docker_compose('up --detach')
+    docker_compose('images')
+    # TODO: use --all when docker-compose fixes https://github.com/docker/compose/issues/6579
+    docker_compose('ps')
+  end
+
   # Windows requires directories to exist prior, whereas Linux will create them
   def create_host_volume_targets(root, volumes)
     return unless IS_WINDOWS
