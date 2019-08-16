@@ -8,6 +8,8 @@ require 'openssl'
 module Pupperware
 module SpecHelpers
 
+  class ContainerNotFoundError < StandardError; end
+
   IS_WINDOWS = !!File::ALT_SEPARATOR
 
   def require_test_image()
@@ -48,20 +50,20 @@ module SpecHelpers
     { status: status, stdout: stdout_string }
   end
 
-  def retry_block_up_to_timeout(timeout, &block)
-    ex = nil
+  def retry_block_up_to_timeout(timeout, exit_early_on_error_type: [], raise_custom_error_type: nil, &block)
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
     loop do
       begin
         return yield
-      rescue => e
-        ex = e
-        sleep(1)
-      ensure
+      rescue
+        raise $! if [exit_early_on_error_type].flatten.include?($!.class)
         if (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) > timeout
-          raise Timeout::Error.new(ex)
+          raise raise_custom_error_type.nil? ?
+            Timeout::Error.new :
+            raise_custom_error_type.new
         end
+        sleep(1)
       end
     end
   end
@@ -129,8 +131,8 @@ module SpecHelpers
     ids.lines.map(&:chomp)
   end
 
-  def get_service_container(service, timeout = 120)
-    return retry_block_up_to_timeout(timeout) do
+  def get_service_container(service, timeout = 5)
+    return retry_block_up_to_timeout(timeout, raise_custom_error_type: ContainerNotFoundError) do
       container = docker_compose("ps --quiet #{service}")[:stdout].chomp
       if container.empty?
         raise "docker-compose never started a service named '#{service}' in #{timeout} seconds"
@@ -208,8 +210,12 @@ module SpecHelpers
 
   def wait_on_service_health(service, seconds = 180)
     # services with healthcheck should deal with their own timeouts
-    return retry_block_up_to_timeout(seconds) do
-      status = get_container_status(get_service_container(service))
+    return retry_block_up_to_timeout(seconds, exit_early_on_error_type: ContainerNotFoundError) do
+      service_container = get_service_container(service)
+      if get_container_state(service_container) == 'exited'
+        raise ContainerNotFoundError.new("Service #{service} (container: #{service_container}) has exited")
+      end
+      status = get_container_status(service_container)
       (status == 'healthy' || status == "'healthy'") ? 'healthy' :
         raise("#{service} is not healthy - currently #{status}")
     end
