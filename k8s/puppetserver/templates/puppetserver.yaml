@@ -152,7 +152,6 @@ data:
     :backends:
       - yaml
     :hierarchy:
-      - role/%{::role}
       - common
     :yaml:
       :datadir: /hiera
