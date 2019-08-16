@@ -259,11 +259,13 @@ module SpecHelpers
   # Postgres Helpers
   ######################################################################
 
+  # @deprecated
   def count_postgres_database(database, service = 'postgres')
     cmd = "exec -T #{service} psql -t --username=puppetdb --command=\"SELECT count(datname) FROM pg_database where datname = '#{database}'\""
     docker_compose(cmd)[:stdout].strip
   end
 
+  # @deprecated
   def wait_on_postgres_db(database = 'puppetdb', seconds = 240, service = 'postgres')
     return retry_block_up_to_timeout(seconds) do
       count_postgres_database(database, service) == '1' ? '1' :

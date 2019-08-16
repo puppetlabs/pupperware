@@ -3,7 +3,7 @@ shared_context "running_cluster", :shared_context => :metadata do
 
   before(:each) do
     docker_compose_up()
-    wait_on_postgres_db('puppetdb')
+    wait_on_service_health('postgres', seconds = 240)
   end
 end
 
