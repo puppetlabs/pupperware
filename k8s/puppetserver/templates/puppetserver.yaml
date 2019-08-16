@@ -52,6 +52,19 @@ spec:
     requests:
       storage: 100Mi
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: puppet-hiera-claim
+  labels:
+    app: pupperware
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -95,7 +108,7 @@ spec:
               mountPath: /etc/puppetlabs/puppet/
             - name: puppet-serverdata-storage
               mountPath: /opt/puppetlabs/server/data/puppetserver/
-            - name: git-repo
+            - name: puppet-hiera-storage
               mountPath: /hiera
             - name: hiera-volume
               mountPath: /etc/puppetlabs/puppet/hiera.yaml
@@ -116,8 +129,9 @@ spec:
         - name: puppet-serverdata-storage
           persistentVolumeClaim:
             claimName: puppet-serverdata-claim
-        - name: git-repo
-          emptyDir: {}
+        - name: puppet-hiera-storage
+          persistentVolumeClaim:
+            claimName: puppet-hiera-claim
         - name: hiera-volume
           configMap:
             name: hiera-config
@@ -141,7 +155,7 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
           volumeMounts:
-            - name: git-repo
+            - name: puppet-hiera-storage
               mountPath: /hiera
 ---
 apiVersion: v1
@@ -165,3 +179,29 @@ data:
       repositories:
         remote: {{ .Values.puppeturl | quote }}
         basedir: '/etc/puppetlabs/code/environments'
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: hiera-git-pull
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: git
+            image: alpine/git
+            args:
+            - -C
+            - /hiera
+            - pull
+            volumeMounts:
+              - name: puppet-hiera-storage
+                mountPath: /hiera
+          restartPolicy: OnFailure
+          volumes:
+            - name: puppet-hiera-storage
+              persistentVolumeClaim:
+                claimName: puppet-hiera-claim
