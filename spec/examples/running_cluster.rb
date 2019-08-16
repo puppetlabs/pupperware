@@ -2,7 +2,7 @@ shared_context "running_cluster", :shared_context => :metadata do
   include Pupperware::SpecHelpers
 
   before(:each) do
-    run_command('docker-compose --no-ansi up --detach')
+    docker_compose_up()
     wait_on_postgres_db('puppetdb')
   end
 end

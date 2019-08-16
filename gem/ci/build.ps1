@@ -123,6 +123,7 @@ function Clear-BuildState(
     Remove-ContainerVolumeRoot
     Clear-ContainerBuilds @PSBoundParameters
     Clear-DanglingImages
+    Write-DockerResourceInformation
 }
 
 function Clear-ComposeLeftOvers
@@ -204,6 +205,25 @@ function Clear-DanglingImages
 {
     Write-Host "`nPruning Dangling Images"
     docker image prune --filter "dangling=true" --force
+}
+
+function Write-DockerResourceInformation()
+{
+    $line = '=' * 80
+
+    Write-Host "`nExisting Docker Resources"
+
+    Write-Host "$line`nContainers`n$line`n"
+    docker container ps --all
+
+    Write-Host "$line`nImages`n$line`n"
+    docker image ls
+
+    Write-Host "$line`nNetworks`n$line`n"
+    docker network ls
+
+    Write-Host "$line`nVolumes`n$line`n"
+    docker volume ls
 }
 
 function Write-HostDiagnostics()
