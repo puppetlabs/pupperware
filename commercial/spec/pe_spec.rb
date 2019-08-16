@@ -4,17 +4,19 @@ include Pupperware::SpecHelpers
 
 RSpec.configure do |c|
   c.before(:suite) do
+    teardown_cluster()
     # LCOW requires directories to exist
     # VOLUMES = ['postgres-data', 'postgres-ssl']
     # create_host_volume_targets(ENV['VOLUME_ROOT'], VOLUMES)
-    docker_compose('up --detach')
-    wait_for_pe_orchestration_services
+    docker_compose_up()
+    timeout = 8 * 60
+    wait_on_service_health('pe-orchestration-services', timeout)
     wait_for_pxp_agent_to_connect
   end
 
   c.after(:suite) do
     emit_logs
-    teardown_cluster
+    teardown_cluster()
   end
 end
 
