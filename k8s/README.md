@@ -1,5 +1,13 @@
 # pupperware in Kubernetes
 
+## Requirements
+
+The following binaries are required:
+https://github.com/roboll/helmfile/releases
+https://github.com/helm/helm/releases
+https://github.com/databus23/helm-diff
+https://kubernetes.io/docs/tasks/tools/install-kubectl
+
 **EXPERIMENTAL**
 
 The k8s YAML files contained within were created with Minikube & Docker for Mac in mind, should be considered experimental, and are not appropriate for most deployments.
@@ -20,7 +28,9 @@ running Kubernetes via Docker for Mac, this will be the FQDN of your Mac. Note t
 Then create the Pupperware resources:
 
 ```bash
-$ kubectl create -f k8s/secrets.yaml -f k8s/postgres.yaml -f k8s/puppetserver.yaml -f k8s/puppetdb.yaml
+$ export HIERADATA_URL=https://github.com/SOMEUSER/hieradata.git
+$ export PUPPETURL=https://github.com/SOMEUSER/puppet.git
+$ helmfile -f puppet.yaml --interactive apply
 ```
 
 ### Connecting Nodes
@@ -74,9 +84,22 @@ cGFzc3dvcmQxMjM=
 $ kubectl delete -f k8s/secrets.yaml -f k8s/postgres.yaml -f k8s/puppetserver.yaml -f k8s/puppetdb.yaml
 ```
 
+### Running r10k
+
+The script `k8s/bin/r10k` runs r10k on the puppet server
+
+`./k8s/bin/r10k`
+
+### Puppet agent test
+
+The script `k8s/bin/puppet-agent-test` runs a test agent against a working puppet server
+
+`./k8s/bin/puppet-agent-test`
+
 ## To-Do
 
 - [ ] Create a more realistic service option using the `LoadBalancer` service type and/or Ingress
-- [ ] Provide a mechanism to configure r10k & deploy code
+- [X] Provide a mechanism to configure r10k & deploy code
+- [ ] Provide cron mechanism for r10k command provided externally in bin folder, and hiera repo git pull
 - [ ] Create a configuration that uses local volumes to more closely mimic `docker-compose`
 - [ ] Use k8s' functions to scale out the infrastructure with additional compile masters (difficult)

@@ -1,0 +1,10 @@
+---
+releases:
+- name: "puppetserver"
+  namespace: "default"
+  chart: "puppetserver"
+  version: "0.0.1"
+  wait: false
+  values:
+  - hieradataurl: {{ requiredEnv "HIERADATA_URL" }}
+    puppeturl: {{ requiredEnv "PUPPETURL" }}

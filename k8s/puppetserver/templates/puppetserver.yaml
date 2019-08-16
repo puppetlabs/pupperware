@@ -93,6 +93,17 @@ spec:
               mountPath: /etc/puppetlabs/puppet/
             - name: puppet-serverdata-storage
               mountPath: /opt/puppetlabs/server/data/puppetserver/
+            - name: git-repo
+              mountPath: /hiera
+            - name: hiera-volume
+              mountPath: /etc/puppetlabs/puppet/hiera.yaml
+              subPath: hiera.yaml
+            - name: r10k-volume
+              mountPath: /etc/puppetlabs/puppet/r10k.yaml
+              subPath: r10k.yaml
+            - name: manifests-volume
+              mountPath: /etc/puppetlabs/puppet/manifests/site.pp
+              subPath: site.pp
       volumes:
         - name: puppet-code-storage
           persistentVolumeClaim:
@@ -103,3 +114,68 @@ spec:
         - name: puppet-serverdata-storage
           persistentVolumeClaim:
             claimName: puppet-serverdata-claim
+        - name: git-repo
+          emptyDir: {}
+        - name: hiera-volume
+          configMap:
+            name: hiera-config
+        - name: r10k-volume
+          configMap:
+            name: r10k-config
+        - name: manifests-volume
+          configMap:
+            name: manifests-config
+      initContainers:
+        - name: git-clone
+          image: alpine/git
+          args:
+            - clone
+            - --single-branch
+            - --
+            - {{ .Values.hieradataurl }}
+            - /hiera
+          securityContext:
+            runAsUser: 1
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: git-repo
+              mountPath: /hiera
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hiera-config
+  namespace: default
+data:
+  hiera.yaml: |
+    :backends:
+      - yaml
+    :hierarchy:
+      - role/%{::role}
+      - common
+    :yaml:
+      :datadir: /hiera
+      :extension: 'yaml'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: manifests-config
+  namespace: default
+data:
+  site.pp: |
+    hiera_include('classes')
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: r10k-config
+  namespace: default
+data:
+  r10k.yaml: |
+    :cachedir: '/var/tmp/r10k_cache'
+    sources:
+      repositories:
+        remote: {{ .Values.puppeturl | quote }}
+        basedir: '/etc/puppetlabs/code/environments'
