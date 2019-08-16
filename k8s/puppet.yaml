@@ -8,3 +8,11 @@ releases:
   values:
   - hieradataurl: {{ requiredEnv "HIERADATA_URL" }}
     puppeturl: {{ requiredEnv "PUPPETURL" }}
+    hiera: |-
+      :backends:
+        - yaml
+      :hierarchy:
+        - common
+      :yaml:
+        :datadir: /hiera
+        :extension: 'yaml'
