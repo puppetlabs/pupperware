@@ -70,6 +70,8 @@ spec:
       labels:
         app: pupperware
         svc: puppet
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/hiera.yaml") . | sha256sum }}
     spec:
       hostname: puppet
       containers:
@@ -141,15 +143,6 @@ spec:
           volumeMounts:
             - name: git-repo
               mountPath: /hiera
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: hiera-config
-  namespace: default
-data:
-  hiera.yaml: |-
-{{ .Values.hiera | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
