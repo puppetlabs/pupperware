@@ -11,7 +11,7 @@ spec:
   selector:
     app: pupperware
     svc: puppet
-  type: NodePort
+  type: ClusterIP
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
