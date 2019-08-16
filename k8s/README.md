@@ -35,24 +35,20 @@ $ helmfile -f puppet.yaml --interactive apply
 
 ### Connecting Nodes
 
-Kubernetes will expose the Puppet server port (normally TCP port `8140`) on the Kubernetes node using the `NodePort` service type. By default, the TCP port chosen will range from 30000-32767.
-Refer to the [Kubernetes documentation on NodePort](https://kubernetes.io/docs/concepts/services-networking/service/#nodeport) for more information.
+Kubernetes will expose the Puppet server port (normally TCP port `8140`) on the Kubernetes node using the `ClusterIP` service type. This port should then be proxied via an ingress such as nginx-ingress, with kube port forwarding, or with kpoof for easy local testing.
+kpoof: [kpoof](https://github.com/farmotive/kpoof)
+Refer to the [nginx ingress helm chart](https://github.com/helm/charts/tree/master/stable/nginx-ingress) for more information.
 
 To find the port number, run `kubectl get svc/puppet`:
 
 ```bash
 $ kubectl get svc/puppet
-NAME       TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-puppet     NodePort   10.106.50.178   <none>        8140:32520/TCP   1m
+NAME     TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+puppet   ClusterIP   10.97.242.180   <none>        8140/TCP   18m
 ```
 
-In the example above, the Puppet Server service running on port `8140` has been exposed on the Kubernetes node via port `32520`. Assuming the Kubernetes node's FQDN is
-`myworkstation.domain.net`, the following commands will configure a Puppet agent to communicate successfully to the Puppet Server.
-
-```bash
-$ puppet config set server myworkstation.domain.net
-$ puppet config set masterport 32520
-```
+In the example above, the Puppet Server service running on port `8140` has been exposed on the Kubernetes node via port `8140` internally to the cluster.  Using kpoof we can expose the port externally to the cluster,
+and we can then run the puppet-agent-test script mentioned below to test the puppet agent against our cluster
 
 ## Management
 
@@ -98,8 +94,8 @@ The script `k8s/bin/puppet-agent-test` runs a test agent against a working puppe
 
 ## To-Do
 
-- [ ] Create a more realistic service option using the `LoadBalancer` service type and/or Ingress
+- [X] Create a more realistic service option using the `LoadBalancer` service type and/or Ingress
 - [X] Provide a mechanism to configure r10k & deploy code
-- [ ] Provide cron mechanism for r10k command provided externally in bin folder, and hiera repo git pull
+- [X] Provide cron mechanism for r10k command provided externally in bin folder, and hiera repo git pull
 - [ ] Create a configuration that uses local volumes to more closely mimic `docker-compose`
 - [ ] Use k8s' functions to scale out the infrastructure with additional compile masters (difficult)
