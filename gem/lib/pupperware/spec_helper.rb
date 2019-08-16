@@ -211,7 +211,11 @@ module SpecHelpers
   def wait_on_service_health(service, seconds = 180)
     # services with healthcheck should deal with their own timeouts
     return retry_block_up_to_timeout(seconds, exit_early_on_error_type: ContainerNotFoundError) do
-      status = get_container_status(get_service_container(service))
+      service_container = get_service_container(service)
+      if get_container_state(service_container) == 'exited'
+        raise ContainerNotFoundError.new("Service #{service} (container: #{service_container}) has exited")
+      end
+      status = get_container_status(service_container)
       (status == 'healthy' || status == "'healthy'") ? 'healthy' :
         raise("#{service} is not healthy - currently #{status}")
     end
