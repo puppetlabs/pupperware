@@ -49,4 +49,12 @@ CMD ["postgres", "-c", "config_file=/etc/postgresql/config/postgresql.conf"]
 
 EXPOSE 5432
 
+# The start-period is just a wild guess how long it takes Postgres to come
+# up in the worst case. The other timing parameters are set so that it
+# takes at most 90s to realize that Postgres has failed.
+# Probe failure during --start-period will not be counted towards the maximum number of retries
+COPY healthcheck.sh /
+RUN chmod +x /healthcheck.sh
+HEALTHCHECK --start-period=300s --interval=10s --timeout=5s --retries=6 CMD ["/healthcheck.sh"]
+
 COPY Dockerfile /
