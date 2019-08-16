@@ -28,8 +28,6 @@ running Kubernetes via Docker for Mac, this will be the FQDN of your Mac. Note t
 Then create the Pupperware resources:
 
 ```bash
-$ export HIERADATA_URL=https://github.com/SOMEUSER/hieradata.git
-$ export PUPPETURL=https://github.com/SOMEUSER/puppet.git
 $ helmfile -f puppet.yaml --interactive apply
 ```
 
