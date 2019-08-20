@@ -29,8 +29,12 @@ module SpecHelpers
   # General Ruby Helpers
   ######################################################################
 
+  # Returns hash with `status`, `stdout`, and `stderr` keys
+  # Use `result[:status].exitstatus` to get the exit code.
+  # You may want to call `.chomp` on the stdout/stderr values.
   def run_command(env = ENV.to_h, command)
     stdout_string = ''
+    stderr_string = ''
     status = nil
 
     Open3.popen3(env, command) do |stdin, stdout, stderr, wait_thread|
@@ -40,14 +44,16 @@ module SpecHelpers
       end
       Thread.new do
         Thread.current.report_on_exception = false
-        stderr.each { |l| STDOUT.puts l }
+        # Write stderr to stdout so it's more visible and shows up
+        # in spec runs even when the tests aren't reading stderr
+        stderr.each { |l| stderr_string << l and STDOUT.puts l }
       end
 
       stdin.close
       status = wait_thread.value
     end
 
-    { status: status, stdout: stdout_string }
+    { status: status, stdout: stdout_string, stderr: stderr_string }
   end
 
   def retry_block_up_to_timeout(timeout, exit_early_on_error_type: [], raise_custom_error_type: nil, &block)
