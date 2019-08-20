@@ -94,7 +94,7 @@ services:
           - puppet-agent.test
     entrypoint: /bin/bash
     command: -c "echo 'waiting for orchestration services to be up' &&
-                 while true; do if curl -k --fail --silent https://pe-orchestration-services.test:8143/status/v1/simple; then break; fi; done &&
+                 while true; sleep 5; do if curl -k --fail --silent https://pe-orchestration-services.test:8143/status/v1/simple; then break; fi; done &&
                  puppet config set server puppet.test &&
                  puppet agent -t &&
                  echo 'starting pxp services' &&
