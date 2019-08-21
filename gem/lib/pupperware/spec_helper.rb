@@ -191,6 +191,13 @@ module SpecHelpers
     return status
   end
 
+  # returns a Ruby object for the Health of a container
+  def get_container_health_details(container)
+    # docker returns string 'null' when there is no health
+    json = inspect_container(container, '{{json .State.Health}}')
+    JSON.parse(json, object_class: OpenStruct)
+  end
+
   def get_container_status(container)
     inspect_container(container, '{{.State.Health.Status}}')
   end
@@ -221,9 +228,13 @@ module SpecHelpers
       if get_container_state(service_container) == 'exited'
         raise ContainerNotFoundError.new("Service #{service} (container: #{service_container}) has exited")
       end
-      status = get_container_status(service_container)
-      (status == 'healthy' || status == "'healthy'") ? 'healthy' :
-        raise("#{service} is not healthy - currently #{status}")
+      health = get_container_health_details(service_container)
+      if (health.Status == 'healthy' || health.Status == "'healthy'")
+        return 'healthy'
+      else
+        log = health.Log.last()
+        raise("#{service} is not healthy - currently #{health.Status}\nExit [#{log.ExitCode}] - #{log.Output}")
+      end
     end
   end
 
