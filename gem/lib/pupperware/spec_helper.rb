@@ -263,8 +263,8 @@ module SpecHelpers
   def emit_log(container)
     container_name = get_container_name(container)
     STDOUT.puts("#{'*' * 80}\nContainer logs for #{container_name} / #{container}\n#{'*' * 80}\n")
-    logs = run_command("docker logs --details --timestamps #{container}")[:stdout]
-    STDOUT.puts(logs)
+    # run_command streams stdout / stderr
+    run_command("docker logs --details --timestamps #{container}")[:stdout]
   end
 
   def teardown_container(container)
