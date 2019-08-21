@@ -4,6 +4,7 @@ require 'net/http'
 require 'open3'
 require 'timeout'
 require 'openssl'
+require 'stringio'
 
 module Pupperware
 module SpecHelpers
@@ -32,7 +33,7 @@ module SpecHelpers
   # Returns hash with `status`, `stdout`, and `stderr` keys
   # Use `result[:status].exitstatus` to get the exit code.
   # You may want to call `.chomp` on the stdout/stderr values.
-  def run_command(env = ENV.to_h, command)
+  def run_command(env = ENV.to_h, command, stream: STDOUT)
     stdout_string = ''
     stderr_string = ''
     status = nil
@@ -40,13 +41,13 @@ module SpecHelpers
     Open3.popen3(env, command) do |stdin, stdout, stderr, wait_thread|
       Thread.new do
         Thread.current.report_on_exception = false
-        stdout.each { |l| stdout_string << l and STDOUT.puts l }
+        stdout.each { |l| stdout_string << l and stream.puts l }
       end
       Thread.new do
         Thread.current.report_on_exception = false
         # Write stderr to stdout so it's more visible and shows up
         # in spec runs even when the tests aren't reading stderr
-        stderr.each { |l| stderr_string << l and STDOUT.puts l }
+        stderr.each { |l| stderr_string << l and stream.puts l }
       end
 
       stdin.close
@@ -101,7 +102,7 @@ module SpecHelpers
     file_arg = File.file?(overrides) ? "--file #{overrides}" : ''
     run_command("docker-compose --file docker-compose.yml #{file_arg} \
                                 --no-ansi \
-                                #{command_and_args}")
+                                #{command_and_args}", stream: StringIO.new)
   end
 
   def docker_compose_up()
@@ -185,9 +186,9 @@ module SpecHelpers
   ######################################################################
 
   def inspect_container(container, query)
-    result = run_command("docker inspect \"#{container}\" --format \"#{query}\"")
+    result = run_command("docker inspect \"#{container}\" --format \"#{query}\"", stream: StringIO.new)
     status = result[:stdout].chomp
-    STDOUT.puts "queried #{query} of #{container}: #{status}"
+    STDOUT.puts "#{container} - #{query} : #{status}\n"
     return status
   end
 
