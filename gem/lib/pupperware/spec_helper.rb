@@ -264,7 +264,7 @@ module SpecHelpers
     container_name = get_container_name(container)
     STDOUT.puts("#{'*' * 80}\nContainer logs for #{container_name} / #{container}\n#{'*' * 80}\n")
     # run_command streams stdout / stderr
-    run_command("docker logs --details --timestamps #{container}")[:stdout]
+    run_command("docker logs --details --timestamps #{container} 2>&1")[:stdout]
   end
 
   def teardown_container(container)
