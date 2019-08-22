@@ -199,6 +199,23 @@ module SpecHelpers
     JSON.parse(json, object_class: OpenStruct)
   end
 
+  def get_container_healthcheck_details(container)
+    # docker returns string 'null' when there is no healthcheck
+    json = inspect_container(container, '{{json .Config.Healthcheck}}')
+    JSON.parse(json, object_class: OpenStruct)
+  end
+
+  def get_container_healthcheck_timeout(container)
+    check = get_container_healthcheck_details(container)
+    return 180 if check.nil?
+
+    nanoseconds_to_seconds = 1000000000
+
+    # container won't be marked unhealthy during start period
+    # then has a max number of retries over given interval before changing from starting to unhealthy
+    ((check.StartPeriod || 0) + (check.Interval * check.Retries)) / nanoseconds_to_seconds
+  end
+
   def get_container_status(container)
     inspect_container(container, '{{.State.Health.Status}}')
   end
@@ -222,10 +239,14 @@ module SpecHelpers
     end
   end
 
-  def wait_on_service_health(service, seconds = 180)
+  def wait_on_service_health(service, seconds = nil)
+    service_container = get_service_container(service)
+    # this always runs after healthcheck timer started, so no need to wait extra time
+    seconds = get_container_healthcheck_timeout(service_container) if seconds.nil?
+    STDOUT.puts("Waiting up to #{seconds} seconds for service #{service} to be healthy...")
+
     # services with healthcheck should deal with their own timeouts
     return retry_block_up_to_timeout(seconds, exit_early_on_error_type: ContainerNotFoundError) do
-      service_container = get_service_container(service)
       if get_container_state(service_container) == 'exited'
         raise ContainerNotFoundError.new("Service #{service} (container: #{service_container}) has exited")
       end
