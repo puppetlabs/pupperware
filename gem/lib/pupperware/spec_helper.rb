@@ -205,12 +205,14 @@ module SpecHelpers
   def get_container_health_details(container)
     # docker returns string 'null' when there is no health
     json = inspect_container(container, '{{json .State.Health}}')
+    json = 'null' if json.empty?
     JSON.parse(json, object_class: OpenStruct)
   end
 
   def get_container_healthcheck_details(container)
     # docker returns string 'null' when there is no healthcheck
     json = inspect_container(container, '{{json .Config.Healthcheck}}')
+    json = 'null' if json.empty?
     JSON.parse(json, object_class: OpenStruct)
   end
 
@@ -260,7 +262,9 @@ module SpecHelpers
         raise ContainerNotFoundError.new("Service #{service} (container: #{service_container}) has exited")
       end
       health = get_container_health_details(service_container)
-      if (health.Status == 'healthy' || health.Status == "'healthy'")
+      if health.nil?
+        raise("#{service} does not define a healthcheck")
+      elsif (health.Status == 'healthy' || health.Status == "'healthy'")
         return 'healthy'
       else
         log = health.Log.last()
