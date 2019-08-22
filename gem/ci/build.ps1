@@ -138,10 +138,10 @@ function Clear-ComposeLeftOvers
     docker container prune --force
 
     Write-Host "`nPruning Volumes"
-    docker volume prune
+    docker volume prune --force
 
     Write-Host "`nPruning Networks"
-    docker network prune
+    docker network prune --force
 }
 
 function Remove-ContainerVolumeRoot
