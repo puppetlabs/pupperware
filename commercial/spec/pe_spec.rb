@@ -9,8 +9,7 @@ RSpec.configure do |c|
     # VOLUMES = ['postgres-data', 'postgres-ssl']
     # create_host_volume_targets(ENV['VOLUME_ROOT'], VOLUMES)
     docker_compose_up()
-    timeout = 8 * 60
-    wait_on_service_health('pe-orchestration-services', timeout)
+    wait_on_service_health('pe-orchestration-services')
     wait_for_pxp_agent_to_connect
   end
 
