@@ -150,11 +150,20 @@ module SpecHelpers
     end
   end
 
-  def pull_images(ignore_service)
-    puts "Pulling images (ignoring image for #{ignore_service}):"
+  # Pull images defined in the compose file. To not pull the image for a
+  # particular service, supply the name of that service as it's defined
+  # in the compose file.
+  # Typically the ignored service will be the one under test, since in
+  # that case we want to use the image we just built, not the latest released.
+  def pull_images(ignore_service = nil)
     services = docker_compose('config --services')[:stdout].chomp
-    services = services.gsub(ignore_service, '')
-    services = services.gsub("\n", ' ')
+    if ignore_service.nil?
+      puts "Pulling images"
+    else
+      puts "Pulling images (ignoring image for service #{ignore_service})"
+      services = services.gsub(ignore_service, '')
+      services = services.gsub("\n", ' ')
+    end
     docker_compose("pull --quiet #{services}")
   end
 
