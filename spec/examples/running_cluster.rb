@@ -13,9 +13,9 @@ shared_examples 'a running pupperware cluster' do
   include_context 'running_cluster'
 
   it 'should start all of the cluster services' do
-    expect(get_service_container('puppet', 120)).to_not be_empty
-    expect(get_service_container('postgres', 60)).to_not be_empty
-    expect(get_service_container('puppetdb', 60)).to_not be_empty
+    expect(get_service_container('puppet')).to_not be_empty
+    expect(get_service_container('postgres')).to_not be_empty
+    expect(get_service_container('puppetdb')).to_not be_empty
   end
 
   it 'should start puppetserver' do
