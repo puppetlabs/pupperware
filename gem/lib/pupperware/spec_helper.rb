@@ -94,7 +94,7 @@ module SpecHelpers
   # Docker Compose Helpers
   ######################################################################
 
-  def docker_compose(command_and_args)
+  def docker_compose(command_and_args, stream: StringIO.new)
     overrides = IS_WINDOWS ?
                   'docker-compose.windows.yml' :
                   'docker-compose.override.yml'
@@ -102,14 +102,14 @@ module SpecHelpers
     file_arg = File.file?(overrides) ? "--file #{overrides}" : ''
     run_command("docker-compose --file docker-compose.yml #{file_arg} \
                                 --no-ansi \
-                                #{command_and_args}", stream: StringIO.new)
+                                #{command_and_args}", stream: stream)
   end
 
   def docker_compose_up()
-    docker_compose('up --detach')
-    docker_compose('images')
+    docker_compose('up --detach', stream: STDOUT)
+    docker_compose('images', stream: STDOUT)
     # TODO: use --all when docker-compose fixes https://github.com/docker/compose/issues/6579
-    docker_compose('ps')
+    docker_compose('ps', stream: STDOUT)
     get_containers().each do |id|
       labels = (get_container_labels(id).map { |k, v| "#{k}: #{v}"} || []).join("\n")
       STDOUT.puts("Container #{id} labels:\n#{labels}\n\n")
@@ -117,10 +117,10 @@ module SpecHelpers
   end
 
   def docker_compose_down()
-    docker_compose('down --volumes')
+    docker_compose('down --volumes', stream: STDOUT)
     STDOUT.puts("Running containers in compose:")
     # TODO: use --all when docker-compose fixes https://github.com/docker/compose/issues/6579
-    docker_compose('ps')
+    docker_compose('ps', stream: STDOUT)
     STDOUT.puts("Running containers in system:")
     run_command('docker ps --all')
   end
@@ -168,7 +168,7 @@ module SpecHelpers
       services = services.gsub(ignore_service, '')
       services = services.gsub("\n", ' ')
     end
-    docker_compose("pull --quiet #{services}")
+    docker_compose("pull --quiet #{services}", stream: STDOUT)
   end
 
   def get_service_base_uri(service, port)

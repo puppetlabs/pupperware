@@ -26,7 +26,7 @@ describe 'The docker-compose file works' do
     # LCOW requires directories to exist
     create_host_volume_targets(ENV['VOLUME_ROOT'], VOLUMES)
     # ensure all containers are latest versions
-    docker_compose('pull --quiet')
+    docker_compose('pull --quiet', stream: STDOUT)
   end
 
   after(:all) do
@@ -48,7 +48,7 @@ describe 'The docker-compose file works' do
     it 'should stop the cluster', :if => File::ALT_SEPARATOR.nil? do
       expect(get_containers()).not_to be_empty
       # don't use shared helper as it removes volumes
-      docker_compose('down')
+      docker_compose('down', stream: STDOUT)
       expect(get_containers()).to be_empty
     end
 
