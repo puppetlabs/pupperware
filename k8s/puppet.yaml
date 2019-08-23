@@ -1,0 +1,18 @@
+---
+releases:
+- name: "puppetserver"
+  namespace: "default"
+  chart: "puppetserver"
+  version: "0.0.1"
+  wait: false
+  values:
+  - hieradataurl: https://github.com/SOMEUSER/hiera
+    puppeturl: https://github.com/SOMEUSER/puppet
+    hiera: |-
+      :backends:
+        - yaml
+      :hierarchy:
+        - common
+      :yaml:
+        :datadir: /hiera
+        :extension: 'yaml'

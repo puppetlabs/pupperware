@@ -1,0 +1,3 @@
+#! /bin/sh
+
+kubectl exec -ti -n default `kubectl get pod -n default | grep puppet- | awk '{print $1}'` -- r10k deploy environment --verbose --config /etc/puppetlabs/puppet/r10k.yaml
