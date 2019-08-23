@@ -110,6 +110,10 @@ module SpecHelpers
     docker_compose('images')
     # TODO: use --all when docker-compose fixes https://github.com/docker/compose/issues/6579
     docker_compose('ps')
+    get_containers().each do |id|
+      labels = (get_container_labels(id).map { |k, v| "#{k}: #{v}"} || []).join("\n")
+      STDOUT.puts("Container #{id} labels:\n#{labels}\n\n")
+    end
   end
 
   def docker_compose_down()
@@ -233,6 +237,11 @@ module SpecHelpers
 
   def get_container_name(container)
     inspect_container(container, '{{.Name}}')
+  end
+
+  def get_container_labels(container)
+    json = inspect_container(container, '{{json .Config.Labels}}')
+    JSON.parse(json)
   end
 
   def get_container_state(container)
