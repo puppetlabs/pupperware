@@ -5,6 +5,7 @@ require 'open3'
 require 'timeout'
 require 'openssl'
 require 'stringio'
+require 'yaml'
 
 module Pupperware
 module SpecHelpers
@@ -107,6 +108,7 @@ module SpecHelpers
 
   def docker_compose_up()
     docker_compose('up --detach', stream: STDOUT)
+    wait_on_services_started()
     docker_compose('images', stream: STDOUT)
     # TODO: use --all when docker-compose fixes https://github.com/docker/compose/issues/6579
     docker_compose('ps', stream: STDOUT)
@@ -123,6 +125,10 @@ module SpecHelpers
     docker_compose('ps', stream: STDOUT)
     STDOUT.puts("Running containers in system:")
     run_command('docker ps --all')
+  end
+
+  def docker_config()
+    YAML.load(docker_compose('config')[:stdout].chomp)
   end
 
   # Windows requires directories to exist prior, whereas Linux will create them
@@ -151,6 +157,16 @@ module SpecHelpers
 
       STDOUT.puts("service named '#{service}' is hosted in container: '#{container}'")
       container
+    end
+  end
+
+  # waits for a container to exist for each compose service
+  # the container state may be running, exited or otherwise
+  def wait_on_services_started()
+    docker_config['services'].map do |k, v|
+      # on initial startup wait 10 seconds for a container to exist before failing
+      STDOUT.puts("Waiting for a container for service #{k}...")
+      get_service_container(k)
     end
   end
 
