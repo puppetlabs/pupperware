@@ -95,5 +95,7 @@ The script `k8s/bin/puppet-agent-test` runs a test agent against a working puppe
 - [X] Create a more realistic service option using the `LoadBalancer` service type and/or Ingress
 - [X] Provide a mechanism to configure r10k & deploy code
 - [X] Provide cron mechanism for r10k command provided externally in bin folder, and hiera repo git pull
+- [X] Provide support for eyaml
+- [ ] Provide support for private repos
 - [ ] Create a configuration that uses local volumes to more closely mimic `docker-compose`
 - [ ] Use k8s' functions to scale out the infrastructure with additional compile masters (difficult)

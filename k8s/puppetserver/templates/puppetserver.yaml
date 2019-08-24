@@ -116,6 +116,12 @@ spec:
             - name: manifests-volume
               mountPath: /etc/puppetlabs/puppet/manifests/site.pp
               subPath: site.pp
+            - name: eyamlpub-volume
+              mountPath: /etc/puppetlabs/puppet/keys/public_key.pkcs7.pem
+              subPath: public_key.pkcs7.pem
+            - name: eyamlpriv-volume
+              mountPath: /etc/puppetlabs/puppet/keys/private_key.pkcs7.pem
+              subPath: private_key.pkcs7.pem
       volumes:
         - name: puppet-code-storage
           persistentVolumeClaim:
@@ -135,6 +141,12 @@ spec:
         - name: manifests-volume
           configMap:
             name: manifests-config
+        - name: eyamlpub-volume
+          configMap:
+            name: eyamlpub-config
+        - name: eyamlpriv-volume
+          configMap:
+            name: eyamlpriv-config
       initContainers:
         - name: git-clone
           image: alpine/git
