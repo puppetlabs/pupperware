@@ -487,8 +487,22 @@ module SpecHelpers
     # setting up a Windows TTY is difficult, so we don't
     # allocating a TTY will show container pull output on Linux, but that's not good for tests
     STDOUT.puts("running agent #{agent_name} in network #{network} against #{server}")
-    add_hosts = extra_hosts.empty? ? '' :
-      extra_hosts.map { |k, v| "--add-host=#{k}:#{v}" }.join(' ')
+    add_hosts = ''
+    unless extra_hosts.empty?
+      # LCOW doesn't support --add-host / extra_hosts as of 7-31-2019
+      # https://github.com/moby/moby/issues/30555
+      # https://github.com/docker/for-win/issues/1455
+      if IS_WINDOWS
+        path = Pathname.new(Dir.mktmpdir) + 'hosts'
+        hosts = extra_hosts.map { |k, v| "#{k}\t#{v}" }.join("\n")
+        # linux containers need LF line endings
+        File.open(path.realpath, mode: 'w', crlf_newline: false) { |f| f.write(hosts) }
+        # Windows cannot mount just /etc/hosts, have to mount the entire parent directory
+        add_hosts = "--volume #{path.dirname}:/etc"
+      else
+        add_hosts = extra_hosts.map { |k, v| "--add-host=#{k}:#{v}" }.join(' ')
+      end
+    end
     result = run_command("docker run --rm --network #{network} --name #{agent_name} --hostname #{agent_name} \
       #{add_hosts} puppet/puppet-agent-ubuntu agent --verbose --onetime --no-daemonize --summarize \
       --server #{server} --masterport #{masterport} --ca_server #{ca} --ca_port #{ca_port}")
