@@ -476,6 +476,7 @@ module SpecHelpers
   def run_agent(
     agent_name,
     network,
+    extra_hosts: {},
     server: get_container_hostname(get_service_container('puppet')),
     ca: get_container_hostname(get_service_container('puppet')),
     masterport: 8140,
@@ -486,8 +487,10 @@ module SpecHelpers
     # setting up a Windows TTY is difficult, so we don't
     # allocating a TTY will show container pull output on Linux, but that's not good for tests
     STDOUT.puts("running agent #{agent_name} in network #{network} against #{server}")
+    add_hosts = extra_hosts.empty? ? '' :
+      extra_hosts.map { |k, v| "--add-host=#{k}:#{v}" }.join(' ')
     result = run_command("docker run --rm --network #{network} --name #{agent_name} --hostname #{agent_name} \
-      puppet/puppet-agent-ubuntu agent --verbose --onetime --no-daemonize --summarize \
+      #{add_hosts} puppet/puppet-agent-ubuntu agent --verbose --onetime --no-daemonize --summarize \
       --server #{server} --masterport #{masterport} --ca_server #{ca} --ca_port #{ca_port}")
     return result[:status].exitstatus
   end
