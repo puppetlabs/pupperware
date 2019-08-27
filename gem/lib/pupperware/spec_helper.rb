@@ -241,7 +241,8 @@ module SpecHelpers
 
   def get_container_labels(container)
     json = inspect_container(container, '{{json .Config.Labels}}')
-    JSON.parse(json)
+    json = 'null' if json.empty?
+    JSON.parse(json) || {}
   end
 
   def get_container_state(container)
