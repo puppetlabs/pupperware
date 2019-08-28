@@ -267,18 +267,19 @@ module SpecHelpers
 
     # services with healthcheck should deal with their own timeouts
     return retry_block_up_to_timeout(seconds, exit_early_on_error_type: ContainerNotFoundError) do
-      if get_container_state(service_container) == 'exited'
-        raise ContainerNotFoundError.new("Service #{service} (container: #{service_container}) has exited")
-      end
       health = get_container_health_details(service_container)
+      last_log = health&.Log&.last()
+      log_msg = "Exit [#{last_log&.ExitCode || 'Code Unknown'}]:\n\n#{last_log&.Output || 'Log Unavailable'}"
+      if get_container_state(service_container) == 'exited'
+        raise ContainerNotFoundError.new("Service #{service} (container: #{service_container}) has exited\n#{log_msg}")
+      end
       if health.nil?
         raise("#{service} does not define a healthcheck")
       elsif (health.Status == 'healthy' || health.Status == "'healthy'")
         STDOUT.puts("Service #{service} (container: #{service_container}) is healthy")
         return 'healthy'
       else
-        log = health.Log.last()
-        raise("#{service} is not healthy - currently #{health.Status}\nExit [#{log.ExitCode}] - #{log.Output}")
+        raise("#{service} is not healthy - currently #{health.Status}\n#{log_msg}")
       end
     end
   end
