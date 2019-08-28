@@ -2,19 +2,20 @@ require 'rspec'
 require 'pupperware/spec_helper'
 include Pupperware::SpecHelpers
 
+CLIENT_TOOLS_IMAGE = 'artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:kearney-latest'
+
 RSpec.configure do |c|
   c.before(:suite) do
     teardown_cluster()
-    # LCOW requires directories to exist
-    # VOLUMES = ['postgres-data', 'postgres-ssl']
-    # create_host_volume_targets(ENV['VOLUME_ROOT'], VOLUMES)
+    pull_images()
+    run_command("docker pull --quiet #{CLIENT_TOOLS_IMAGE}")
     docker_compose_up()
     wait_on_service_health('pe-orchestration-services')
-    wait_for_pxp_agent_to_connect
+    wait_for_pxp_agent_to_connect()
   end
 
   c.after(:suite) do
-    emit_logs
+    emit_logs()
     teardown_cluster()
   end
 end
@@ -28,7 +29,7 @@ describe 'PE stack' do
            --env RBAC_PASSWORD=admin \
            --env PUPPETSERVER_HOSTNAME=puppet.test \
            --env PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test \
-           artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:19.1.3 \
+           #{CLIENT_TOOLS_IMAGE} \
            puppet-job run \
               --nodes puppet-agent.test \
               --service-url https://pe-orchestration-services.test:8143/")
