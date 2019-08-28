@@ -86,7 +86,7 @@ services:
         aliases:
           - postgres.test
   puppet-agent:
-    image: puppet/puppet-agent-ubuntu
+    image: puppet/puppet-agent-ubuntu:6.4.2
     hostname: puppet-agent.test
     networks:
       test:
