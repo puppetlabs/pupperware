@@ -87,7 +87,6 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/hiera.yaml") . | sha256sum }}
     spec:
       hostname: puppet
-
       containers:
         - image: puppet/puppetserver
           name: puppet
@@ -126,7 +125,6 @@ spec:
             - name: eyamlpriv-volume
               mountPath: /etc/puppetlabs/puppet/keys/private_key.pkcs7.pem
               subPath: private_key.pkcs7.pem
-
         - name: git-sync-hiera
           image: k8s.gcr.io/git-sync:v3.1.1
           args:
@@ -141,7 +139,6 @@ spec:
             mountPath: /etc/git-secret
           - name: puppet-hiera-storage
             mountPath: /tmp/
-
         - name: git-sync-puppet
           image: k8s.gcr.io/git-sync:v3.1.1
           args:
