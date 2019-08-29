@@ -8,10 +8,6 @@ https://github.com/helm/helm/releases
 https://github.com/databus23/helm-diff
 https://kubernetes.io/docs/tasks/tools/install-kubectl
 
-**EXPERIMENTAL**
-
-The k8s YAML files contained within were created with Minikube & Docker for Mac in mind, should be considered experimental, and are not appropriate for most deployments.
-
 ## Quick Start
 
 To get started, you will need an Kubernetes cluster at your disposal with [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) configured correctly to communicate with your cluster.
@@ -28,6 +24,7 @@ running Kubernetes via Docker for Mac, this will be the FQDN of your Mac. Note t
 Then create the Pupperware resources:
 
 ```bash
+$ helm init
 $ bash bin/git-secret
 $ helmfile -f puppet.yaml --interactive apply
 $ bash bin/r10k

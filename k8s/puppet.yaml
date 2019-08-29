@@ -4,7 +4,7 @@ releases:
   namespace: "default"
   chart: "puppetserver"
   version: "0.0.1"
-  wait: false
+  wait: true
   values:
   - hieradataurl: git@github.com:SOMEUSER/hiera.git
     puppeturl: git@github.com:SOMEUSER/puppet.git
