@@ -30,6 +30,16 @@ $ helmfile -f puppet.yaml --interactive apply
 $ bash bin/r10k
 ```
 
+Then expose the port with kpoof:
+```bash
+$ ./kpoof
+```
+
+Then run a test agent to confirm the stack works:
+```bash
+$ bash bin/puppet-agent-test
+```
+
 ### Connecting Nodes
 
 Kubernetes will expose the Puppet server port (normally TCP port `8140`) on the Kubernetes node using the `ClusterIP` service type. This port should then be proxied via an ingress such as nginx-ingress, with kube port forwarding, or with kpoof for easy local testing.
