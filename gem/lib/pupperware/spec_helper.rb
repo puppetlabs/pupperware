@@ -202,7 +202,6 @@ module SpecHelpers
   def inspect_container(container, query)
     result = run_command("docker inspect \"#{container}\" --format \"#{query}\"", stream: StringIO.new)
     status = result[:stdout].chomp
-    STDOUT.puts "#{container} - #{query} : #{status}\n"
     return status
   end
 
@@ -269,17 +268,19 @@ module SpecHelpers
 
     # services with healthcheck should deal with their own timeouts
     return retry_block_up_to_timeout(seconds, exit_early_on_error_type: ContainerNotFoundError) do
-      if get_container_state(service_container) == 'exited'
-        raise ContainerNotFoundError.new("Service #{service} (container: #{service_container}) has exited")
-      end
       health = get_container_health_details(service_container)
+      last_log = health&.Log&.last()
+      log_msg = "Exit [#{last_log&.ExitCode || 'Code Unknown'}]:\n\n#{last_log&.Output || 'Log Unavailable'}"
+      if get_container_state(service_container) == 'exited'
+        raise ContainerNotFoundError.new("Service #{service} (container: #{service_container}) has exited\n#{log_msg}")
+      end
       if health.nil?
         raise("#{service} does not define a healthcheck")
       elsif (health.Status == 'healthy' || health.Status == "'healthy'")
+        STDOUT.puts("Service #{service} (container: #{service_container}) is healthy")
         return 'healthy'
       else
-        log = health.Log.last()
-        raise("#{service} is not healthy - currently #{health.Status}\nExit [#{log.ExitCode}] - #{log.Output}")
+        raise("#{service} is not healthy - currently #{health.Status}\n#{log_msg}")
       end
     end
   end
@@ -313,8 +314,8 @@ module SpecHelpers
   end
 
   def teardown_container(container)
-    STDOUT.puts("Tearing down test container")
     network_id = get_container_network(container)
+    STDOUT.puts("Tearing down test container #{container} - disconnecting from network #{network_id}")
     run_command("docker network disconnect -f #{network_id} #{container}")
     run_command("docker container rm --force #{container}")
   end
@@ -481,7 +482,7 @@ module SpecHelpers
 
     # setting up a Windows TTY is difficult, so we don't
     # allocating a TTY will show container pull output on Linux, but that's not good for tests
-    STDOUT.puts("running agent #{agent_name} in network #{network} against #{server}")
+    STDOUT.puts("running agent #{agent_name} in network #{network} against #{server} / ca #{ca}")
     result = run_command("docker run --rm --network #{network} --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-ubuntu agent --verbose --onetime --no-daemonize --summarize --server #{server} --masterport #{masterport} --ca_server #{ca} --ca_port #{ca_port}")
     return result[:status].exitstatus
   end
