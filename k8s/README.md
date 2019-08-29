@@ -28,7 +28,9 @@ running Kubernetes via Docker for Mac, this will be the FQDN of your Mac. Note t
 Then create the Pupperware resources:
 
 ```bash
+$ bash bin/git-secret
 $ helmfile -f puppet.yaml --interactive apply
+$ bash bin/r10k
 ```
 
 ### Connecting Nodes
@@ -96,6 +98,6 @@ The script `k8s/bin/puppet-agent-test` runs a test agent against a working puppe
 - [X] Provide a mechanism to configure r10k & deploy code
 - [X] Provide cron mechanism for r10k command provided externally in bin folder, and hiera repo git pull
 - [X] Provide support for eyaml
-- [ ] Provide support for private repos
-- [ ] Create a configuration that uses local volumes to more closely mimic `docker-compose`
+- [X] Provide support for private repos
+- [X] Create proper volumes
 - [ ] Use k8s' functions to scale out the infrastructure with additional compile masters (difficult)
