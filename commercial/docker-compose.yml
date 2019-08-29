@@ -20,6 +20,7 @@ services:
       - PUPPETSERVER_HOSTNAME=puppet.test
       - PUPPETDB_HOSTNAME=puppetdb.test
       - POSTGRES_HOSTNAME=postgres.test
+      - PE_BOLT_SERVER_HOSTNAME=pe-bolt-server.test
       - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
     ports:
       - 8142:8142
@@ -52,6 +53,19 @@ services:
       test:
         aliases:
           - pe-console-services.test
+  pe-bolt-server:
+    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-bolt-server:kearney-latest
+    hostname: pe-bolt-server.test
+    expose:
+      - 62658
+      - 62659
+    environment:
+      - PUPPETSERVER_HOSTNAME=puppet.test
+      - PE_BOLT_SERVER_LOGLEVEL=${PE_BOLT_SERVER_LOGLEVEL:-info}
+    networks:
+      test:
+        aliases:
+          - pe-bolt-server.test
   puppetdb:
     image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-puppetdb:kearney-latest
     hostname: puppetdb.test
@@ -85,24 +99,6 @@ services:
       test:
         aliases:
           - postgres.test
-  puppet-agent:
-    image: puppet/puppet-agent-ubuntu:6.4.2
-    hostname: puppet-agent.test
-    networks:
-      test:
-        aliases:
-          - puppet-agent.test
-    entrypoint: /bin/bash
-    command: -c "echo 'waiting for orchestration services to be up' &&
-                 while true; sleep 5; do if curl -k --fail --silent https://pe-orchestration-services.test:8143/status/v1/simple; then break; fi; done &&
-                 puppet config set server puppet.test &&
-                 puppet agent -t &&
-                 echo 'starting pxp services' &&
-                 pxp-agent --broker-ws-uri wss://pe-orchestration-services.test:8142/pcp2/
-                           --ssl-ca-cert /etc/puppetlabs/puppet/ssl/certs/ca.pem
-                           --ssl-cert /etc/puppetlabs/puppet/ssl/certs/puppet-agent.test.pem
-                           --ssl-key /etc/puppetlabs/puppet/ssl/private_keys/puppet-agent.test.pem
-                           --pcp-version 2"
 networks:
   test:
     name: pupperware-commercial

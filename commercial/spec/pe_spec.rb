@@ -21,6 +21,10 @@ RSpec.configure do |c|
 end
 
 describe 'PE stack' do
+  before(:all) do
+    generate_rbac_token()
+  end
+
   it 'can orchestrate a puppet run on an agent via the client tools' do
     output = run_command("docker run \
            --rm \
@@ -34,5 +38,15 @@ describe 'PE stack' do
               --nodes puppet-agent.test \
               --service-url https://pe-orchestration-services.test:8143/")
     expect(output[:stdout]).to include('Success! 1/1 runs succeeded.')
+  end
+
+  it 'will recieve an API request to run a task over SSH' do
+    result = curl_console_task(target_nodes: 'test_sshd.test')
+    expect(result).to include('"job":"2"')
+  end
+
+  it 'confirm the task completed without error' do
+    result = curl_job_number(job_number: 2)
+    expect(result).to include('"state":"finished"')
   end
 end
