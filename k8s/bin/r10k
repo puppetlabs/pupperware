@@ -1,11 +1,11 @@
 #! /bin/sh
 
-if [ -z $1 ] ; then echo enter namespace ; exit 1 ; fi
+if [ -z "$1" ] ; then echo enter namespace ; exit 1 ; fi
 
 NAMESPACE=$1
-POD=$(kubectl get pods -n $NAMESPACE | grep puppet- | awk '{print $1}')
+POD=$(kubectl get pods -n "$NAMESPACE" | grep puppet- | awk '{print $1}')
 
-kubectl exec -ti -n $NAMESPACE "$POD" -- sh -c '
+kubectl exec -ti -n "$NAMESPACE" "$POD" -- sh -c '
 cd /etc/puppetlabs/code/git/puppet ;
 for i in `cd /etc/puppetlabs/code/git/puppet ; git branch -a | grep remotes | grep -v master | grep -v HEAD | xargs basename`
 do cd /etc/puppetlabs/code/git/puppet ; git checkout $i ; git branch ; git checkout origin/master
