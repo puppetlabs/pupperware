@@ -113,9 +113,6 @@ spec:
             - name: hiera-volume
               mountPath: /etc/puppetlabs/puppet/hiera.yaml
               subPath: hiera.yaml
-            - name: r10k-volume
-              mountPath: /etc/puppetlabs/puppet/r10k.yaml
-              subPath: r10k.yaml
             - name: manifests-volume
               mountPath: /etc/puppetlabs/puppet/manifests/site.pp
               subPath: site.pp
@@ -171,9 +168,6 @@ spec:
         - name: hiera-volume
           configMap:
             name: hiera-config
-        - name: r10k-volume
-          configMap:
-            name: r10k-config
         - name: manifests-volume
           configMap:
             name: manifests-config
@@ -207,3 +201,36 @@ data:
                local:
                  remote: 'file:///etc/puppetlabs/code/git/puppet'
                  basedir: '/etc/puppetlabs/code/environments'
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: r10k-deploy
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: r10k
+            image: puppet/r10k
+            args:
+            - deploy
+            - environment
+            - --config
+            - /etc/puppetlabs/puppet/r10k.yaml
+            volumeMounts:
+              - name: r10k-volume
+                mountPath: /etc/puppetlabs/puppet/r10k.yaml
+                subPath: r10k.yaml
+              - name: puppet-code-storage
+                mountPath: /etc/puppetlabs/code/
+          restartPolicy: OnFailure
+          volumes:
+            - name: puppet-code-storage
+              persistentVolumeClaim:
+                claimName: puppet-code-claim
+            - name: r10k-volume
+              configMap:
+                name: r10k-config
