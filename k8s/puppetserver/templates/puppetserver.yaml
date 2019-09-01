@@ -87,6 +87,15 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/hiera.yaml") . | sha256sum }}
     spec:
       hostname: puppet
+      initContainers:
+        - name: create-puppet-r10k-dir
+          image: puppet/puppetserver
+          command: ["sh", "-c", "mkdir -p /etc/puppetlabs/code/environments"]
+          securityContext:
+            runAsUser: 999 # "puppet" user
+          volumeMounts:
+          - name: puppet-code-storage
+            mountPath: /etc/puppetlabs/code/
       containers:
         - image: puppet/puppetserver
           name: puppet
@@ -96,7 +105,7 @@ spec:
             - name: PUPPETSERVER_HOSTNAME
               value: puppet
             - name: DNS_ALT_NAMES
-              value: puppet
+              value: puppet,localhost
             - name: PUPPETDB_SERVER_URLS
               value: https://puppetdb:8081
           ports:
@@ -123,7 +132,7 @@ spec:
               mountPath: /etc/puppetlabs/puppet/keys/private_key.pkcs7.pem
               subPath: private_key.pkcs7.pem
         - name: git-sync-hiera
-          image: k8s.gcr.io/git-sync:v3.1.1
+          image: k8s.gcr.io/git-sync:v3.1.2
           args:
            - -ssh
            - -repo={{ .Values.hieradataurl }}
@@ -137,7 +146,7 @@ spec:
           - name: puppet-hiera-storage
             mountPath: /tmp/
         - name: git-sync-puppet
-          image: k8s.gcr.io/git-sync:v3.1.1
+          image: k8s.gcr.io/git-sync:v3.1.2
           args:
            - -ssh
            - -repo={{ .Values.puppeturl }}
@@ -234,3 +243,4 @@ spec:
             - name: r10k-volume
               configMap:
                 name: r10k-config
+...
