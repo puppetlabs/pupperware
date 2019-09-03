@@ -27,6 +27,19 @@ function Get-ContainerVersion
     $gitver -replace '-.*', ''
 }
 
+function Get-EnterpriseContainerVersion(
+    $Package,
+    $Token,
+    $PeVer = "2019.1.x")
+{
+    $url = "https://raw.githubusercontent.com/puppetlabs/enterprise-dist/$PeVer/packages.json"
+    $headers = @{"Authorization"="token $Token"}
+    $output = ".\packages.json"
+    Invoke-WebRequest -Uri $url -OutFile $output -Headers $headers
+    $packages = Get-Content ".\packages.json" | ConvertFrom-Json
+    $packages."ubuntu-18.04-amd64"."$Package"."version"
+}
+
 # only need to specify -Name or -Path when calling
 function Lint-Dockerfile(
     $Name,
