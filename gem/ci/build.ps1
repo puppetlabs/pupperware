@@ -32,11 +32,11 @@ function Get-EnterpriseContainerVersion(
     $Token,
     $PeVer = "2019.1.x")
 {
-    $url = "https://raw.githubusercontent.com/puppetlabs/enterprise-dist/$PeVer/packages.json"
-    $headers = @{"Authorization"="token $Token"}
-    $output = ".\packages.json"
-    Invoke-WebRequest -Uri $url -OutFile $output -Headers $headers
-    $packages = Get-Content ".\packages.json" | ConvertFrom-Json
+    $params = @{
+      Uri = "https://raw.githubusercontent.com/puppetlabs/enterprise-dist/$PeVer/packages.json"
+      Headers = @{ "Authorization" = "token $Token" }
+    }
+    $packages = Invoke-RestMethod @params
     $packages."ubuntu-18.04-amd64"."$Package"."version"
 }
 
