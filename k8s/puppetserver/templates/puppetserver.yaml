@@ -87,6 +87,15 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/hiera.yaml") . | sha256sum }}
     spec:
       hostname: puppet
+      initContainers:
+        - name: create-puppet-r10k-dir
+          image: puppet/puppetserver
+          command: ["sh", "-c", "mkdir -p /etc/puppetlabs/code/environments"]
+          securityContext:
+            runAsUser: 999 # "puppet" user
+          volumeMounts:
+          - name: puppet-code-storage
+            mountPath: /etc/puppetlabs/code/
       containers:
         - image: puppet/puppetserver
           name: puppet
@@ -96,7 +105,7 @@ spec:
             - name: PUPPETSERVER_HOSTNAME
               value: puppet
             - name: DNS_ALT_NAMES
-              value: puppet
+              value: puppet,localhost
             - name: PUPPETDB_SERVER_URLS
               value: https://puppetdb:8081
           ports:
@@ -122,6 +131,36 @@ spec:
             - name: eyamlpriv-volume
               mountPath: /etc/puppetlabs/puppet/keys/private_key.pkcs7.pem
               subPath: private_key.pkcs7.pem
+        - name: git-sync-hiera
+          image: k8s.gcr.io/git-sync:v3.1.2
+          args:
+           - -ssh
+           - -repo={{ .Values.hieradataurl }}
+           - -dest=hiera
+           - -wait=60
+          securityContext:
+            runAsUser: 65533 # git-sync user
+          volumeMounts:
+          - name: git-secret
+            mountPath: /etc/git-secret
+          - name: puppet-hiera-storage
+            mountPath: /tmp/
+        - name: git-sync-puppet
+          image: k8s.gcr.io/git-sync:v3.1.2
+          args:
+           - -ssh
+           - -repo={{ .Values.puppeturl }}
+           - -dest=puppet
+           - -wait=60
+          securityContext:
+            runAsUser: 65533 # git-sync user
+          volumeMounts:
+          - name: git-secret
+            mountPath: /etc/git-secret
+          - name: puppet-code-storage
+            mountPath: /tmp/
+      securityContext:
+        fsGroup: 65533 # to make SSH key readable
       volumes:
         - name: puppet-code-storage
           persistentVolumeClaim:
@@ -147,28 +186,15 @@ spec:
         - name: eyamlpriv-volume
           configMap:
             name: eyamlpriv-config
-      initContainers:
-        - name: git-clone
-          image: alpine/git
-          args:
-            - clone
-            - --single-branch
-            - --
-            - {{ .Values.hieradataurl }}
-            - /hiera
-          securityContext:
-            runAsUser: 1
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-          volumeMounts:
-            - name: puppet-hiera-storage
-              mountPath: /hiera
+        - name: git-secret
+          secret:
+            secretName: git-creds
+            defaultMode: 288 # = mode 0440
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: manifests-config
-  namespace: default
 data:
   site.pp: |
     hiera_include('classes')
@@ -177,47 +203,20 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: r10k-config
-  namespace: default
 data:
   r10k.yaml: |
-    :cachedir: '/var/tmp/r10k_cache'
-    sources:
-      repositories:
-        remote: {{ .Values.puppeturl | quote }}
-        basedir: '/code/environments'
----
-apiVersion: batch/v1beta1
-kind: CronJob
-metadata:
-  name: hiera-git-pull
-spec:
-  schedule: "* * * * *"
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          containers:
-          - name: git
-            image: alpine/git
-            args:
-            - -C
-            - /hiera
-            - pull
-            volumeMounts:
-              - name: puppet-hiera-storage
-                mountPath: /hiera
-          restartPolicy: OnFailure
-          volumes:
-            - name: puppet-hiera-storage
-              persistentVolumeClaim:
-                claimName: puppet-hiera-claim
+             :cachedir: '/var/tmp/r10k_cache'
+             sources:
+               local:
+                 remote: 'file:///etc/puppetlabs/code/git/puppet'
+                 basedir: '/etc/puppetlabs/code/environments'
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: r10k-deploy
 spec:
-  schedule: "*/2 * * * *"
+  schedule: "* * * * *"
   jobTemplate:
     spec:
       template:
@@ -229,18 +228,19 @@ spec:
             - deploy
             - environment
             - --config
-            - /r10k.yaml
+            - /etc/puppetlabs/puppet/r10k.yaml
             volumeMounts:
               - name: r10k-volume
-                mountPath: /r10k.yaml
+                mountPath: /etc/puppetlabs/puppet/r10k.yaml
                 subPath: r10k.yaml
               - name: puppet-code-storage
-                mountPath: /code
+                mountPath: /etc/puppetlabs/code/
           restartPolicy: OnFailure
           volumes:
-            - name: r10k-volume
-              configMap:
-                name: r10k-config
             - name: puppet-code-storage
               persistentVolumeClaim:
                 claimName: puppet-code-claim
+            - name: r10k-volume
+              configMap:
+                name: r10k-config
+...

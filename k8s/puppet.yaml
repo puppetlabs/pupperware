@@ -4,17 +4,17 @@ releases:
   namespace: "default"
   chart: "puppetserver"
   version: "0.0.1"
-  wait: false
+  wait: true
   values:
-  - hieradataurl: https://github.com/SOMEUSER/hiera
-    puppeturl: https://github.com/SOMEUSER/puppet
+  - hieradataurl: git@github.com:SOMEUSER/hiera.git
+    puppeturl: git@github.com:SOMEUSER/puppet.git
     hiera: |-
       :backends:
         - eyaml
       :hierarchy:
         - common
       :eyaml:
-        :datadir: /hiera
+        :datadir: /hiera/git/hiera
         :extension: 'yaml'
         :pkcs7_private_key: /etc/puppetlabs/puppet/keys/private_key.pkcs7.pem
         :pkcs7_public_key:  /etc/puppetlabs/puppet/keys/public_key.pkcs7.pem
