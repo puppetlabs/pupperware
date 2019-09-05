@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: puppetboard
+  labels:
+    app: pupperware
+spec:
+  selector:
+    matchLabels:
+      app: pupperware
+      svc: puppetboard
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: pupperware
+        svc: puppetboard
+    spec:
+      hostname: puppetboard
+      containers:
+        - image: puppet/puppetboard
+          name: puppetboard
+          ports:
+          env:
+          - name: "PUPPETDB_HOST"
+            value: "puppetdb"
+          - name: "PUPPETDB_PORT"
+            value: "8080"
+          ports:
+          - name: puppetboard
+            containerPort: 8000
