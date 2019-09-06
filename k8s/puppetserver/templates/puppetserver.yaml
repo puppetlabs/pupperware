@@ -89,7 +89,8 @@ spec:
       hostname: puppet
       initContainers:
         - name: create-puppet-r10k-dir
-          image: puppet/puppetserver:6.3.1
+          image: "puppet/puppetserver:{{.Values.dockerImage.puppetserver.tag}}"
+          imagePullPolicy: "{{.Values.dockerImage.puppetserver.pullPolicy}}"
           command: ["sh", "-c", "mkdir -p /etc/puppetlabs/code/environments"]
           securityContext:
             runAsUser: 999 # "puppet" user
@@ -97,8 +98,9 @@ spec:
           - name: puppet-code-storage
             mountPath: /etc/puppetlabs/code/
       containers:
-        - image: puppet/puppetserver:6.3.1
-          name: puppet
+        - name: puppet
+          image: "puppet/puppetserver:{{.Values.dockerImage.puppetserver.tag}}"
+          imagePullPolicy: "{{.Values.dockerImage.puppetserver.pullPolicy}}"
           env:
             # necessary to set certname and server in puppet.conf, required by
             # puppetserver ca cli application
@@ -132,7 +134,8 @@ spec:
               mountPath: /etc/puppetlabs/puppet/keys/private_key.pkcs7.pem
               subPath: private_key.pkcs7.pem
         - name: git-sync-hiera
-          image: k8s.gcr.io/git-sync:v3.1.2
+          image: "k8s.gcr.io/git-sync:{{.Values.dockerImage.git_sync.tag}}"
+          imagePullPolicy: "{{.Values.dockerImage.git_sync.pullPolicy}}"
           args:
            - -ssh
            - -repo={{ .Values.hieradataurl }}
@@ -146,7 +149,8 @@ spec:
           - name: puppet-hiera-storage
             mountPath: /tmp/
         - name: git-sync-puppet
-          image: k8s.gcr.io/git-sync:v3.1.2
+          image: "k8s.gcr.io/git-sync:{{.Values.dockerImage.git_sync.tag}}"
+          imagePullPolicy: "{{.Values.dockerImage.git_sync.pullPolicy}}"
           args:
            - -ssh
            - -repo={{ .Values.puppeturl }}
@@ -223,7 +227,8 @@ spec:
         spec:
           containers:
           - name: r10k
-            image: puppet/r10k
+            image: "puppet/r10k:{{.Values.dockerImage.r10k.tag}}"
+            imagePullPolicy: "{{.Values.dockerImage.r10k.pullPolicy}}"
             args:
             - deploy
             - environment

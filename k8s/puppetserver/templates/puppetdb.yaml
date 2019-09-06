@@ -49,8 +49,9 @@ spec:
     spec:
       hostname: puppetdb
       containers:
-        - image: puppet/puppetdb
-          name: puppetdb
+        - name: puppetdb
+          image: "puppet/puppetdb:{{.Values.dockerImage.puppetdb.tag}}"
+          imagePullPolicy: "{{.Values.dockerImage.puppetdb.pullPolicy}}"
           env:
             - name: PUPPETSERVER_HOSTNAME
               value: puppet

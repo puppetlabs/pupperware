@@ -19,8 +19,9 @@ spec:
     spec:
       hostname: puppetboard
       containers:
-        - image: puppet/puppetboard
-          name: puppetboard
+        - name: puppetboard
+          image: "puppet/puppetboard:{{.Values.dockerImage.puppetboard.tag}}"
+          imagePullPolicy: "{{.Values.dockerImage.puppetboard.pullPolicy}}"
           ports:
           env:
           - name: "PUPPETDB_HOST"
