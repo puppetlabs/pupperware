@@ -57,8 +57,9 @@ spec:
     spec:
       hostname: postgres
       containers:
-        - image: postgres:9.6
-          name: postgres
+        - name: postgres
+          image: "postgres:{{.Values.dockerImage.postgres.tag}}"
+          imagePullPolicy: "{{.Values.dockerImage.postgres.pullPolicy}}"
           env:
             - name: POSTGRES_PASSWORD
               valueFrom:
