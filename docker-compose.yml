@@ -29,6 +29,7 @@ services:
 
   postgres:
     image: postgres:9.6
+    hostname: postgres.${DOMAIN:-internal}
     environment:
       - POSTGRES_PASSWORD=puppetdb
       - POSTGRES_USER=puppetdb
