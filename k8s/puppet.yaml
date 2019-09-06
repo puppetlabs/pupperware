@@ -8,7 +8,7 @@ releases:
   values:
   - dockerImage:
       puppetserver:
-        tag: "6.5.0"
+        tag: "6.4.0"
         pullPolicy: "IfNotPresent"
       git_sync:
         tag: "v3.1.2"
