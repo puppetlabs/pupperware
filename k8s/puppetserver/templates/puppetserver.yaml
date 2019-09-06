@@ -89,7 +89,7 @@ spec:
       hostname: puppet
       initContainers:
         - name: create-puppet-r10k-dir
-          image: puppet/puppetserver
+          image: puppet/puppetserver:6.3.1
           command: ["sh", "-c", "mkdir -p /etc/puppetlabs/code/environments"]
           securityContext:
             runAsUser: 999 # "puppet" user
@@ -97,7 +97,7 @@ spec:
           - name: puppet-code-storage
             mountPath: /etc/puppetlabs/code/
       containers:
-        - image: puppet/puppetserver
+        - image: puppet/puppetserver:6.3.1
           name: puppet
           env:
             # necessary to set certname and server in puppet.conf, required by
