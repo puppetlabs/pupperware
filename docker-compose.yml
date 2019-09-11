@@ -74,8 +74,3 @@ services:
       default:
         aliases:
          - puppetdb.${DOMAIN:-internal}
-
-  puppetboard:
-    image: puppet/puppetboard
-    ports:
-      - 8000:8000
