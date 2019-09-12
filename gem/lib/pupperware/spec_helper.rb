@@ -39,11 +39,11 @@ module SpecHelpers
     status = nil
 
     Open3.popen3(env, command) do |stdin, stdout, stderr, wait_thread|
-      Thread.new do
+      stdout_reader = Thread.new do
         Thread.current.report_on_exception = false
         stdout.each { |l| stdout_string << l and stream.puts l }
       end
-      Thread.new do
+      stderr_reader = Thread.new do
         Thread.current.report_on_exception = false
         # Write stderr to stdout so it's more visible and shows up
         # in spec runs even when the tests aren't reading stderr
@@ -51,6 +51,10 @@ module SpecHelpers
       end
 
       stdin.close
+      # wait for threads handling output to complete
+      stdout_reader.join()
+      stderr_reader.join()
+      # wait on process exit
       status = wait_thread.value
     end
 
@@ -311,6 +315,7 @@ module SpecHelpers
     STDOUT.puts("#{'*' * 80}\nContainer logs for #{container_name} / #{container}\n#{'*' * 80}\n")
     # run_command streams stdout / stderr
     run_command("docker logs --details --timestamps #{container} 2>&1")[:stdout]
+    STDOUT.puts("#{'*' * 80}\nEnd container logs for #{container_name} / #{container}\n#{'*' * 80}\n\n")
   end
 
   def teardown_container(container)
