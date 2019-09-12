@@ -6,8 +6,14 @@ services:
     environment:
       - PUPPETDB_HOSTNAME=puppetdb.test
       - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
+      # Set the control repo URL like https://github.com/puppetlabs/control-repo.git
+      # - R10K_REMOTE=
+    # volumes:
+      # For an R10K_REMOTE the id-control_repo.rsa path may be bind mounted
+      # - ./path/to/codemanager/ssh/keys:/etc/puppetlabs/puppetserver/ssh
     ports:
       - 8140:8140
+      - 8170:8170
     dns_search: test
     networks:
       test:
