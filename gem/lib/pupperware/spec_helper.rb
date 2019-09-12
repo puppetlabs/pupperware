@@ -166,9 +166,9 @@ module SpecHelpers
       puts "Pulling images"
     else
       puts "Pulling images (ignoring image for service #{ignore_service})"
-      services = services.gsub(ignore_service, '')
-      services = services.gsub("\n", ' ')
+      services.sub!(/^#{ignore_service}$/, '')
     end
+    services.gsub!("\n", ' ')
     docker_compose("pull --quiet #{services}", stream: STDOUT)
   end
 
