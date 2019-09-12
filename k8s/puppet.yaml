@@ -6,7 +6,23 @@ releases:
   version: "0.0.1"
   wait: true
   values:
-  - hieradataurl: git@github.com:SOMEUSER/hiera.git
+  - dockerImage:
+      puppetserver:
+        tag: "6.4.0"
+        pullPolicy: "IfNotPresent"
+      git_sync:
+        tag: "v3.1.2"
+        pullPolicy: "IfNotPresent"
+      r10k:
+        tag: "3.3.1"
+        pullPolicy: "IfNotPresent"
+      postgres:
+        tag: "9.6"
+        pullPolicy: "IfNotPresent"
+      puppetdb:
+        tag: "6.5.0"
+        pullPolicy: "IfNotPresent"
+    hieradataurl: git@github.com:SOMEUSER/hiera.git
     puppeturl: git@github.com:SOMEUSER/puppet.git
     hiera: |-
       :backends:
