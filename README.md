@@ -68,6 +68,13 @@ PuppetDB
   `Preferences>File Sharing` in order for these directories to be created
   and volume-mounted automatically. There is no need to add each sub directory.
 
+## Container Versions
+
+By default, the puppetserver and puppetdb containers will use the `latest` tag.
+`PUPPETSERVER_VERSION` and `PUPPETDB_VERSION` environment variables have been
+added to the compose file so you can pin versions if you need to by setting those
+on the command line, or in a `.env` file.
+
 ## Pupperware on Windows (using LCOW)
 
 Complete instructions for provisiong a server with LCOW support are in [README-windows.md](./README-windows.md)
