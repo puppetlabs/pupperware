@@ -6,10 +6,6 @@ describe 'The docker-compose file works' do
   include Pupperware::SpecHelpers
 
   VOLUMES = [
-    'volumes/code',
-    'volumes/puppet',
-    'volumes/serverdata',
-    'volumes/puppetdb/ssl',
     'volumes/puppetdb-postgres/data'
   ]
 
@@ -23,7 +19,7 @@ describe 'The docker-compose file works' do
       fail "`docker-compose` must be installed and available in your PATH"
     end
     teardown_cluster()
-    # LCOW requires directories to exist
+    # LCOW requires bind mount directories to exist
     create_host_volume_targets(ENV['VOLUME_ROOT'], VOLUMES)
     # ensure all containers are latest versions
     docker_compose('pull --quiet', stream: STDOUT)

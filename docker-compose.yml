@@ -18,9 +18,9 @@ services:
       - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
       - PUPPETDB_SERVER_URLS=https://puppetdb.${DOMAIN:-internal}:8081
     volumes:
-      - ${VOLUME_ROOT:-.}/volumes/code:/etc/puppetlabs/code/
-      - ${VOLUME_ROOT:-.}/volumes/puppet:/etc/puppetlabs/puppet/
-      - ${VOLUME_ROOT:-.}/volumes/serverdata:/opt/puppetlabs/server/data/puppetserver/
+      - puppetserver-code:/etc/puppetlabs/code/
+      - puppetserver-config:/etc/puppetlabs/puppet/
+      - puppetserver-data:/opt/puppetlabs/server/data/puppetserver/
     dns_search: ${DOMAIN:-internal}
     networks:
       default:
@@ -43,6 +43,7 @@ services:
     expose:
       - 5432
     volumes:
+      # only bind mounts currently work under LCOW for Postgres
       - ${VOLUME_ROOT:-.}/volumes/puppetdb-postgres/data:/var/lib/postgresql/data
       - ./postgres-custom:/docker-entrypoint-initdb.d
     dns_search: ${DOMAIN:-internal}
@@ -68,9 +69,15 @@ services:
       - postgres
       - puppet
     volumes:
-      - ${VOLUME_ROOT:-.}/volumes/puppetdb/ssl:/etc/puppetlabs/puppet/ssl/
+      - puppetdb-ssl:/etc/puppetlabs/puppet/ssl/
     dns_search: ${DOMAIN:-internal}
     networks:
       default:
         aliases:
          - puppetdb.${DOMAIN:-internal}
+
+volumes:
+  puppetserver-code:
+  puppetserver-config:
+  puppetserver-data:
+  puppetdb-ssl:
