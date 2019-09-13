@@ -137,7 +137,8 @@ module SpecHelpers
     STDOUT.puts("Creating volumes directory structure in #{root}")
     volumes.each { |subdir| FileUtils.mkdir_p(File.join(root, subdir)) }
     # Hack: grant all users access to this temp dir for the sake of Docker daemon
-    run_command("icacls \"#{root}\" /grant Users:\"(OI)(CI)F\" /T")
+    # icacls can't have trailing slashes in the path, so remove with expand_path
+    run_command("icacls \"#{File.expand_path(root)}\" /grant Users:\"(OI)(CI)F\" /T")
   end
 
   def get_containers

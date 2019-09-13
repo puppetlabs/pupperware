@@ -79,6 +79,8 @@ function Build-Container(
 function Initialize-TestEnv()
 {
     $tempVolumeRoot = Join-Path -Path $ENV:TEMP -ChildPath ([System.IO.Path]::GetRandomFileName())
+    # tack on a trailing / or \
+    $tempVolumeRoot = Join-Path -Path $tempVolumeRoot -ChildPath ([System.IO.Path]::DirectorySeparatorChar)
     Write-Host "##vso[task.setvariable variable=VOLUME_ROOT]$tempVolumeRoot"
 }
 

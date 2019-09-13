@@ -6,7 +6,7 @@ describe 'The docker-compose file works' do
   include Pupperware::SpecHelpers
 
   VOLUMES = [
-    'volumes/puppetdb-postgres/data'
+    'puppetdb-postgres'
   ]
 
   before(:all) do
