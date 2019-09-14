@@ -130,15 +130,32 @@ module SpecHelpers
     run_command('docker ps --all')
   end
 
+  # https://github.com/moby/moby/issues/39922
+  # Each launched VM (and correspondingly container) is run under a unique Windows
+  # user account (in this case a random GUID) to run it's vmwp.exe host process.
+  # So the docker volume that gets created needs to have the FullControl permission
+  # granted to that specific user that owns the VM / container, but that's not
+  # currently the case.
+  #
+  # Until the bug can be fixed, grant the NT VIRTUAL MACHINE\Virtual Machines
+  # group FullControl to a specific path so that operations like symlink
+  # creation will succeed from inside Linux Containers
+  #
+  # Note this helper can't work under the usual C:\ProgramData\Docker\volumes
+  # directory when called by the Azure CI agent, which is a lower privilege
+  # account without access to permissions in that directory
+  def grant_windows_vm_group_full_permissions(path)
+    # icacls can't have trailing slashes in the path, so remove with expand_path
+    run_command("icacls \"#{File.expand_path(path)}\" /grant *S-1-5-83-0:\"(OI)(CI)F\" /T")
+  end
+
   # Windows requires directories to exist prior, whereas Linux will create them
   def create_host_volume_targets(root, volumes)
     return unless IS_WINDOWS
 
     STDOUT.puts("Creating volumes directory structure in #{root}")
     volumes.each { |subdir| FileUtils.mkdir_p(File.join(root, subdir)) }
-    # Hack: grant all users access to this temp dir for the sake of Docker daemon
-    # icacls can't have trailing slashes in the path, so remove with expand_path
-    run_command("icacls \"#{File.expand_path(root)}\" /grant Users:\"(OI)(CI)F\" /T")
+    grant_windows_vm_group_full_permissions(root)
   end
 
   def get_containers
