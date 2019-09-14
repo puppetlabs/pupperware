@@ -43,9 +43,7 @@ services:
     expose:
       - 5432
     volumes:
-      # only bind mounts currently work under LCOW for Postgres
-      # https://github.com/moby/moby/issues/39922
-      - ${VOLUME_ROOT}puppetdb-postgres:/var/lib/postgresql/data
+      - puppetdb-postgres:/var/lib/postgresql/data
       - ./postgres-custom:/docker-entrypoint-initdb.d
     dns_search: ${DOMAIN:-internal}
     networks:
@@ -82,5 +80,4 @@ volumes:
   puppetserver-config:
   puppetserver-data:
   puppetdb-ssl:
-  # unused in LCOW since a bind mount is used instead - https://github.com/moby/moby/issues/39922
   puppetdb-postgres:

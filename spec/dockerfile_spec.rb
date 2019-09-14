@@ -5,10 +5,6 @@ require "#{File.join(File.dirname(__FILE__), 'examples', 'running_cluster.rb')}"
 describe 'The docker-compose file works' do
   include Pupperware::SpecHelpers
 
-  VOLUMES = [
-    'puppetdb-postgres'
-  ]
-
   before(:all) do
     # append .internal (or user domain) to ensure domain suffix for Docker DNS resolver is used
     # since search domains are not appended to /etc/resolv.conf
@@ -19,8 +15,6 @@ describe 'The docker-compose file works' do
       fail "`docker-compose` must be installed and available in your PATH"
     end
     teardown_cluster()
-    # LCOW requires bind mount directories to exist
-    create_host_volume_targets(ENV['VOLUME_ROOT'], VOLUMES)
     # ensure all containers are latest versions
     docker_compose('pull --quiet', stream: STDOUT)
   end
