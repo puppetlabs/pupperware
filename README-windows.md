@@ -4,8 +4,9 @@ The ecosystem surrounding Docker container support for Linux containers on Windo
 
 The Pupperware project is being tested against the latest [LCOW (Linux Containers on Windows)](https://github.com/linuxkit/lcow) support available from Docker and Microsoft, and as such has a number of pre-requisites. At a high level, this support enables running Linux and Windows containers side-by-side on the same host and relies on:
 
-* A build of Windows newer than Windows 10, Build 1709
+* A build of Windows newer than Windows 10, Build 1809
   - Per [Moby Issue 33850 Comment](https://github.com/moby/moby/issues/33850#issuecomment-478192332) from Mar 29 2019, LCOW will only support V2 HCS APIs which require RS4 / RS5 builds (Windows 10 1803+, Windows Server 2016 1803+, Windows Server 2019+)
+  - More specifically, the Postgres Linux container requires RS5 (Windows 10 1809+, Windows Server 2019+)
 * Docker edge release 18.02 with experimental features enabled, nightly currently preferred
 * A LinuxKit based kernel image
 * docker-compose binaries
@@ -21,6 +22,7 @@ The following steps outline how to provision a host with the required support to
 * [Provision a Windows host with LCOW support](#provision-a-windows-host-with-lcow-support)
 * [Install the Docker nightly build](#install-the-docker-nightly-build)
 * [Install the docker-compose binaries](#install-the-docker-compose-binaries)
+* [Set the Volumes directory permissions](#set-the-volumes-directory-permissions)
 * [Validate the Install](#validate-the-install)
 
 Some of these instructions are updated from the [A sneak peek at LCOW](https://stefanscherer.github.io/sneak-peek-at-lcow/) written by Stefan Scherer [@stefscherer](https://twitter.com/stefscherer)
@@ -56,7 +58,7 @@ Server:
 
 ## Provision a Windows host with LCOW support
 
-As mentioned, Windows 10 Build 1709+, Windows Server 2016 1709+ or newer builds are necessary to support LCOW. It is preferred to use RS5+ builds like Windows 10 1809+ or Windows Server 2019 in preparation for upcoming LCOW v2.
+As mentioned, Windows 10 Build 1809+, Windows Server 2019 1809+ or newer builds are necessary to support LCOW.
 
 If the host is provisioned in Azure, the host must be a `v3` SKU to support nested virtualization, like `Standard_D4s_v3`. Other cloud providers or virtualized infrastructure will have similar requirements / configuration needed to enable nested virtualization.
 
@@ -247,6 +249,14 @@ Copy-Item .\dist\docker-compose-Windows-x86_64.exe $ENV:ProgramFiles\Docker\dock
 
 NOTE: Python 3.6 series is required to build Windows binaries. 3.7 can be used, but requires manually merging the patch from https://github.com/Alexpux/MINGW-packages/commit/4c18633ba2331d980f00aff075f17135399c43c5 into the cx_Freeze package.
 
+## Set the Volumes directory permissions
+
+Due to bug [#39922](https://github.com/moby/moby/issues/39922) in Docker, the Postgres Linux container cannot use a Docker volume stored in the typical location of `C:\ProgramData\Docker\volumes`. Postgres attempts to create a hardlink, but the `vwmp.exe` process hosting the container lacks the permission to do so. Until the bug is fixed, a workaround is to grant the `NT VIRTUAL MACHINE\Virtual Machines` group inheritable full control to the volumes parent directory. Hopefully in the future this will be automatically managed by Docker and unnecessary for users to manage themselves.
+
+```
+icacls C:\ProgramData\docker\volumes /grant *S-1-5-83-0:"(OI)(CI)F" /T
+```
+
 ## Validate the install
 
 The Docker service should now be running on boot and should now yield details about the LCOW setup like
@@ -310,5 +320,5 @@ Linux and Windows containers
 
 ```powershell
 docker run -itd microsoft/nanoserver
-docker run -itd alpine
+docker run -itd postgres:9.6
 ```
