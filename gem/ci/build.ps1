@@ -74,6 +74,8 @@ function Build-Container(
     docker build $docker_args $PathOrUri
 }
 
+# NOTE: no longer necessary, but left in case need arises for temp bind mounts
+# https://github.com/moby/moby/issues/39922
 # set an Azure variable for temp volumes root
 # temp volumes root is deleted in Clear-ContainerBuilds
 function Initialize-TestEnv()
@@ -146,6 +148,8 @@ function Clear-ComposeLeftOvers
     docker network prune --force
 }
 
+# NOTE: no longer necessary, but left in case need arises for temp bind mounts
+# https://github.com/moby/moby/issues/39922
 function Remove-ContainerVolumeRoot
 {
     # delete directory if ENV variable is defined and directory actually exists

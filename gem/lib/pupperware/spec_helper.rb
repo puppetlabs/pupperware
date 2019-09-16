@@ -150,6 +150,7 @@ module SpecHelpers
   end
 
   # Windows requires directories to exist prior, whereas Linux will create them
+  # @deprecated
   def create_host_volume_targets(root, volumes)
     return unless IS_WINDOWS
 
