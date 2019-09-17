@@ -515,8 +515,7 @@ module SpecHelpers
     generate_rbac_token()
     puts "Waiting for the puppet-agent's pxp-agent to connect to the pe-orchestration-service"
     return retry_block_up_to_timeout(timeout) do
-      output = curl_pe_orchestration_services("orchestrator/v1/inventory/#{agent_name}")
-      raise("pxp-agent has not connected after #{timeout} seconds") if !output.include?('"connected" : true')
+      raise("pxp-agent has not connected after #{timeout} seconds") if !JSON.parse(curl_pe_orchestration_services("orchestrator/v1/inventory/#{agent_name}"))['connected']
     end
   end
 
