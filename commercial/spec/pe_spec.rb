@@ -11,7 +11,7 @@ RSpec.configure do |c|
     run_command("docker pull --quiet #{CLIENT_TOOLS_IMAGE}")
     docker_compose_up()
     wait_on_service_health('pe-orchestration-services')
-    wait_for_pxp_agent_to_connect()
+    wait_for_pxp_agent_to_connect(agent_name: 'puppet-agent.test')
   end
 
   c.after(:suite) do
