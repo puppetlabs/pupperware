@@ -284,11 +284,11 @@ module SpecHelpers
     end
   end
 
-  def wait_on_service_health(service, seconds = nil)
+  def wait_on_service_health(service, seconds = nil, status = "healthy")
     service_container = get_service_container(service)
     # this always runs after healthcheck timer started, so no need to wait extra time
     seconds = get_container_healthcheck_timeout(service_container) if seconds.nil?
-    STDOUT.puts("Waiting up to #{seconds} seconds for service #{service} to be healthy...")
+    STDOUT.puts("Waiting up to #{seconds} seconds for service #{service} to be #{status}...")
 
     # services with healthcheck should deal with their own timeouts
     return retry_block_up_to_timeout(seconds, exit_early_on_error_type: ContainerNotFoundError) do
@@ -300,11 +300,11 @@ module SpecHelpers
       end
       if health.nil?
         raise("#{service} does not define a healthcheck")
-      elsif (health.Status == 'healthy' || health.Status == "'healthy'")
-        STDOUT.puts("Service #{service} (container: #{service_container}) is healthy")
-        return 'healthy'
+      elsif (health.Status == status || health.Status == "'#{status}'")
+        STDOUT.puts("Service #{service} (container: #{service_container}) is #{status}")
+        return status
       else
-        raise("#{service} is not healthy - currently #{health.Status}\n#{log_msg}")
+        raise("#{service} is not #{status} - currently #{health.Status}\n#{log_msg}")
       end
     end
   end
