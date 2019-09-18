@@ -27,6 +27,19 @@ function Get-ContainerVersion
     $gitver -replace '-.*', ''
 }
 
+function Get-EnterpriseContainerVersion(
+    $Package,
+    $Token,
+    $PeVer = "2019.1.x")
+{
+    $params = @{
+      Uri = "https://raw.githubusercontent.com/puppetlabs/enterprise-dist/$PeVer/packages.json"
+      Headers = @{ "Authorization" = "token $Token" }
+    }
+    $packages = Invoke-RestMethod @params
+    $packages."ubuntu-18.04-amd64"."$Package"."version"
+}
+
 # only need to specify -Name or -Path when calling
 function Lint-Dockerfile(
     $Name,
