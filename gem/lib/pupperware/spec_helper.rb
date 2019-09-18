@@ -111,6 +111,7 @@ module SpecHelpers
   end
 
   def docker_compose_up()
+    docker_compose('config', stream: STDOUT)
     docker_compose('up --detach', stream: STDOUT)
     docker_compose('images', stream: STDOUT)
     # TODO: use --all when docker-compose fixes https://github.com/docker/compose/issues/6579
