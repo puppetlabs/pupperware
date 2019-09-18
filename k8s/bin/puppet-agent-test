@@ -1,3 +1,0 @@
-#! /bin/sh
-
-docker run --net host puppet/puppet-agent-ubuntu agent -t --certname `< /dev/urandom tr -dc a-z | head -c${1:-16};echo;`

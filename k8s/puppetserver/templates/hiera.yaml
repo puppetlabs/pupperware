@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: hiera-config
-data:
-  hiera.yaml: |-
-{{ .Values.hiera | indent 4 }}
