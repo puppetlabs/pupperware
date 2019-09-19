@@ -3,7 +3,7 @@ version: '3.7'
 services:
   puppet:
     hostname: puppet.${DOMAIN:-internal}
-    image: puppet/puppetserver:6.4.0
+    image: puppet/puppetserver:${PUPPETSERVER_VERSION:-latest}
     ports:
       - 8140:8140
     environment:
@@ -54,7 +54,7 @@ services:
 
   puppetdb:
     hostname: puppetdb.${DOMAIN:-internal}
-    image: puppet/puppetdb
+    image: puppet/puppetdb:${PUPPETDB_VERSION:-latest}
     environment:
       - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
       # This name is an FQDN so the short name puppet doesn't collide outside compose network
