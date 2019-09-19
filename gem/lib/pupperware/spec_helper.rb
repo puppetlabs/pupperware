@@ -41,13 +41,13 @@ module SpecHelpers
     Open3.popen3(env, command) do |stdin, stdout, stderr, wait_thread|
       stdout_reader = Thread.new do
         Thread.current.report_on_exception = false
-        stdout.each { |l| stdout_string << l and stream.puts l }
+        stdout.each { |l| stdout_string << l and stream.puts l and stream.flush() }
       end
       stderr_reader = Thread.new do
         Thread.current.report_on_exception = false
         # Write stderr to stdout so it's more visible and shows up
         # in spec runs even when the tests aren't reading stderr
-        stderr.each { |l| stderr_string << l and stream.puts l }
+        stderr.each { |l| stderr_string << l and stream.puts l and stream.flush() }
       end
 
       stdin.close
@@ -334,7 +334,7 @@ module SpecHelpers
     container_name = get_container_name(container)
     STDOUT.puts("#{'*' * 80}\nContainer logs for #{container_name} / #{container}\n#{'*' * 80}\n")
     # run_command streams stdout / stderr
-    run_command("docker logs --details --timestamps #{container} 2>&1")[:stdout]
+    run_command("docker logs --details --timestamps #{container} 2>&1", stream: STDOUT)
     STDOUT.puts("#{'*' * 80}\nEnd container logs for #{container_name} / #{container}\n#{'*' * 80}\n\n")
   end
 
