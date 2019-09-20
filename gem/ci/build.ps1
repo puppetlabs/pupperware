@@ -56,6 +56,16 @@ function Lint-Dockerfile(
     if ($LASTEXITCODE -ne 0) { throw "ERROR: Linting $Path" }
 }
 
+function Test-NetworkAccess() {
+    if ($ENV:REQUIRE_ARTIFACTORY) {
+        try {
+            Invoke-RestMethod -Uri https://artifactory.delivery.puppetlabs.net/artifactory/api/system/ping -TimeoutSec 10
+        } catch {
+            throw 'ERROR: Artifactory cannot be reached or unhealthy. Are you on the VPN?'
+        }
+    }
+}
+
 function Build-Container(
     $Name,
     $Namespace = 'puppet',
@@ -68,6 +78,8 @@ function Build-Container(
     $Pull = $true,
     $AdditionalOptions = @())
 {
+    Test-NetworkAccess
+
     $build_date = (Get-Date).ToUniversalTime().ToString('o')
     $docker_args = @(
         '--build-arg', "version=$Version",
