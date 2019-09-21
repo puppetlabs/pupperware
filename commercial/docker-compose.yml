@@ -8,9 +8,14 @@ services:
       - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
       # Set the control repo URL like https://github.com/puppetlabs/control-repo.git
       # - R10K_REMOTE=
-    # volumes:
-      # For an R10K_REMOTE the id-control_repo.rsa path may be bind mounted
+    volumes:
+      - puppetserver:/opt/puppetlabs/server/data/puppetserver
+      - puppetserver-packages:/opt/puppetlabs/server/data/packages
+      - code-manager:/opt/puppetlabs/server/data/code-manager
+      # NOTE: for an R10K_REMOTE the id-control_repo.rsa path may be bind mounted like:
       # - ./path/to/codemanager/ssh/keys:/etc/puppetlabs/puppetserver/ssh
+      # and this line may be removed to prevent a named volume
+      - code-manager-ssh-key:/etc/puppetlabs/puppetserver/ssh
     ports:
       - 8140:8140
       - 8170:8170
@@ -28,6 +33,8 @@ services:
       - POSTGRES_HOSTNAME=postgres.test
       - PE_BOLT_SERVER_HOSTNAME=pe-bolt-server.test
       - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
+    volumes:
+      - orchestration-services:/opt/puppetlabs/server/data/orchestration-services
     ports:
       - 8142:8142
       - 8143:8143
@@ -46,6 +53,8 @@ services:
       - PUPPETDB_HOSTNAME=puppetdb.test
       - POSTGRES_HOSTNAME=postgres.test
       - PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services.test
+    volumes:
+      - console-services:/opt/puppetlabs/server/data/console-services
     ports:
       - 443:4431
       - 4430:4430
@@ -68,6 +77,8 @@ services:
     environment:
       - PUPPETSERVER_HOSTNAME=puppet.test
       - PE_BOLT_SERVER_LOGLEVEL=${PE_BOLT_SERVER_LOGLEVEL:-info}
+    volumes:
+      - bolt-server:/opt/puppetlabs/server/data/bolt-server
     networks:
       test:
         aliases:
@@ -81,6 +92,8 @@ services:
       - PUPPETDB_PASSWORD=puppetdb
       - PUPPETDB_USER=puppetdb
       - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
+    volumes:
+      - puppetdb:/opt/puppetlabs/server/data/puppetdb
     ports:
       - 8080
       - 8081
@@ -98,6 +111,8 @@ services:
     environment:
       - CERTNAME=postgres.test
       - PUPPETSERVER_HOSTNAME=puppet.test
+    volumes:
+      - puppetdb-postgres:/var/lib/postgresql/data
     expose:
       - 5432
     dns_search: test
@@ -108,3 +123,13 @@ services:
 networks:
   test:
     name: pupperware-commercial
+volumes:
+  puppetserver:
+  puppetserver-packages:
+  code-manager:
+  code-manager-ssh-key:
+  orchestration-services:
+  console-services:
+  bolt-server:
+  puppetdb:
+  puppetdb-postgres:
