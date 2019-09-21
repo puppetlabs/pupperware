@@ -36,8 +36,11 @@ function Get-EnterpriseContainerVersion(
       Uri = "https://raw.githubusercontent.com/puppetlabs/enterprise-dist/$PeVer/packages.json"
       Headers = @{ "Authorization" = "token $Token" }
     }
+    $v = "" | Select-Object -Property version,release
     $packages = Invoke-RestMethod @params
-    $packages."ubuntu-18.04-amd64"."$Package"."version"
+    $v.version = $packages."ubuntu-18.04-amd64"."$Package"."version"
+    $v.release = $packages."ubuntu-18.04-amd64"."$Package"."release"
+    $v
 }
 
 # only need to specify -Name or -Path when calling
@@ -74,6 +77,7 @@ function Build-Container(
     [Alias('Context')]
     $PathOrUri = "docker/$Name",
     $Version = (Get-ContainerVersion),
+    $Release = '',
     $Vcs_ref = $(git rev-parse HEAD),
     $Pull = $true,
     $AdditionalOptions = @())
@@ -88,6 +92,10 @@ function Build-Container(
         '--file', $Dockerfile,
         '--tag', "$Namespace/${Name}:$Version"
     ) + $AdditionalOptions
+
+    if ($Release -ne '') {
+        $docker_args += '--build-arg', "release=$Release"
+    }
 
     if ($Pull) {
         $docker_args += '--pull'
@@ -116,7 +124,8 @@ function Invoke-ContainerTest(
     $Namespace = 'puppet',
     $Specs = 'docker/spec',
     $Options = '.rspec',
-    $Version = (Get-ContainerVersion))
+    $Version = (Get-ContainerVersion),
+    $Release = '')
 {
     # NOTE our shared `docker_compose` Ruby method assumes the
     # docker-compose.yml files are in the current working directory,
@@ -124,9 +133,15 @@ function Invoke-ContainerTest(
     Push-Location (Split-Path $Specs)
     $specdir = Split-Path -Leaf $Specs
 
-    if ($Name -ne $null)
-    {
-        $ENV:PUPPET_TEST_DOCKER_IMAGE = "$Namespace/${Name}:$Version"
+    if ($Release -ne '') {
+        $Tag = "$Version-$Release"
+    }
+    else {
+        $Tag = "$Version"
+    }
+
+    if ($Name -ne $null) {
+        $ENV:PUPPET_TEST_DOCKER_IMAGE = "$Namespace/${Name}:$Tag"
         Write-Host "Testing against image: ${ENV:PUPPET_TEST_DOCKER_IMAGE}"
     }
     bundle exec rspec --version
