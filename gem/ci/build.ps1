@@ -89,12 +89,15 @@ function Build-Container(
         '--build-arg', "version=$Version",
         '--build-arg', "vcs_ref=$Vcs_ref",
         '--build-arg', "build_date=$build_date",
-        '--file', $Dockerfile,
-        '--tag', "$Namespace/${Name}:$Version"
+        '--file', $Dockerfile
     ) + $AdditionalOptions
 
     if ($Release -ne '') {
+        $docker_args += '--tag', "$Namespace/${Name}:$Version-$Release"
         $docker_args += '--build-arg', "release=$Release"
+    }
+    else {
+        $docker_args += '--tag', "$Namespace/${Name}:$Version"
     }
 
     if ($Pull) {
