@@ -123,7 +123,7 @@ module SpecHelpers
   end
 
   def docker_compose_down()
-    docker_compose('down --volumes', stream: STDOUT)
+    docker_compose('down --volumes --remove-orphans', stream: STDOUT)
     STDOUT.puts("Running containers in compose:")
     # TODO: use --all when docker-compose fixes https://github.com/docker/compose/issues/6579
     docker_compose('ps', stream: STDOUT)
