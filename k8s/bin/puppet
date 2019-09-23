@@ -1,3 +1,0 @@
-#! /bin/sh
-
-kubectl get pods --selector=svc=puppet -o name | cut -d '/' -f 2 | xargs -I '{}' kubectl exec '{}' -- puppet "$@"
