@@ -350,6 +350,20 @@ module SpecHelpers
     get_containers.each { |id| emit_log(id) }
   end
 
+  def kill_service_and_wait_for_return(service: nil, process: nil)
+    container = get_service_container(service)
+    original_restart_count = inspect_container(container,'{{.RestartCount}}')
+    docker_compose("exec -T #{service} pkill #{process}")
+    new_restart_count = inspect_container(container,'{{.RestartCount}}')
+    counter = 0
+    while(original_restart_count == new_restart_count) do
+      counter += 1
+      raise "Container #{service} never restarted" if(counter == 5)
+      sleep(5)
+      new_restart_count = inspect_container(container,'{{.RestartCount}}')
+    end
+  end
+
   ######################################################################
   # Postgres Helpers
   ######################################################################
@@ -417,6 +431,20 @@ module SpecHelpers
 
   def curl_pe_orchestration_services(end_point)
     curl('localhost', 8143, end_point).body
+  end
+
+  def orchestrate_puppet_run(target_agent: 'puppet-agent.test', network: 'pupperware-commercial', rbac_username: 'admin', rbac_password: 'admin', puppetserver: 'puppet.test', pe_console_services: 'pe-console-services.test', pe_orchestration_services: 'pe-orchestration-services.test')
+    run_command("docker run \
+           --rm \
+           --network #{network} \
+           --env RBAC_USERNAME=#{rbac_username} \
+           --env RBAC_PASSWORD=#{rbac_password} \
+           --env PUPPETSERVER_HOSTNAME=#{puppetserver} \
+           --env PE_CONSOLE_SERVICES_HOSTNAME=#{pe_console_services} \
+           artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:kearney-latest \
+           puppet-job run \
+              --nodes #{target_agent} \
+              --service-url https://#{pe_orchestration_services}:8143/")
   end
 
   ######################################################################
