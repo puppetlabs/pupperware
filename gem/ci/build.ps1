@@ -36,11 +36,11 @@ function Get-EnterpriseContainerVersion(
       Uri = "https://raw.githubusercontent.com/puppetlabs/enterprise-dist/$PeVer/packages.json"
       Headers = @{ "Authorization" = "token $Token" }
     }
-    $v = "" | Select-Object -Property version,release
     $packages = Invoke-RestMethod @params
-    $v.version = $packages."ubuntu-18.04-amd64"."$Package"."version"
-    $v.release = $packages."ubuntu-18.04-amd64"."$Package"."release"
-    $v
+    @{
+      Version = $packages."ubuntu-18.04-amd64"."$Package"."version"
+      Release = $packages."ubuntu-18.04-amd64"."$Package"."release"
+    }
 }
 
 # only need to specify -Name or -Path when calling
