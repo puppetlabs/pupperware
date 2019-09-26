@@ -131,6 +131,10 @@ module SpecHelpers
     run_command('docker ps --all')
   end
 
+  def docker_compose_exec(service:, command:)
+    docker_compose("exec #{service} #{command}", stream: STDOUT)
+  end
+
   # https://github.com/moby/moby/issues/39922
   # Each launched VM (and correspondingly container) is run under a unique Windows
   # user account (in this case a random GUID) to run it's vmwp.exe host process.
@@ -353,7 +357,7 @@ module SpecHelpers
   def kill_service_and_wait_for_return(service: nil, process: nil)
     container = get_service_container(service)
     original_restart_count = inspect_container(container,'{{.RestartCount}}')
-    docker_compose("exec -T #{service} pkill #{process}")
+    docker_compose_exec(service: service, command: "pkill #{process}")
     new_restart_count = inspect_container(container,'{{.RestartCount}}')
     counter = 0
     while(original_restart_count == new_restart_count) do
@@ -370,8 +374,8 @@ module SpecHelpers
 
   # @deprecated
   def count_postgres_database(database, service = 'postgres')
-    cmd = "exec -T #{service} psql -t --username=puppetdb --command=\"SELECT count(datname) FROM pg_database where datname = '#{database}'\""
-    docker_compose(cmd)[:stdout].strip
+    cmd = "psql -t --username=puppetdb --command=\"SELECT count(datname) FROM pg_database where datname = '#{database}'\""
+    docker_compose_exec(service: service, command: cmd)[:stdout].strip
   end
 
   # @deprecated
@@ -384,8 +388,8 @@ module SpecHelpers
 
   def get_postgres_extensions(service: 'postgres')
     return retry_block_up_to_timeout(30) do
-      query = "exec -T #{service} psql --username=puppetdb --command=\"SELECT * FROM pg_extension\""
-      extensions = docker_compose(query)[:stdout].chomp
+      query = "psql --username=puppetdb --command=\"SELECT * FROM pg_extension\""
+      extensions = docker_compose_exec(service: service, command: query)[:stdout].chomp
       raise('failed to retrieve extensions') if extensions.empty?
       STDOUT.puts("retrieved extensions: #{extensions}")
       extensions
@@ -396,8 +400,8 @@ module SpecHelpers
   # PE Console Services Helper
   ######################################################################
   def unrevoke_console_admin_user(postgres_container_name = "postgres")
-    query = "exec -T #{postgres_container_name} psql --username=puppetdb --dbname=pe-rbac --command \"UPDATE subjects SET is_revoked = 'f' WHERE login='admin';\""
-    output = docker_compose(query)[:stdout].chomp
+    query = "psql --username=puppetdb --dbname=pe-rbac --command \"UPDATE subjects SET is_revoked = 'f' WHERE login='admin';\""
+    output = docker_compose_exec(service: postgres_container_name, command: query)[:stdout].chomp
     raise('failed to unrevoke the admin account') if ! output.eql? "UPDATE 1"
   end
 
@@ -513,7 +517,7 @@ module SpecHelpers
   # agent_name is the fully qualified name of the node
   def clean_certificate(agent_name, service: 'puppet')
     STDOUT.puts "cleaning cert for #{agent_name}"
-    result = docker_compose("exec -T #{service} puppetserver ca clean --certname #{agent_name}")
+    result = docker_compose_exec(service: service, command: "puppetserver ca clean --certname #{agent_name}")
     return result[:status].exitstatus
   end
 
