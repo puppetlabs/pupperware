@@ -3,7 +3,6 @@ shared_context "running_cluster", :shared_context => :metadata do
 
   before(:each) do
     docker_compose_up()
-    wait_on_service_health('postgres')
   end
 end
 
@@ -16,14 +15,6 @@ shared_examples 'a running pupperware cluster' do
     expect(get_service_container('puppet')).to_not be_empty
     expect(get_service_container('postgres')).to_not be_empty
     expect(get_service_container('puppetdb')).to_not be_empty
-  end
-
-  it 'should start puppetserver' do
-    expect(wait_on_service_health('puppet')).to eq('healthy')
-  end
-
-  it 'should start puppetdb' do
-    expect(wait_on_service_health('puppetdb')).to eq('healthy')
   end
 
   it 'should include postgres extensions' do

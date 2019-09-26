@@ -5,6 +5,7 @@ require 'open3'
 require 'timeout'
 require 'openssl'
 require 'stringio'
+require 'thwait'
 require 'time'
 
 module Pupperware
@@ -86,9 +87,10 @@ module SpecHelpers
       rescue
         # if this anonymous function returns true, exit without error
         return nil if exit_early_on.($!)
-        if (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) > timeout
+        waited = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+        if waited > timeout
           raise raise_custom_error_type.nil? ?
-            Timeout::Error.new :
+            Timeout::Error.new("Waited #{waited.round(2)} seconds (timeout #{timeout})") :
             raise_custom_error_type.new
         end
         sleep(1)
@@ -131,6 +133,7 @@ module SpecHelpers
     docker_compose('config', stream: STDOUT)
     docker_compose('up --detach', stream: STDOUT)
     docker_compose('images', stream: STDOUT)
+    wait_on_stack_healthy()
     # TODO: use --all when docker-compose fixes https://github.com/docker/compose/issues/6579
     docker_compose('ps', stream: STDOUT)
     get_containers().each do |id|
@@ -146,6 +149,50 @@ module SpecHelpers
     docker_compose('ps', stream: STDOUT)
     STDOUT.puts("Running containers in system:")
     run_command('docker ps --all')
+  end
+
+  # will simultaneously wait on all containers with healthchecks defined
+  def wait_on_stack_healthy()
+    threads = []
+    mutex = Mutex.new
+    cancel = false
+
+    get_containers().each do |id|
+      # skip those without healthchecks
+      next if get_container_healthcheck_details(id).nil?
+      threads << Thread.new do
+        # this must be set for the waiting to re-raise the thread
+        Thread.current.abort_on_exception = true
+        Thread.current.report_on_exception = false
+
+        begin
+          exit_early_on = -> err {
+            raise err if ContainerNotFoundError == err.class
+            mutex.synchronize do
+              # check if any containers has failed to wait and stop waiting if necessary
+              STDOUT.puts("Abandoning healthy wait for container: #{id}!") if cancel
+              return cancel
+            end
+          }
+          wait_on_container_health(container: id, exit_early_on: exit_early_on)
+        # waiting for healthy has failed due to a dead container or failing healthcheck
+        rescue
+          STDOUT.puts("ERROR: #{$!.class} (#{$!.message}) while waiting for healthy container: #{id}! Cancelling other waiters.")
+          # set cancel so that all other threads will stop executing prematurely
+          mutex.synchronize { cancel = true  }
+          raise
+        end
+      end
+    end
+
+    # WARN: this is a global setting, this will prevent stack trace noise from showing in spec logs
+    # setting it for just the ThreadsWait waiter thread is not possible
+    Thread.report_on_exception = false
+    # Wait on all threads to complete and one of a few things happens:
+    # * all containers are healthy, none error and the wait is a success
+    # * one container fails, and throws an exception, teling all the others to cancel
+    #   and the exception is immediately raised here (other threads will gc)
+    ThreadsWait.all_waits(threads)
   end
 
   # https://github.com/moby/moby/issues/39922
