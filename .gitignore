@@ -1,9 +1,3 @@
-volumes/
-code/
-puppet/
-puppetdb/
-puppetdb-postgres/
-serverdata/
 Gemfile.lock
 .bundle/
 .ruby-version
