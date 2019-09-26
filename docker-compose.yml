@@ -14,6 +14,7 @@ services:
       # and must list all the names under which the puppetserver can be
       # reached. 'puppet.${DOMAIN:-internal}' must be one of them, otherwise puppetdb won't be
       # able to get a cert. Add other names as a comma-separated list
+      - CA_ALLOW_SUBJECT_ALT_NAMES=true
       - DNS_ALT_NAMES=puppet,puppet.${DOMAIN:-internal},${DNS_ALT_NAMES:-}
       - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
       - PUPPETDB_SERVER_URLS=https://puppetdb.${DOMAIN:-internal}:8081
