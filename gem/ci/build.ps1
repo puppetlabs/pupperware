@@ -37,7 +37,10 @@ function Get-EnterpriseContainerVersion(
       Headers = @{ "Authorization" = "token $Token" }
     }
     $packages = Invoke-RestMethod @params
-    $packages."ubuntu-18.04-amd64"."$Package"."version"
+    @{
+      Version = $packages."ubuntu-18.04-amd64"."$Package"."version"
+      Release = $packages."ubuntu-18.04-amd64"."$Package"."release"
+    }
 }
 
 # only need to specify -Name or -Path when calling
@@ -74,6 +77,7 @@ function Build-Container(
     [Alias('Context')]
     $PathOrUri = "docker/$Name",
     $Version = (Get-ContainerVersion),
+    $Release = '',
     $Vcs_ref = $(git rev-parse HEAD),
     $Pull = $true,
     $AdditionalOptions = @())
@@ -85,9 +89,16 @@ function Build-Container(
         '--build-arg', "version=$Version",
         '--build-arg', "vcs_ref=$Vcs_ref",
         '--build-arg', "build_date=$build_date",
-        '--file', $Dockerfile,
-        '--tag', "$Namespace/${Name}:$Version"
+        '--file', $Dockerfile
     ) + $AdditionalOptions
+
+    if ($Release -ne '') {
+        $docker_args += '--tag', "$Namespace/${Name}:$Version-$Release"
+        $docker_args += '--build-arg', "release=$Release"
+    }
+    else {
+        $docker_args += '--tag', "$Namespace/${Name}:$Version"
+    }
 
     if ($Pull) {
         $docker_args += '--pull'
@@ -116,7 +127,8 @@ function Invoke-ContainerTest(
     $Namespace = 'puppet',
     $Specs = 'docker/spec',
     $Options = '.rspec',
-    $Version = (Get-ContainerVersion))
+    $Version = (Get-ContainerVersion),
+    $Release = '')
 {
     # NOTE our shared `docker_compose` Ruby method assumes the
     # docker-compose.yml files are in the current working directory,
@@ -124,9 +136,15 @@ function Invoke-ContainerTest(
     Push-Location (Split-Path $Specs)
     $specdir = Split-Path -Leaf $Specs
 
-    if ($Name -ne $null)
-    {
-        $ENV:PUPPET_TEST_DOCKER_IMAGE = "$Namespace/${Name}:$Version"
+    if ($Release -ne '') {
+        $Tag = "$Version-$Release"
+    }
+    else {
+        $Tag = "$Version"
+    }
+
+    if ($Name -ne $null) {
+        $ENV:PUPPET_TEST_DOCKER_IMAGE = "$Namespace/${Name}:$Tag"
         Write-Host "Testing against image: ${ENV:PUPPET_TEST_DOCKER_IMAGE}"
     }
     bundle exec rspec --version
