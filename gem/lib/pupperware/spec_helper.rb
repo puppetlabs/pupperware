@@ -327,7 +327,18 @@ module SpecHelpers
     return retry_block_up_to_timeout(seconds, exit_early_on: exit_early_on) do
       health = get_container_health_details(service_container)
       last_log = health&.Log&.last()
-      log_msg = "Exit [#{last_log&.ExitCode || 'Code Unknown'}]:\n\n#{last_log&.Output || 'Log Unavailable'}"
+      container_log = run_command("docker logs --tail 3 --details #{service_container} 2>&1", stream: StringIO.new)[:stdout].chomp
+      log_msg = <<-LOG
+Exit [#{last_log&.ExitCode || 'Code Unknown'}]:
+
+Healthcheck Logs:
+===========================================================
+#{last_log&.Output || 'Unavailable'}
+
+Container Logs:
+===========================================================
+#{container_log}
+LOG
       if get_container_state(service_container) == 'exited'
         raise ContainerNotFoundError.new("Service #{service} (container: #{service_container}) has exited\n#{log_msg}")
       end
