@@ -61,14 +61,29 @@ module SpecHelpers
     { status: status, stdout: stdout_string, stderr: stderr_string }
   end
 
-  def retry_block_up_to_timeout(timeout, exit_early_on_error_type: [], raise_custom_error_type: nil, &block)
+  # Retries a given block in one seconds intervals, up to the given timeout,
+  # until the block does not raise an error.
+  #
+  # @param timeout [Integer] how long to keep retrying the given block for
+  #                          note the block is not guaranteed to complete by this timeout
+  #                          instead, it's only guaranteed to no longer be executed
+  #                          again if a successful execution has not yet been made
+  # @exit_early_on [Proc]    when the block errors, this provides an optional
+  #                          anonymous function to run on the raised error
+  #                          if the function returns true, the raised error
+  #                          is re-raised, even if timeout seconds have not elapsed
+  # @raise_custom_error_type [Class] When specified, a custom error is raised
+  #                          instead of raising a Timeout::Error if the timeout
+  #                          value elapses without the block raising an error
+  # @return [Object]         the return value of the block
+  def retry_block_up_to_timeout(timeout, exit_early_on: -> e { false }, raise_custom_error_type: nil, &block)
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
     loop do
       begin
         return yield
       rescue
-        raise $! if [exit_early_on_error_type].flatten.include?($!.class)
+        raise $! if exit_early_on.($!)
         if (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) > timeout
           raise raise_custom_error_type.nil? ?
             Timeout::Error.new :
@@ -291,7 +306,7 @@ module SpecHelpers
     STDOUT.puts("Waiting up to #{seconds} seconds for service #{service} to be healthy...")
 
     # services with healthcheck should deal with their own timeouts
-    return retry_block_up_to_timeout(seconds, exit_early_on_error_type: ContainerNotFoundError) do
+    return retry_block_up_to_timeout(seconds, exit_early_on: -> err { ContainerNotFoundError == err.class }) do
       health = get_container_health_details(service_container)
       last_log = health&.Log&.last()
       log_msg = "Exit [#{last_log&.ExitCode || 'Code Unknown'}]:\n\n#{last_log&.Output || 'Log Unavailable'}"
