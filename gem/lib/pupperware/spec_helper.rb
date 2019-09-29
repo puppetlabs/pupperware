@@ -306,28 +306,33 @@ module SpecHelpers
     end
   end
 
-  def wait_on_service_health(service, seconds = nil)
+  def wait_on_service_health(service, seconds = nil, exit_early_on: nil)
     service_container = get_service_container(service)
+    wait_on_container_health(container: service_container, seconds: seconds, exit_early_on: exit_early_on)
+  end
+
+  def wait_on_container_health(container:, seconds: nil, exit_early_on:)
+    service = get_container_labels(container)['com.docker.compose.service'] || 'N/A'
     # this always runs after healthcheck timer started, so no need to wait extra time
-    seconds = get_container_healthcheck_timeout(service_container) if seconds.nil?
+    seconds = get_container_healthcheck_timeout(container) if seconds.nil?
     # only allow one iteration if container has already been up longer than its healthcheck
-    if (uptime = Integer(get_container_uptime_seconds(service_container))) > seconds
+    if (uptime = Integer(get_container_uptime_seconds(container))) > seconds
       seconds = 1
-      STDOUT.puts("Already running #{uptime} seconds - skipping additional waiting on service #{service} to be healthy...")
+      STDOUT.puts("Already running #{uptime} seconds - skipping additional waiting on service #{service} (container: #{container}) to be healthy...")
     else
       seconds -= uptime
-      STDOUT.puts("Waiting up to #{seconds} seconds (running #{uptime} already) for service #{service} to be healthy...")
+      STDOUT.puts("Waiting up to #{seconds} seconds (running #{uptime} already) for service #{service} (container: #{container}) to be healthy...")
     end
 
     # services with healthcheck should deal with their own timeouts
-    exit_early_on = -> err {
+    exit_early_on ||= -> err {
       raise err if ContainerNotFoundError == err.class
       false
     }
     return retry_block_up_to_timeout(seconds, exit_early_on: exit_early_on) do
-      health = get_container_health_details(service_container)
+      health = get_container_health_details(container)
       last_log = health&.Log&.last()
-      container_log = run_command("docker logs --tail 3 --details #{service_container} 2>&1", stream: StringIO.new)[:stdout].chomp
+      container_log = run_command("docker logs --tail 3 --details #{container} 2>&1", stream: StringIO.new)[:stdout].chomp
       log_msg = <<-LOG
 Exit [#{last_log&.ExitCode || 'Code Unknown'}]:
 
@@ -339,16 +344,16 @@ Container Logs:
 ===========================================================
 #{container_log}
 LOG
-      if get_container_state(service_container) == 'exited'
-        raise ContainerNotFoundError.new("Service #{service} (container: #{service_container}) has exited\n#{log_msg}")
+      if get_container_state(container) == 'exited'
+        raise ContainerNotFoundError.new("Service #{service} (container: #{container}) has exited\n#{log_msg}")
       end
       if health.nil?
         raise("#{service} does not define a healthcheck")
       elsif (health.Status == 'healthy' || health.Status == "'healthy'")
-        STDOUT.puts("Service #{service} (container: #{service_container}) is healthy")
+        STDOUT.puts("Service #{service} (container: #{container}) is healthy")
         return 'healthy'
       else
-        raise("#{service} is not healthy - currently #{health.Status}\n#{log_msg}")
+        raise("Service #{service} (container: #{container}) is not healthy - currently #{health.Status}\n#{log_msg}")
       end
     end
   end
