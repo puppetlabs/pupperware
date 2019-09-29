@@ -70,8 +70,8 @@ module SpecHelpers
   #                          again if a successful execution has not yet been made
   # @exit_early_on [Proc]    when the block errors, this provides an optional
   #                          anonymous function to run on the raised error
-  #                          if the function returns true, the raised error
-  #                          is re-raised, even if timeout seconds have not elapsed
+  #                          if the function returns true, nil is returned early
+  #                          from this method, even if timeout seconds have not elapsed
   # @raise_custom_error_type [Class] When specified, a custom error is raised
   #                          instead of raising a Timeout::Error if the timeout
   #                          value elapses without the block raising an error
@@ -83,7 +83,8 @@ module SpecHelpers
       begin
         return yield
       rescue
-        raise $! if exit_early_on.($!)
+        # if this anonymous function returns true, exit without error
+        return nil if exit_early_on.($!)
         if (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) > timeout
           raise raise_custom_error_type.nil? ?
             Timeout::Error.new :
@@ -306,7 +307,11 @@ module SpecHelpers
     STDOUT.puts("Waiting up to #{seconds} seconds for service #{service} to be healthy...")
 
     # services with healthcheck should deal with their own timeouts
-    return retry_block_up_to_timeout(seconds, exit_early_on: -> err { ContainerNotFoundError == err.class }) do
+    exit_early_on = -> err {
+      raise err if ContainerNotFoundError == err.class
+      false
+    }
+    return retry_block_up_to_timeout(seconds, exit_early_on: exit_early_on) do
       health = get_container_health_details(service_container)
       last_log = health&.Log&.last()
       log_msg = "Exit [#{last_log&.ExitCode || 'Code Unknown'}]:\n\n#{last_log&.Output || 'Log Unavailable'}"
