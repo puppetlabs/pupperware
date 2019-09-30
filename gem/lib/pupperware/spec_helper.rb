@@ -5,6 +5,7 @@ require 'open3'
 require 'timeout'
 require 'openssl'
 require 'stringio'
+require 'time'
 
 module Pupperware
 module SpecHelpers
@@ -289,6 +290,11 @@ module SpecHelpers
     inspect_container(container, '{{.State.Status}}')
   end
 
+  def get_container_uptime_seconds(container)
+    started_at = Time.parse(inspect_container(container, '{{ .State.StartedAt }}'))
+    Time.now.utc - started_at
+  end
+
   def get_container_exit_code(container)
     inspect_container(container, '{{.State.ExitCode}}').to_i
   end
@@ -304,7 +310,14 @@ module SpecHelpers
     service_container = get_service_container(service)
     # this always runs after healthcheck timer started, so no need to wait extra time
     seconds = get_container_healthcheck_timeout(service_container) if seconds.nil?
-    STDOUT.puts("Waiting up to #{seconds} seconds for service #{service} to be healthy...")
+    # only allow one iteration if container has already been up longer than its healthcheck
+    if (uptime = Integer(get_container_uptime_seconds(service_container))) > seconds
+      seconds = 1
+      STDOUT.puts("Already running #{uptime} seconds - skipping additional waiting on service #{service} to be healthy...")
+    else
+      seconds -= uptime
+      STDOUT.puts("Waiting up to #{seconds} seconds (running #{uptime} already) for service #{service} to be healthy...")
+    end
 
     # services with healthcheck should deal with their own timeouts
     exit_early_on = -> err {
