@@ -52,7 +52,7 @@ which you will run your Puppet Infrastructure.
 
 ## Provisioning
 
-Once you have Docker Compose installed, you can start the stack on Linux or macOS with:
+Once you have Docker Compose installed, you can start the stack on Linux or OSX with:
 ```
     DNS_ALT_NAMES=host.example.com docker-compose up -d
 ```
@@ -75,44 +75,55 @@ account any custom domain.
     DOMAIN=foo docker-compose up -d
 ```
 
-When you first start the Puppet Infrastructure, the stack will create a
-`volumes/` directory with a number of sub-directories to store the
-persistent data that should survive the restart of your infrastructure. This
-directory is created right next to the Docker Compose file and contains the
-following sub-directories:
+When you first start the Puppet Infrastructure, the stack will create a number of Docker volumes to store the persistent data that should survive the restart of your infrastructure. The actual location on disk of these volumes may be examined with the `docker inspect` command. The following volumes include:
 
-* `code/`: the Puppet code directory.
-* `puppet/`: Puppet configuration files, including `puppet/ssl/` containing
-certificates for your infrastructure. This directory is populated with
-default configuration files if they are not present when the stack starts
-up. You can make configuration changes to your stack by editing files in
-this directory and restarting the stack.
-* `puppetdb/ssl/`: certificates in use by the PuppetDB instance in the
-  stack.
-* `puppetdb-postgres/`: the data files for the PostgreSQL instance used by
-PuppetDB
-* `serverdata/`: persistent data for Puppet Server
-* Note: On OSX, you must add the `volumes` directory to "File Sharing" under
-  `Preferences>File Sharing` in order for these directories to be created
-  and volume-mounted automatically. There is no need to add each sub directory.
+* `puppetserver`: persistent data for Puppet Server including generated certs, logs, reports and the file bucket
+* `puppetserver-packages`: packages for the simplified installer
+* `code-manager`: code manager data, filesync data, staging and master code dir from the Puppet Server
+* `code-manager-ssh-key`: will be created if an existing bind mount path to `id-control_repo.rsa` is not specified in `docker-compose.yml` so that a file may be copied in later to the naemd volume
+* `orchestration-services`: data files for orchestration services, including generated certificates and logs
+* `console-services`: data files for console services, including generated certificates and logs
+* `bolt-server`: data files for bolt server, including generated certificates and logs
+* `puppetdb`: data files for puppetdb, including generated certificates and logs
+* `puppetdb-postgres`: the data files for the PostgreSQL instance used by
+PuppetDB (the standard Postgres `PGDATA` volume)
+
 
 ## Pupperware on Windows (using LCOW)
 
 Complete instructions for provisiong a server with LCOW support are in [README-windows.md](./README-windows.md)
 
-Due to [permissions issues with Postgres](https://forums.docker.com/t/trying-to-get-postgres-to-work-on-persistent-windows-mount-two-issues/12456/4) on Docker for Windows, to run under the LCOW environment, the Windows stack relies on the [`stellirin/postgres-windows`](https://hub.docker.com/r/stellirin/postgres-windows/) Windows variant of the upstream [`postgres`](https://hub.docker.com/_/postgres/) container instead.
-
-To create the stack:
+Creating the stack from PowerShell is nearly identical to other platforms, aside from how environment variables are declared:
 
 ``` powershell
 PS> $ENV:DNS_ALT_NAMES = 'host.example.com'
 
-PS> docker-compose -f .\docker-compose.yml -f .\docker-compose.windows.yml up
-Creating network "pupperware_default" with the default driver
-Creating pupperware_puppet_1_4be38bcee346   ... done
-Creating pupperware_postgres_1_c82bfeb597f5 ... done
-Creating pupperware_puppetdb_1_bcd7e5f54a3f ... done
-Attaching to pupperware_postgres_1_cf9a935a098e, pupperware_puppet_1_79b6ff064b91, pupperware_puppetdb_1_70edf5d8cd1e
+PS> docker-compose up
+Creating network "pupperware-commercial" with the default driver
+Creating volume "pupperware-commercial_puppetserver" with default driver
+Creating volume "pupperware-commercial_puppetserver-packages" with default driver
+Creating volume "pupperware-commercial_code-manager" with default driver
+Creating volume "pupperware-commercial_orchestration-services" with default driver
+Creating volume "pupperware-commercial_console-services" with default driver
+Creating volume "pupperware-commercial_bolt-server" with default driver
+Creating volume "pupperware-commercial_puppetdb" with default driver
+Creating volume "pupperware-commercial_puppetdb-postgres" with default driver
+Creating pupperware-commercial_puppet-agent_1 ...
+Creating pupperware-commercial_puppet_1       ...
+Creating pupperware-commercial_test-sshd_1    ...
+Creating pupperware-commercial_pe-bolt-server_1 ...
+Creating pupperware-commercial_postgres_1       ...
+Creating pupperware-commercial_postgres_1       ... done
+Creating pupperware-commercial_pe-bolt-server_1 ... done
+Creating pupperware-commercial_test-sshd_1      ... done
+Creating pupperware-commercial_puppet-agent_1   ... done
+Creating pupperware-commercial_puppet_1         ... done
+Creating pupperware-commercial_pe-console-services_1 ...
+Creating pupperware-commercial_puppetdb_1            ...
+Creating pupperware-commercial_pe-orchestration-services_1 ...
+Creating pupperware-commercial_puppetdb_1                  ... done
+Creating pupperware-commercial_pe-orchestration-services_1 ... done
+Creating pupperware-commercial_pe-console-services_1       ... done
 
 ...
 ```
@@ -121,7 +132,7 @@ To delete the stack:
 
 ``` powershell
 PS> docker-compose down
-Removing network pupperware_default
+Removing network pupperware-commercial_default
 ...
 ```
 
