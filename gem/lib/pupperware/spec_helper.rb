@@ -289,6 +289,7 @@ module SpecHelpers
 
   def inspect_container(container, query)
     result = run_command("docker inspect \"#{container}\" --format \"#{query}\"", stream: StringIO.new)
+    raise ContainerNotFoundError.new(container) if result[:status].exitstatus != 0
     status = result[:stdout].chomp
     return status
   end
