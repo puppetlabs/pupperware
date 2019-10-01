@@ -5,6 +5,8 @@ require 'open3'
 require 'timeout'
 require 'openssl'
 require 'stringio'
+require 'thwait'
+require 'time'
 
 module Pupperware
 module SpecHelpers
@@ -61,17 +63,34 @@ module SpecHelpers
     { status: status, stdout: stdout_string, stderr: stderr_string }
   end
 
-  def retry_block_up_to_timeout(timeout, exit_early_on_error_type: [], raise_custom_error_type: nil, &block)
+  # Retries a given block in one seconds intervals, up to the given timeout,
+  # until the block does not raise an error.
+  #
+  # @param timeout [Integer] how long to keep retrying the given block for
+  #                          note the block is not guaranteed to complete by this timeout
+  #                          instead, it's only guaranteed to no longer be executed
+  #                          again if a successful execution has not yet been made
+  # @exit_early_on [Proc]    when the block errors, this provides an optional
+  #                          anonymous function to run on the raised error
+  #                          if the function returns true, nil is returned early
+  #                          from this method, even if timeout seconds have not elapsed
+  # @raise_custom_error_type [Class] When specified, a custom error is raised
+  #                          instead of raising a Timeout::Error if the timeout
+  #                          value elapses without the block raising an error
+  # @return [Object]         the return value of the block
+  def retry_block_up_to_timeout(timeout, exit_early_on: -> e { false }, raise_custom_error_type: nil, &block)
     started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
     loop do
       begin
         return yield
       rescue
-        raise $! if [exit_early_on_error_type].flatten.include?($!.class)
-        if (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) > timeout
+        # if this anonymous function returns true, exit without error
+        return nil if exit_early_on.($!)
+        waited = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+        if waited > timeout
           raise raise_custom_error_type.nil? ?
-            Timeout::Error.new :
+            Timeout::Error.new("Waited #{waited.round(2)} seconds (timeout #{timeout})") :
             raise_custom_error_type.new
         end
         sleep(1)
@@ -114,6 +133,7 @@ module SpecHelpers
     docker_compose('config', stream: STDOUT)
     docker_compose('up --detach', stream: STDOUT)
     docker_compose('images', stream: STDOUT)
+    wait_on_stack_healthy()
     # TODO: use --all when docker-compose fixes https://github.com/docker/compose/issues/6579
     docker_compose('ps', stream: STDOUT)
     get_containers().each do |id|
@@ -129,6 +149,50 @@ module SpecHelpers
     docker_compose('ps', stream: STDOUT)
     STDOUT.puts("Running containers in system:")
     run_command('docker ps --all')
+  end
+
+  # will simultaneously wait on all containers with healthchecks defined
+  def wait_on_stack_healthy()
+    threads = []
+    mutex = Mutex.new
+    cancel = false
+
+    get_containers().each do |id|
+      # skip those without healthchecks
+      next if get_container_healthcheck_details(id).nil?
+      threads << Thread.new do
+        # this must be set for the waiting to re-raise the thread
+        Thread.current.abort_on_exception = true
+        Thread.current.report_on_exception = false
+
+        begin
+          exit_early_on = -> err {
+            raise err if ContainerNotFoundError == err.class
+            mutex.synchronize do
+              # check if any containers has failed to wait and stop waiting if necessary
+              STDOUT.puts("Abandoning healthy wait for container: #{id}!") if cancel
+              return cancel
+            end
+          }
+          wait_on_container_health(container: id, exit_early_on: exit_early_on)
+        # waiting for healthy has failed due to a dead container or failing healthcheck
+        rescue
+          STDOUT.puts("ERROR: #{$!.class} (#{$!.message}) while waiting for healthy container: #{id}! Cancelling other waiters.")
+          # set cancel so that all other threads will stop executing prematurely
+          mutex.synchronize { cancel = true  }
+          raise
+        end
+      end
+    end
+
+    # WARN: this is a global setting, this will prevent stack trace noise from showing in spec logs
+    # setting it for just the ThreadsWait waiter thread is not possible
+    Thread.report_on_exception = false
+    # Wait on all threads to complete and one of a few things happens:
+    # * all containers are healthy, none error and the wait is a success
+    # * one container fails, and throws an exception, teling all the others to cancel
+    #   and the exception is immediately raised here (other threads will gc)
+    ThreadsWait.all_waits(threads)
   end
 
   # https://github.com/moby/moby/issues/39922
@@ -252,7 +316,7 @@ module SpecHelpers
 
     # container won't be marked unhealthy during start period
     # then has a max number of retries over given interval before changing from starting to unhealthy
-    ((check.StartPeriod || 0) + (check.Interval * check.Retries)) / nanoseconds_to_seconds
+    ((check.StartPeriod || 0) + ((check.Interval + (check&.Timeout || 0)) * check.Retries)) / nanoseconds_to_seconds
   end
 
   def get_container_status(container)
@@ -273,6 +337,11 @@ module SpecHelpers
     inspect_container(container, '{{.State.Status}}')
   end
 
+  def get_container_uptime_seconds(container)
+    started_at = Time.parse(inspect_container(container, '{{ .State.StartedAt }}'))
+    Time.now.utc - started_at
+  end
+
   def get_container_exit_code(container)
     inspect_container(container, '{{.State.ExitCode}}').to_i
   end
@@ -284,27 +353,54 @@ module SpecHelpers
     end
   end
 
-  def wait_on_service_health(service, seconds = nil)
+  def wait_on_service_health(service, seconds = nil, exit_early_on: nil)
     service_container = get_service_container(service)
+    wait_on_container_health(container: service_container, seconds: seconds, exit_early_on: exit_early_on)
+  end
+
+  def wait_on_container_health(container:, seconds: nil, exit_early_on:)
+    service = get_container_labels(container)['com.docker.compose.service'] || 'N/A'
     # this always runs after healthcheck timer started, so no need to wait extra time
-    seconds = get_container_healthcheck_timeout(service_container) if seconds.nil?
-    STDOUT.puts("Waiting up to #{seconds} seconds for service #{service} to be healthy...")
+    seconds = get_container_healthcheck_timeout(container) if seconds.nil?
+    # only allow one iteration if container has already been up longer than its healthcheck
+    if (uptime = Integer(get_container_uptime_seconds(container))) > seconds
+      seconds = 1
+      STDOUT.puts("Already running #{uptime} seconds - skipping additional waiting on service #{service} (container: #{container}) to be healthy...")
+    else
+      seconds -= uptime
+      STDOUT.puts("Waiting up to #{seconds} seconds (running #{uptime} already) for service #{service} (container: #{container}) to be healthy...")
+    end
 
     # services with healthcheck should deal with their own timeouts
-    return retry_block_up_to_timeout(seconds, exit_early_on_error_type: ContainerNotFoundError) do
-      health = get_container_health_details(service_container)
+    exit_early_on ||= -> err {
+      raise err if ContainerNotFoundError == err.class
+      false
+    }
+    return retry_block_up_to_timeout(seconds, exit_early_on: exit_early_on) do
+      health = get_container_health_details(container)
       last_log = health&.Log&.last()
-      log_msg = "Exit [#{last_log&.ExitCode || 'Code Unknown'}]:\n\n#{last_log&.Output || 'Log Unavailable'}"
-      if get_container_state(service_container) == 'exited'
-        raise ContainerNotFoundError.new("Service #{service} (container: #{service_container}) has exited\n#{log_msg}")
+      container_log = run_command("docker logs --tail 3 --details #{container} 2>&1", stream: StringIO.new)[:stdout].chomp
+      log_msg = <<-LOG
+Exit [#{last_log&.ExitCode || 'Code Unknown'}]:
+
+Healthcheck Logs:
+===========================================================
+#{last_log&.Output || 'Unavailable'}
+
+Container Logs:
+===========================================================
+#{container_log}
+LOG
+      if get_container_state(container) == 'exited'
+        raise ContainerNotFoundError.new("Service #{service} (container: #{container}) has exited\n#{log_msg}")
       end
       if health.nil?
         raise("#{service} does not define a healthcheck")
       elsif (health.Status == 'healthy' || health.Status == "'healthy'")
-        STDOUT.puts("Service #{service} (container: #{service_container}) is healthy")
+        STDOUT.puts("Service #{service} (container: #{container}) is healthy")
         return 'healthy'
       else
-        raise("#{service} is not healthy - currently #{health.Status}\n#{log_msg}")
+        raise("Service #{service} (container: #{container}) is not healthy - currently #{health.Status}\n#{log_msg}")
       end
     end
   end
