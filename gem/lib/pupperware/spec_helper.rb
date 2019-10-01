@@ -428,7 +428,7 @@ LOG
   end
 
   def emit_log(container)
-    container_name = get_container_name(container)
+    container_name = begin get_container_name(container) rescue 'N/A' end
     STDOUT.puts("#{'*' * 80}\nContainer logs for #{container_name} / #{container}\n#{'*' * 80}\n")
     # run_command streams stdout / stderr
     run_command("docker logs --details --timestamps #{container} 2>&1", stream: STDOUT)
@@ -436,7 +436,7 @@ LOG
   end
 
   def teardown_container(container)
-    network_id = get_container_network(container)
+    network_id = begin get_container_network(container) rescue 'missing' end
     STDOUT.puts("Tearing down test container #{container} - disconnecting from network #{network_id}")
     run_command("docker network disconnect -f #{network_id} #{container}")
     run_command("docker container rm --force #{container}")
