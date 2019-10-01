@@ -192,7 +192,17 @@ module SpecHelpers
     # * all containers are healthy, none error and the wait is a success
     # * one container fails, and throws an exception, teling all the others to cancel
     #   and the exception is immediately raised here (other threads will gc)
-    ThreadsWait.all_waits(threads)
+    waiter = ThreadsWait.new(threads)
+    begin
+      waiter.all_waits()
+    rescue
+      # wait for all other threads to cancel (ignoring any exceptions) so logs are ordered correctly
+      waiter.threads.each do |thr|
+        begin thr.join() if thr.alive? rescue nil end
+      end
+      # re-raise the exception from first failing thread
+      raise
+    end
   end
 
   # https://github.com/moby/moby/issues/39922
