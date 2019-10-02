@@ -327,7 +327,7 @@ module SpecHelpers
 
     # container won't be marked unhealthy during start period
     # then has a max number of retries over given interval before changing from starting to unhealthy
-    ((check.StartPeriod || 0) + ((check.Interval + (check&.Timeout || 0)) * check.Retries)) / nanoseconds_to_seconds
+    ((check.StartPeriod || 0) + (check.Interval * check.Retries)) / nanoseconds_to_seconds
   end
 
   def get_container_status(container)
