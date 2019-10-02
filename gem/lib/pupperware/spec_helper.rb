@@ -408,7 +408,8 @@ LOG
       if health.nil?
         raise("#{service} does not define a healthcheck")
       elsif (health.Status == 'healthy' || health.Status == "'healthy'")
-        STDOUT.puts("Service #{service} (container: #{container}) is healthy")
+        up = get_container_uptime_seconds(container)
+        STDOUT.puts("Service #{service} (container: #{container}) is healthy - running #{up.round(1)} seconds")
         return 'healthy'
       else
         raise("Service #{service} (container: #{container}) is not healthy - currently #{health.Status}\n#{log_msg}")
