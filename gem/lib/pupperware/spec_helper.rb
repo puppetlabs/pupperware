@@ -503,6 +503,7 @@ LOG
   ######################################################################
   # PE Console Services Helper
   ######################################################################
+
   def unrevoke_console_admin_user(postgres_container_name = "postgres")
     query = "exec -T #{postgres_container_name} psql --username=puppetdb --dbname=pe-rbac --command \"UPDATE subjects SET is_revoked = 'f' WHERE login='admin';\""
     output = docker_compose(query)[:stdout].chomp
@@ -513,13 +514,13 @@ LOG
     curl('localhost', 4433, end_point).body
   end
 
-  def generate_rbac_token()
+  def generate_rbac_token(rbac_username: 'admin', rbac_password: 'admin')
     uri = URI.parse("https://localhost:4433/rbac-api/v1/auth/token")
     request = Net::HTTP::Post.new(uri)
     request.content_type = "application/json"
     request.body = JSON.dump({
-                               "login" => "admin",
-                               "password" => "admin",
+                               "login" => rbac_username,
+                               "password" => rbac_password,
                                "lifetime" => "1h"
                              })
     req_options = {
