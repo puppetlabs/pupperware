@@ -10,7 +10,6 @@ RSpec.configure do |c|
     pull_images()
     run_command("docker pull --quiet #{CLIENT_TOOLS_IMAGE}")
     docker_compose_up()
-    wait_for_pxp_agent_to_connect(agent_name: 'puppet-agent.test')
   end
 
   c.after(:suite) do
@@ -21,7 +20,8 @@ end
 
 describe 'PE stack' do
   before(:all) do
-    generate_rbac_token()
+    unrevoke_console_admin_user()
+    wait_for_pxp_agent_to_connect(agent_name: 'puppet-agent.test')
   end
 
   it 'can orchestrate a puppet run on an agent via the client tools' do
