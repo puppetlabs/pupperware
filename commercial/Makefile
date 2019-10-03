@@ -3,6 +3,7 @@ pull:
 
 test: pull
 	bundle install --path .bundle/gems
+	bundle update
 	bundle exec rspec spec/
 
 up: pull
