@@ -503,7 +503,7 @@ LOG
     curl('localhost', 4433, end_point).body
   end
 
-  def generate_rbac_token(rbac_username: 'admin', rbac_password: 'admin')
+  def generate_rbac_token(rbac_username: 'admin', rbac_password: 'pupperware')
     uri = URI.parse("https://localhost:4433/rbac-api/v1/auth/token")
     request = Net::HTTP::Post.new(uri)
     request.content_type = "application/json"
@@ -531,7 +531,7 @@ LOG
     curl('localhost', 8143, end_point).body
   end
 
-  def orchestrate_puppet_run(target_agent: 'puppet-agent.test', network: 'pupperware-commercial', rbac_username: 'admin', rbac_password: 'admin', puppetserver: 'puppet.test', pe_console_services: 'pe-console-services.test', pe_orchestration_services: 'pe-orchestration-services.test')
+  def orchestrate_puppet_run(target_agent: 'puppet-agent.test', network: 'pupperware-commercial', rbac_username: 'admin', rbac_password: 'pupperware', puppetserver: 'puppet.test', pe_console_services: 'pe-console-services.test', pe_orchestration_services: 'pe-orchestration-services.test')
     run_command("docker run \
            --rm \
            --network #{network} \
