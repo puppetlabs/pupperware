@@ -33,6 +33,7 @@ services:
       - POSTGRES_HOSTNAME=postgres.test
       - PE_BOLT_SERVER_HOSTNAME=pe-bolt-server.test
       - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
+      - PUPPERWARE_ADMIN_PASSWORD=pupperware
     volumes:
       - orchestration-services:/opt/puppetlabs/server/data/orchestration-services
     ports:

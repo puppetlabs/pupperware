@@ -20,7 +20,6 @@ end
 
 describe 'PE stack' do
   before(:all) do
-    unrevoke_console_admin_user()
     wait_for_pxp_agent_to_connect(agent_name: 'puppet-agent.test')
   end
 
@@ -29,7 +28,7 @@ describe 'PE stack' do
            --rm \
            --network pupperware-commercial \
            --env RBAC_USERNAME=admin \
-           --env RBAC_PASSWORD=admin \
+           --env RBAC_PASSWORD=pupperware \
            --env PUPPETSERVER_HOSTNAME=puppet.test \
            --env PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test \
            #{CLIENT_TOOLS_IMAGE} \
