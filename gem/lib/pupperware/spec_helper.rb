@@ -10,7 +10,6 @@ require 'time'
 
 module Pupperware
 module SpecHelpers
-PE_CLIENT_TOOLS_IMAGE='artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:kearney-latest'
 
   class ContainerNotFoundError < StandardError; end
 
@@ -543,8 +542,17 @@ LOG
     curl('localhost', 8143, end_point).body
   end
 
-  def orchestrate_puppet_run(target_agent: 'puppet-agent.test', network: 'pupperware-commercial', rbac_username: 'admin', rbac_password: 'pupperware', puppetserver: 'puppet.test', pe_console_services: 'pe-console-services.test', pe_orchestration_services: 'pe-orchestration-services.test')
-    run_command("docker pull #{PE_CLIENT_TOOLS_IMAGE}")
+  def orchestrate_puppet_run(
+        target_agent: 'puppet-agent.test',
+        network: 'pupperware-commercial',
+        rbac_username: 'admin',
+        rbac_password: 'pupperware',
+        puppetserver: 'puppet.test',
+        pe_console_services: 'pe-console-services.test',
+        pe_orchestration_services: 'pe-orchestration-services.test'
+      )
+    image = 'artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:kearney-latest'
+    run_command("docker pull #{image}")
     run_command("docker run \
            --rm \
            --network #{network} \
@@ -552,7 +560,7 @@ LOG
            --env RBAC_PASSWORD=#{rbac_password} \
            --env PUPPETSERVER_HOSTNAME=#{puppetserver} \
            --env PE_CONSOLE_SERVICES_HOSTNAME=#{pe_console_services} \
-           #{PE_CLIENT_TOOLS_IMAGE} \
+           #{image} \
            puppet-job run \
               --nodes #{target_agent} \
               --service-url https://#{pe_orchestration_services}:8143/")
