@@ -2,7 +2,7 @@ pull:
 	docker-compose pull --ignore-pull-failures
 
 test:
-	bundle install --path .bundle/gems
+	bundle install --path .bundle/gems --with test
 	bundle update
 	bundle exec rspec spec/
 
