@@ -29,12 +29,14 @@ steps:
     bundle config --local path $gempath
     bundle install --with test
   displayName: Fetch Dependencies
+  timeoutInMinutes: 1
   name: fetch_deps
 
 - powershell: |
     . "$(bundle show pupperware)/ci/build.ps1"
     Write-HostDiagnostics
   displayName: Diagnostic Host Information
+  timeoutInMinutes: 2
   name: hostinfo
 
 - powershell: |
@@ -49,6 +51,7 @@ steps:
     docker-compose pull --quiet
     bundle exec rspec spec/
   displayName: Test $(COMPOSE_PROJECT_NAME)
+  timeoutInMinutes: 30
   name: test
 
 - task: PublishTestResults@2
@@ -63,5 +66,5 @@ steps:
     . "$(bundle show pupperware)/ci/build.ps1"
     Clear-BuildState
   displayName: Build Cleanup
-  timeoutInMinutes: 3
+  timeoutInMinutes: 4
   condition: always()
