@@ -63,6 +63,7 @@ services:
       - PUPPETDB_POSTGRES_HOSTNAME=postgres.${DOMAIN:-internal}
       - PUPPETDB_PASSWORD=puppetdb
       - PUPPETDB_USER=puppetdb
+      - DNS_ALT_NAMES=puppetdb,${DNS_ALT_NAMES:-}
     ports:
       - 8080
       - 8081
