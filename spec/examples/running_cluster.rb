@@ -1,12 +1,6 @@
 shared_examples 'a running pupperware cluster' do
   require 'rspec/core'
 
-  it 'should start all of the cluster services' do
-    expect(get_service_container('puppet')).to_not be_empty
-    expect(get_service_container('postgres')).to_not be_empty
-    expect(get_service_container('puppetdb')).to_not be_empty
-  end
-
   it 'should include postgres extensions' do
     installed_extensions = get_postgres_extensions
     expect(installed_extensions).to match(/^\s+pg_trgm\s+/)
