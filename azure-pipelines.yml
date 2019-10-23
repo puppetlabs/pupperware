@@ -26,11 +26,13 @@ steps:
     . gem/ci/build.ps1
     Write-HostDiagnostics
   displayName: Diagnostic Host Information
+  timeoutInMinutes: 2
   name: hostinfo
 
 - powershell: |
     bundle install --with test --path '.bundle/gems'
   displayName: Fetch Dependencies
+  timeoutInMinutes: 1
   name: fetch_deps
 
 - powershell: |
@@ -43,6 +45,7 @@ steps:
     . gem/ci/build.ps1
     Invoke-ContainerTest -Specs spec
   displayName: Test $(COMPOSE_PROJECT_NAME)
+  timeoutInMinutes: 25
   name: test
 
 - task: PublishTestResults@2
@@ -57,5 +60,5 @@ steps:
     . gem/ci/build.ps1
     Clear-BuildState
   displayName: Build Cleanup
-  timeoutInMinutes: 3
+  timeoutInMinutes: 4
   condition: always()
