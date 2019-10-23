@@ -458,17 +458,14 @@ LOG
     get_containers.each { |id| emit_log(id) }
   end
 
-  def kill_service_and_wait_for_return(service: nil, process: nil)
+  def kill_service_and_wait_for_return(service: nil, process: nil, timeout: 20)
     container = get_service_container(service)
-    original_restart_count = inspect_container(container,'{{.RestartCount}}')
+    restart_count = inspect_container(container,'{{.RestartCount}}')
     docker_compose("exec -T #{service} pkill #{process}")
-    new_restart_count = inspect_container(container,'{{.RestartCount}}')
-    counter = 0
-    while(original_restart_count == new_restart_count) do
-      counter += 1
-      raise "Container #{service} never restarted" if(counter == 5)
-      sleep(5)
-      new_restart_count = inspect_container(container,'{{.RestartCount}}')
+
+    return retry_block_up_to_timeout(timeout) do
+      restart_count == inspect_container(container,'{{.RestartCount}}') ? true :
+      raise("Container #{service} never restarted")
     end
   end
 
