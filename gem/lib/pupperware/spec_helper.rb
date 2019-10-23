@@ -348,6 +348,10 @@ module SpecHelpers
     inspect_container(container, '{{.State.Status}}')
   end
 
+  def get_container_restart_count(container)
+    inspect_container(container,'{{.RestartCount}}')
+  end
+
   def get_container_uptime_seconds(container)
     started_at = Time.parse(inspect_container(container, '{{ .State.StartedAt }}'))
     Time.now.utc - started_at
@@ -460,11 +464,11 @@ LOG
 
   def kill_service_and_wait_for_return(service: nil, process: nil, timeout: 20)
     container = get_service_container(service)
-    restart_count = inspect_container(container,'{{.RestartCount}}')
+    restart_count = get_container_restart_count(container)
     docker_compose("exec -T #{service} pkill #{process}")
 
     return retry_block_up_to_timeout(timeout) do
-      restart_count == inspect_container(container,'{{.RestartCount}}') ? true :
+      restart_count == get_container_restart_count(container) ? true :
       raise("Container #{service} never restarted")
     end
   end
