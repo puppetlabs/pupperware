@@ -205,6 +205,29 @@ module SpecHelpers
     end
   end
 
+  def restart_stack()
+    STDOUT.puts("Restarting cluster")
+    clear_service_base_uri_cache()
+
+    # get current restart counts
+    restarts = get_containers().each_with_object({}) do |container, h|
+      h[container] = get_container_restart_count(container)
+    end
+
+    # restart the cluster
+    docker_compose('restart', stream: STDOUT)
+
+    # make sure each container increments its restart count by 1
+    # the waiting implementation is a little hokey given it requires the prior count
+    # but that removes the need for complex threading / synchronization
+    restarts.each_pair do |container, count|
+      wait_on_container_restart(container: container, prior_count: count)
+    end
+
+    # and then wait for all containers to be marked healthy
+    wait_on_stack_healthy()
+  end
+
   # https://github.com/moby/moby/issues/39922
   # Each launched VM (and correspondingly container) is run under a unique Windows
   # user account (in this case a random GUID) to run it's vmwp.exe host process.
@@ -268,6 +291,10 @@ module SpecHelpers
     end
     services.gsub!("\n", ' ')
     docker_compose("pull --quiet #{services}", stream: STDOUT)
+  end
+
+  def clear_service_base_uri_cache
+    @mapped_ports = {}
   end
 
   def get_service_base_uri(service, port)
@@ -348,6 +375,10 @@ module SpecHelpers
     inspect_container(container, '{{.State.Status}}')
   end
 
+  def get_container_restart_count(container)
+    inspect_container(container,'{{.RestartCount}}')
+  end
+
   def get_container_uptime_seconds(container)
     started_at = Time.parse(inspect_container(container, '{{ .State.StartedAt }}'))
     Time.now.utc - started_at
@@ -361,6 +392,15 @@ module SpecHelpers
     return retry_block_up_to_timeout(timeout) do
       get_container_state(container) == 'exited' ? 'exited' :
         raise('container never exited')
+    end
+  end
+
+  # this method assumes that the previous restart count is queried prior to restart / is passed in
+  def wait_on_container_restart(container: nil, prior_count: nil, seconds: 20)
+    service = get_container_labels(container)['com.docker.compose.service'] || 'N/A'
+    return retry_block_up_to_timeout(seconds) do
+      prior_count == get_container_restart_count(container) ? true :
+      raise("Service #{service} (container: #{container}) never restarted")
     end
   end
 
@@ -458,18 +498,12 @@ LOG
     get_containers.each { |id| emit_log(id) }
   end
 
-  def kill_service_and_wait_for_return(service: nil, process: nil)
+  def kill_service_and_wait_for_return(service: nil, process: nil, timeout: 20)
     container = get_service_container(service)
-    original_restart_count = inspect_container(container,'{{.RestartCount}}')
+    restart_count = get_container_restart_count(container)
     docker_compose("exec -T #{service} pkill #{process}")
-    new_restart_count = inspect_container(container,'{{.RestartCount}}')
-    counter = 0
-    while(original_restart_count == new_restart_count) do
-      counter += 1
-      raise "Container #{service} never restarted" if(counter == 5)
-      sleep(5)
-      new_restart_count = inspect_container(container,'{{.RestartCount}}')
-    end
+
+    wait_on_container_restart(container: container, prior_count: restart_count)
   end
 
   ######################################################################
