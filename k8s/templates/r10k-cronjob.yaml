@@ -46,4 +46,16 @@ spec:
                 secretName: {{ template "r10k.secret" . }}
                 defaultMode: 288 # = mode 0440
             {{- end -}}
+        {{- if .Values.nodeSelector }}
+          nodeSelector:
+{{ toYaml .Values.nodeSelector | nindent 14 }}
+        {{- end }}
+        {{- if .Values.affinity }}
+          affinity:
+{{ toYaml .Values.affinity | nindent 14 }}
+        {{- end }}
+        {{- if .Values.tolerations }}
+          tolerations:
+{{ toYaml .Values.tolerations| nindent 14 }}
+        {{- end }}
 {{- end }}

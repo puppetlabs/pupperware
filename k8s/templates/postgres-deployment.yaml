@@ -50,3 +50,15 @@ spec:
         - name: postgres-custom-extensions
           configMap:
             name: postgres-custom-extensions
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | nindent 10 }}
+    {{- end }}
+    {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | nindent 10 }}
+    {{- end }}
+    {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations| nindent 10 }}
+    {{- end }}
