@@ -14,6 +14,10 @@ spec:
     metadata:
       labels:
         {{- include "puppetserver.puppetdb.labels" . | nindent 8 }}
+      {{- if .Values.podAnnotations }}
+      annotations:
+{{ toYaml .Values.podAnnotations | nindent 8 }}
+      {{- end }}
     spec:
       hostname: puppetdb
       containers:
@@ -58,4 +62,7 @@ spec:
     {{- if .Values.tolerations }}
       tolerations:
 {{ toYaml .Values.tolerations| nindent 10 }}
+    {{- end }}
+    {{- if and (.Capabilities.APIVersions.Has "scheduling.k8s.io/v1beta1") (.Values.priorityClassName) }}
+      priorityClassName: {{ .Values.priorityClassName }}
     {{- end }}
