@@ -17,7 +17,7 @@
 You can install the chart with the release name `puppetserver` as below.
 
 ```bash
-helm install --namespace puppetserver --name puppetserver stable/puppetserver --set puppetserver.puppeturl='https://github.com/$SOMEUSER/control-repo.git'
+helm install --namespace puppetserver --name puppetserver ./ --set puppetserver.puppeturl='https://github.com/$SOMEUSER/control-repo.git'
 ```
 
 > Note - If you do not specify a name, helm will select a name for you.
@@ -66,11 +66,16 @@ Parameter | Description | Default
 `puppetserver.tag` | puppetserver img tag | `6.6.0`
 `puppetserver.pullPolicy` | puppetserver img pull policy | `IfNotPresent`
 `puppetserver.fqdns.alternateServerNames` | puppetserver alternate fqdns |``
-`puppetserver.service.type` | puppetserver svc type | `LoadBalancer`
+`puppetserver.service.type` | puppetserver svc type | `ClusterIP`
 `puppetserver.service.port` | puppetserver svc port | `8140`
 `puppetserver.service.annotations`| puppetserver svc annotations |``
 `puppetserver.service.labels`| puppetserver additional svc labels |``
 `puppetserver.service.loadBalancerIP`| puppetserver svc loadbalancer ip |``
+`puppetserver.ingress.enabled`| puppetserver ingress creation enabled |`false`
+`puppetserver.ingress.annotations`| puppetserver ingress annotations |``
+`puppetserver.ingress.extraLabels`| puppetserver ingress extraLabels |``
+`puppetserver.ingress.hosts`| puppetserver ingress hostnames |``
+`puppetserver.ingress.tls`| puppetserver ingress tls configuration |``
 `puppetserver.puppeturl`| puppetserver control repo url |``
 `git_sync.name` | git_sync component label | `git_sync`
 `git_sync.image` | git_sync img | `k8s.gcr.io/git-sync`
@@ -133,17 +138,32 @@ Parameter | Description | Default
 `hiera.config`| hieradata yaml config |``
 `hiera.eyaml.private_key`| hiera eyaml private key |``
 `hiera.eyaml.public_key`| hiera eyaml public key |``
+`nodeSelector`| Node labels for pod assignment |``
+`affinity`| Affinity for pod assignment |``
+`tolerations`| Tolerations for pod assignment |``
+`priorityClass`| Leverage a priorityClass to ensure your pods survive resource shortages |``
+`podAnnotations`| Extra Pod annotations |``
+`storage.storageClass`| Storage Class |``
+`storage.selector`| PVs/PVCs Selector Config |`false`
+`storage.annotations`| Storage annotations |``
+`storage.size`| PVCs Storage Size |`100Mi`
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
 
 ```bash
-helm install --namespace puppetserver --name puppetserver stable/puppetserver --set puppetserver.puppeturl='https://github.com/$SOMEUSER/puppet.git',hiera.hieradataurl='https://github.com/$SOMEUSER/hieradata.git'
+helm install --namespace puppetserver --name puppetserver ./ --set puppetserver.puppeturl='https://github.com/$SOMEUSER/puppet.git',hiera.hieradataurl='https://github.com/$SOMEUSER/hieradata.git'
 ```
 
 Alternatively, a YAML file that specifies the values for the above parameters can be provided while installing the chart. For example,
 
 ```bash
-helm install --namespace puppetserver --name puppetserver stable/puppetserver -f values.yaml
+helm install --namespace puppetserver --name puppetserver ./ -f values.yaml
 ```
 
 > **Tip**: You can use the default [values.yaml](values.yaml)
+
+## Chart's Dev Team
+
+- Lead Developer: Miroslav Hadzhiev (miroslav.hadzhiev@gmail.com)
+- Developer: Scott Cressi (scottcressi@gmail.com)
+- Developer: Morgan Rhodes (morgan@puppet.com)
