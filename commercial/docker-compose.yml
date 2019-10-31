@@ -4,8 +4,10 @@ services:
     image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-puppetserver:kearney-latest
     hostname: puppet.test
     environment:
+      - CERTNAME=puppet.test
       - PUPPETDB_HOSTNAME=puppetdb.test
       - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
+      - PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services.test
       # Set the control repo URL like https://github.com/puppetlabs/control-repo.git
       # - R10K_REMOTE=
     volumes:
@@ -28,6 +30,7 @@ services:
     image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-orchestration-services:kearney-latest
     hostname: pe-orchestration-services.test
     environment:
+      - CERTNAME=pe-orchestration-services.test
       - PUPPETSERVER_HOSTNAME=puppet.test
       - PUPPETDB_HOSTNAME=puppetdb.test
       - POSTGRES_HOSTNAME=postgres.test
@@ -50,10 +53,14 @@ services:
     image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-console-services:kearney-latest
     hostname: pe-console-services.test
     environment:
+      - CERTNAME=pe-console-services.test
       - PUPPETSERVER_HOSTNAME=puppet.test
+      - PUPPETSERVER_CERTNAME=puppet.test
       - PUPPETDB_HOSTNAME=puppetdb.test
+      - PUPPETDB_CERTNAME=puppetdb.test
       - POSTGRES_HOSTNAME=postgres.test
       - PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services.test
+      - PE_ORCHESTRATION_SERVICES_CERTNAME=pe-orchestration-services.test
     volumes:
       - console-services:/opt/puppetlabs/server/data/console-services
     ports:
@@ -76,8 +83,11 @@ services:
       - 62658
       - 62659
     environment:
+      - CERTNAME=pe-bolt-server.test
       - PUPPETSERVER_HOSTNAME=puppet.test
       - PE_BOLT_SERVER_LOGLEVEL=${PE_BOLT_SERVER_LOGLEVEL:-info}
+      - WHITELIST_HOSTNAME.0=pe-bolt-server.test
+      - WHITELIST_HOSTNAME.1=pe-orchestration-services.test
     volumes:
       - bolt-server:/opt/puppetlabs/server/data/bolt-server
     networks:
@@ -88,6 +98,7 @@ services:
     image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-puppetdb:kearney-latest
     hostname: puppetdb.test
     environment:
+      - CERTNAME=puppetdb.test
       - PUPPETSERVER_HOSTNAME=puppet.test
       - PUPPETDB_POSTGRES_HOSTNAME=postgres.test
       - PUPPETDB_PASSWORD=puppetdb
@@ -112,6 +123,9 @@ services:
     environment:
       - CERTNAME=postgres.test
       - PUPPETSERVER_HOSTNAME=puppet.test
+      - PUPPETDB_CERTNAME=puppetdb.test
+      - PE_CONSOLE_SERVICES_CERTNAME=pe-console-services.test
+      - PE_ORCHESTRATION_SERVICES_CERTNAME=pe-orchestration-services.test
     volumes:
       - puppetdb-postgres:/var/lib/postgresql/data
     expose:
