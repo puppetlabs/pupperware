@@ -2,35 +2,35 @@ version: '3.7'
 
 services:
   puppet:
-    hostname: puppet.${DOMAIN:-internal}
+    hostname: puppet.${DOMAIN:-test}
     image: puppet/puppetserver:${PUPPETSERVER_VERSION:-latest}
     ports:
       - 8140:8140
     environment:
       # necessary to set certname and server in puppet.conf, required by
       # puppetserver ca cli application
-      - PUPPETSERVER_HOSTNAME=puppet.${DOMAIN:-internal}
+      - PUPPETSERVER_HOSTNAME=puppet.${DOMAIN:-test}
       # DNS_ALT_NAMES must be set before starting the stack the first time,
       # and must list all the names under which the puppetserver can be
-      # reached. 'puppet.${DOMAIN:-internal}' must be one of them, otherwise puppetdb won't be
+      # reached. 'puppet.${DOMAIN:-test}' must be one of them, otherwise puppetdb won't be
       # able to get a cert. Add other names as a comma-separated list
       - CA_ALLOW_SUBJECT_ALT_NAMES=true
-      - DNS_ALT_NAMES=puppet,puppet.${DOMAIN:-internal},${DNS_ALT_NAMES:-}
+      - DNS_ALT_NAMES=puppet,puppet.${DOMAIN:-test},${DNS_ALT_NAMES:-}
       - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
-      - PUPPETDB_SERVER_URLS=https://puppetdb.${DOMAIN:-internal}:8081
+      - PUPPETDB_SERVER_URLS=https://puppetdb.${DOMAIN:-test}:8081
     volumes:
       - puppetserver-code:/etc/puppetlabs/code/
       - puppetserver-config:/etc/puppetlabs/puppet/
       - puppetserver-data:/opt/puppetlabs/server/data/puppetserver/
-    dns_search: ${DOMAIN:-internal}
+    dns_search: ${DOMAIN:-test}
     networks:
       default:
         aliases:
-         - puppet.${DOMAIN:-internal}
+         - puppet.${DOMAIN:-test}
 
   postgres:
     image: postgres:9.6
-    hostname: postgres.${DOMAIN:-internal}
+    hostname: postgres.${DOMAIN:-test}
     environment:
       - POSTGRES_PASSWORD=puppetdb
       - POSTGRES_USER=puppetdb
@@ -47,20 +47,20 @@ services:
     volumes:
       - puppetdb-postgres:/var/lib/postgresql/data
       - ./postgres-custom:/docker-entrypoint-initdb.d
-    dns_search: ${DOMAIN:-internal}
+    dns_search: ${DOMAIN:-test}
     networks:
       default:
         aliases:
-         - postgres.${DOMAIN:-internal}
+         - postgres.${DOMAIN:-test}
 
   puppetdb:
-    hostname: puppetdb.${DOMAIN:-internal}
+    hostname: puppetdb.${DOMAIN:-test}
     image: puppet/puppetdb:${PUPPETDB_VERSION:-latest}
     environment:
       - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
       # This name is an FQDN so the short name puppet doesn't collide outside compose network
-      - PUPPETSERVER_HOSTNAME=puppet.${DOMAIN:-internal}
-      - PUPPETDB_POSTGRES_HOSTNAME=postgres.${DOMAIN:-internal}
+      - PUPPETSERVER_HOSTNAME=puppet.${DOMAIN:-test}
+      - PUPPETDB_POSTGRES_HOSTNAME=postgres.${DOMAIN:-test}
       - PUPPETDB_PASSWORD=puppetdb
       - PUPPETDB_USER=puppetdb
       - DNS_ALT_NAMES=puppetdb,${DNS_ALT_NAMES:-}
@@ -72,11 +72,11 @@ services:
       - puppet
     volumes:
       - puppetdb:/opt/puppetlabs/server/data/puppetdb
-    dns_search: ${DOMAIN:-internal}
+    dns_search: ${DOMAIN:-test}
     networks:
       default:
         aliases:
-         - puppetdb.${DOMAIN:-internal}
+         - puppetdb.${DOMAIN:-test}
 
 volumes:
   puppetserver-code:
