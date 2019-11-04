@@ -39,9 +39,10 @@ spec:
                   key: username
             - name: POSTGRES_DB
               value: puppetdb
+            - name: PGDATA
+              value: /var/lib/postgresql/data/db-files/
           ports:
-            - name: postgres
-              containerPort: 5432
+            - containerPort: 5432
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data/
@@ -54,9 +55,9 @@ spec:
         - name: postgres-custom-extensions
           configMap:
             name: postgres-custom-extensions
-    {{- if .Values.nodeSelector }}
+    {{- if .Values.nodeSelector.allPods }}
       nodeSelector:
-{{ toYaml .Values.nodeSelector | nindent 10 }}
+{{ toYaml .Values.nodeSelector.allPods | nindent 10 }}
     {{- end }}
     {{- if .Values.affinity }}
       affinity:

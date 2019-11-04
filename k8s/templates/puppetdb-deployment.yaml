@@ -51,9 +51,9 @@ spec:
         - name: puppetdb-storage
           persistentVolumeClaim:
             claimName: puppetdb-claim
-    {{- if .Values.nodeSelector }}
+    {{- if .Values.nodeSelector.allPods }}
       nodeSelector:
-{{ toYaml .Values.nodeSelector | nindent 10 }}
+{{ toYaml .Values.nodeSelector.allPods | nindent 10 }}
     {{- end }}
     {{- if .Values.affinity }}
       affinity:

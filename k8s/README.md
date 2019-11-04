@@ -6,6 +6,27 @@
 
 * You can also use private repos. Just remember to specify your credentials using `r10k.viaHttps.credentials` or `r10k.viaSsh.credentials`. You can set similar credentials for your Hieradata Repo.
 
+### Kubernetes Storage Class
+Depending on your deployment scenario a certain `StorageClass` object might be required.
+In a big K8s megacluster running in the cloud multiple labeled (and/or tainted) nodes in each Availability Zone (AZ) might be present. In such scenario Puppet Server components that use common storage (`puppetserver` and `r10k`) require their volumes to be created in the same AZ. That can be achieved through a custom `StorageClass`.
+
+Exemplary definition:
+```yaml
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: puppetserver-sc
+provisioner: kubernetes.io/aws-ebs
+parameters:
+  type: gp2
+volumeBindingMode: WaitForFirstConsumer
+allowedTopologies:
+- matchLabelExpressions:
+  - key: failure-domain.beta.kubernetes.io/zone
+    values:
+    - us-east-1d
+```
+
 ## Chart Components
 
 * Creates four deployments: Puppet Server, PuppetDB, PosgreSQL, and Puppetboard.

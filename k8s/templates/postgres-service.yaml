@@ -6,6 +6,7 @@ metadata:
     {{- include "puppetserver.postgres.labels" . | nindent 4 }}
 spec:
   ports:
-    - port: 5432
+    - name: postgres
+      port: 5432
   selector:
     {{- include "puppetserver.postgres.matchLabels" . | nindent 4 }}

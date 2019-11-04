@@ -5,6 +5,15 @@ numbering uses [semantic versioning](http://semver.org).
 
 NOTE: The change log until version `v0.2.4` is auto-generated.
 
+## [v1.0.0](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.0.0) (2019-11-06)
+- Differentiate "nodeSelector" for Pods with Common Storage.
+- Fix for PostgreSQL on AWS.
+- Small Syntax Fixes.
+- Improve README.
+- Improve Values Comments.
+
+[Full Changelog](https://github.com/Xtigyro/puppetserver-helm-chart/compare/v0.3.5...v1.0.0)
+
 ## [v0.3.5](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v0.3.5) (2019-10-31)
 - Add Optional `selector` for PVs/PVCs.
 - Switch to Apache v2.0 License.
