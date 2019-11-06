@@ -27,6 +27,9 @@ allowedTopologies:
     - us-east-1d
 ```
 
+### Load-Balancing Puppet Server
+In case a Load Balancer (LB) must sit in front of Puppet Server - please keep in mind that having a Network LB (operating at OSI Layer 4) is preferable.
+
 ## Chart Components
 
 * Creates four deployments: Puppet Server, PuppetDB, PosgreSQL, and Puppetboard.
