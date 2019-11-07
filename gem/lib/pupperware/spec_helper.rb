@@ -487,9 +487,11 @@ LOG
   end
 
   def teardown_container(container)
-    network_id = begin get_container_network(container) rescue 'missing' end
-    STDOUT.puts("Tearing down test container #{container} - disconnecting from network #{network_id}")
-    run_command("docker network disconnect -f #{network_id} #{container}")
+    network_id = begin get_container_network(container) rescue nil end
+    if !network_id.nil? && !network_id.empty?
+      STDOUT.puts("Tearing down test container #{container} - disconnecting from network #{network_id}")
+      run_command("docker network disconnect --force #{network_id} #{container}")
+    end
     run_command("docker container rm --force #{container}")
   end
 
