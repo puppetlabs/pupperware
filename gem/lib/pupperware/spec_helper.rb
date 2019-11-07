@@ -7,6 +7,7 @@ require 'openssl'
 require 'stringio'
 require 'thwait'
 require 'time'
+require 'yaml'
 
 module Pupperware
 module SpecHelpers
@@ -129,8 +130,14 @@ module SpecHelpers
                                 #{command_and_args}", stream: stream)
   end
 
+  def docker_compose_config()
+    YAML.safe_load(docker_compose('config')[:stdout].chomp)
+  end
+
   def docker_compose_up()
     docker_compose('config', stream: STDOUT)
+    docker_compose('up --no-start', stream: STDOUT)
+    docker_compose_preload_cert_volumes() if ENV['PRELOAD_CERTS'] == '1'
     docker_compose('up --detach', stream: STDOUT)
     docker_compose('images', stream: STDOUT)
     wait_on_stack_healthy()
@@ -149,6 +156,45 @@ module SpecHelpers
     docker_compose('ps', stream: STDOUT)
     STDOUT.puts("Running containers in system:")
     run_command('docker ps --all')
+  end
+
+  def docker_compose_preload_cert_volumes()
+    config = docker_compose_config()
+    # list of available certs for services
+    cert_path = Pathname.new(File.join(__dir__, 'certs'))
+    named_volumes = config['volumes'].keys
+
+    config['services'].each do |service_name, service|
+      # for services that have certs
+      source = cert_path.join(service_name)
+      next unless source.directory?
+
+      # where the first service volume name is a registered volume
+      next if service['volumes'].nil?
+      volume, destination = service['volumes'].map { |v| v.split(':') }.first
+      next unless named_volumes.include?(volume)
+
+      # containers don't need to be running to copy data to their volumes
+      if IS_WINDOWS
+        # HACK: LCOW doesn't work with docker cp, so copy using a special container
+        prefix = ENV['COMPOSE_PROJECT_NAME'] || File.basename(Dir.pwd)
+        volume = "#{prefix}_#{volume}"
+        # create a temp container that bind mounts source files
+        # and copies them to the appropriate volume
+        cmd = "docker run \
+          --rm \
+          --volume #{source}:/tmp/src \
+          --volume #{volume}:/opt \
+          alpine:3.10 \
+          cp -r /tmp/src /opt/certs"
+        STDOUT.puts("Copying existing certs from #{source} to volume #{volume} through transient container")
+        run_command(cmd)
+      else
+        container = get_service_container(service_name)
+        STDOUT.puts("Copying existing certs for service #{service_name} (#{container}) to #{destination}/certs")
+        run_command("docker cp #{source} #{container}:#{destination}/certs")
+      end
+    end
   end
 
   # will simultaneously wait on all containers with healthchecks defined
