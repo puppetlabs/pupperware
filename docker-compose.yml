@@ -35,6 +35,9 @@ services:
       - POSTGRES_PASSWORD=puppetdb
       - POSTGRES_USER=puppetdb
       - POSTGRES_DB=puppetdb
+      # to be able to preload certs, PGDATA must be empty when booting, so set
+      # its directory as a subdirectory of the default /var/lib/postgresql/data VOLUME
+      - PGDATA=/var/lib/postgresql/data/pgdata
     healthcheck:
       # existence check for puppetdb database
       test: [ 'CMD-SHELL', "psql --username=puppetdb puppetdb -c ''" ]
