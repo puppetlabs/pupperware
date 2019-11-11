@@ -171,30 +171,33 @@ module SpecHelpers
 
       # where the first service volume name is a registered volume
       next if service['volumes'].nil?
-      volume, destination = service['volumes'].map { |v| v.split(':') }.first
+      volume, _ = service['volumes'].map { |v| v.split(':') }.first
       next unless named_volumes.include?(volume)
 
       # containers don't need to be running to copy data to their volumes
-      if IS_WINDOWS
-        # HACK: LCOW doesn't work with docker cp, so copy using a special container
-        prefix = ENV['COMPOSE_PROJECT_NAME'] || File.basename(Dir.pwd)
-        volume = "#{prefix}_#{volume}"
-        # create a temp container that bind mounts source files
-        # and copies them to the appropriate volume
-        cmd = "docker run \
-          --rm \
-          --volume #{source}:/tmp/src \
-          --volume #{volume}:/opt \
-          alpine:3.10 \
-          cp -r /tmp/src /opt/certs"
-        STDOUT.puts("Copying existing certs from #{source} to volume #{volume} through transient container")
-        run_command(cmd)
-      else
-        container = get_service_container(service_name)
-        STDOUT.puts("Copying existing certs for service #{service_name} (#{container}) to #{destination}/certs")
-        run_command("docker cp #{source} #{container}:#{destination}/certs")
-      end
+      STDOUT.puts("Pre-loading certificates for service #{service_name}")
+      docker_volume_cp(src_path: source, dest_volume: volume, dest_dir: 'certs')
     end
+  end
+
+  # takes a given src_path, and copies files to the dest_dir of dest_volume
+  # uses a transient Alpine container to copy with instead of `docker cp`
+  # to support both Linux and LCOW
+  def docker_volume_cp(src_path:, dest_volume:, dest_dir:, is_compose: true)
+    if is_compose
+      prefix = ENV['COMPOSE_PROJECT_NAME'] || File.basename(Dir.pwd)
+      dest_volume = "#{prefix}_#{dest_volume}"
+    end
+    # create a temp container that bind mounts src_path files
+    # and copies them to the appropriate volume
+    cmd = "docker run \
+      --rm \
+      --volume #{src_path}:/tmp/src \
+      --volume #{dest_volume}:/opt \
+      alpine:3.10 \
+      cp -r /tmp/src /opt/#{dest_dir}"
+    STDOUT.puts("Copying existing files through transient container:\n  from     : #{src_path}\n  to volume: #{dest_volume}/#{dest_dir}")
+    run_command(cmd)
   end
 
   # will simultaneously wait on all containers with healthchecks defined
