@@ -5,6 +5,11 @@ numbering uses [semantic versioning](http://semver.org).
 
 NOTE: The change log until version `v0.2.4` is auto-generated.
 
+## [v1.0.1](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.0.1) (2019-11-11)
+- Fix Permissions for Hiera, Puppet Server and eYaml Configs.
+
+[Full Changelog](https://github.com/Xtigyro/puppetserver-helm-chart/compare/v1.0.0...v1.0.1)
+
 ## [v1.0.0](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.0.0) (2019-11-08)
 - Differentiate "nodeSelector" for Pods with Common Storage.
 - Fix for PostgreSQL on AWS.

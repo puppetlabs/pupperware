@@ -30,7 +30,23 @@ spec:
           command: [ "sh", "-c" ]
           args:
             - mkdir -p /etc/puppetlabs/code/environments;
+              mkdir -p /etc/puppetlabs/puppet/keys;
+              mkdir -p /etc/puppetlabs/puppet/manifests;
               chown -R puppet:puppet /etc/puppetlabs;
+              {{- if .Values.hiera.config }}
+              cp /etc/puppetlabs/puppet/configmap/hiera.yaml /etc/puppetlabs/puppet/hiera.yaml;
+              chown puppet:puppet /etc/puppetlabs/puppet/hiera.yaml;
+              {{- end }}
+              cp /etc/puppetlabs/puppet/configmap/site.pp /etc/puppetlabs/puppet/manifests/site.pp;
+              chown puppet:puppet /etc/puppetlabs/puppet/manifests/site.pp;
+              {{- if .Values.hiera.eyaml.private_key }}
+              cp /etc/puppetlabs/puppet/configmap/private_key.pkcs7.pem /etc/puppetlabs/puppet/keys/private_key.pkcs7.pem;
+              chown puppet:puppet /etc/puppetlabs/puppet/keys/private_key.pkcs7.pem;
+              {{- end }}
+              {{- if .Values.hiera.eyaml.public_key }}
+              cp /etc/puppetlabs/puppet/configmap/public_key.pkcs7.pem /etc/puppetlabs/puppet/keys/public_key.pkcs7.pem;
+              chown puppet:puppet /etc/puppetlabs/puppet/keys/public_key.pkcs7.pem;
+              {{- end }}
               chmod -R 0777 /tmp;
           securityContext:
             runAsUser: 0
@@ -39,6 +55,26 @@ spec:
           volumeMounts:
             - name: puppet-code-storage
               mountPath: /etc/puppetlabs/code/
+            - name: puppet-puppet-storage
+              mountPath: /etc/puppetlabs/puppet/
+            {{- if .Values.hiera.config }}
+            - name: hiera-volume
+              mountPath: /etc/puppetlabs/puppet/configmap/hiera.yaml
+              subPath: hiera.yaml
+            {{- end }}
+            - name: manifests-volume
+              mountPath: /etc/puppetlabs/puppet/configmap/site.pp
+              subPath: site.pp
+            {{- if .Values.hiera.eyaml.public_key }}
+            - name: eyamlpub-volume
+              mountPath: /etc/puppetlabs/puppet/configmap/public_key.pkcs7.pem
+              subPath: public_key.pkcs7.pem
+            {{- end }}
+            {{- if .Values.hiera.eyaml.private_key }}
+            - name: eyamlpriv-volume
+              mountPath: /etc/puppetlabs/puppet/configmap/private_key.pkcs7.pem
+              subPath: private_key.pkcs7.pem
+            {{- end }}            
             - name: puppet-hiera-storage
               mountPath: /tmp/
       containers:
@@ -69,24 +105,6 @@ spec:
               mountPath: /opt/puppetlabs/server/data/puppetserver/
             - name: puppet-hiera-storage
               mountPath: /hiera
-            {{- if .Values.hiera.config }}
-            - name: hiera-volume
-              mountPath: /etc/puppetlabs/puppet/hiera.yaml
-              subPath: hiera.yaml
-            {{- end }}
-            - name: manifests-volume
-              mountPath: /etc/puppetlabs/puppet/manifests/site.pp
-              subPath: site.pp
-            {{- if .Values.hiera.eyaml.public_key }}
-            - name: eyamlpub-volume
-              mountPath: /etc/puppetlabs/puppet/keys/public_key.pkcs7.pem
-              subPath: public_key.pkcs7.pem
-            {{- end }}
-            {{- if .Values.hiera.eyaml.private_key }}
-            - name: eyamlpriv-volume
-              mountPath: /etc/puppetlabs/puppet/keys/private_key.pkcs7.pem
-              subPath: private_key.pkcs7.pem
-            {{- end }}
         {{- if .Values.hiera.hieradataurl }}
         - name: git-sync-hiera
           image: "{{.Values.git_sync.image}}:{{.Values.git_sync.tag}}"
