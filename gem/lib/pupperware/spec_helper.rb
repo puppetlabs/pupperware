@@ -171,19 +171,26 @@ module SpecHelpers
 
       # where the first service volume name is a registered volume
       next if service['volumes'].nil?
-      volume, _ = service['volumes'].map { |v| v.split(':') }.first
+      # user-specified ENV var can select the volume when container has multiple
+      volume = service['environment']['CERT_VOLUME'] ||
+        service['volumes'].map { |v| v.split(':') }.first[0]
       next unless named_volumes.include?(volume)
+      labels = config['volumes'][volume]['labels']
 
       # containers don't need to be running to copy data to their volumes
       STDOUT.puts("Pre-loading certificates for service #{service_name}")
-      docker_volume_cp(src_path: source, dest_volume: volume, dest_dir: 'certs')
+      docker_volume_cp(src_path: source, dest_volume: volume, dest_dir: 'certs',
+        uid: labels ? labels['com.puppet.certs.uid'] : nil,
+        gid: labels ? labels['com.puppet.certs.gid'] : nil)
     end
   end
 
   # takes a given src_path, and copies files to the dest_dir of dest_volume
   # uses a transient Alpine container to copy with instead of `docker cp`
   # to support both Linux and LCOW
-  def docker_volume_cp(src_path:, dest_volume:, dest_dir:, is_compose: true)
+  def docker_volume_cp(src_path:, dest_volume:, dest_dir:, is_compose: true, uid:, gid:)
+    uid ||= 'root'
+    gid ||= 'root'
     if is_compose
       prefix = ENV['COMPOSE_PROJECT_NAME'] || File.basename(Dir.pwd)
       dest_volume = "#{prefix}_#{dest_volume}"
@@ -195,8 +202,13 @@ module SpecHelpers
       --volume #{src_path}:/tmp/src \
       --volume #{dest_volume}:/opt \
       alpine:3.10 \
-      cp -r /tmp/src /opt/#{dest_dir}"
-    STDOUT.puts("Copying existing files through transient container:\n  from     : #{src_path}\n  to volume: #{dest_volume}/#{dest_dir}")
+      /bin/sh -c \"cp -r /tmp/src /opt/#{dest_dir}; chown -R #{uid}:#{gid} /opt/#{dest_dir}\""
+    STDOUT.puts(<<-MSG)
+Copying existing files through transient container:
+  from         : #{src_path}
+  to volume    : #{dest_volume}/#{dest_dir}
+  with uid:gid : #{uid}:#{gid}
+MSG
     run_command(cmd)
   end
 
