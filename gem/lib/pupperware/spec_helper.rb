@@ -7,6 +7,7 @@ require 'openssl'
 require 'stringio'
 require 'thwait'
 require 'time'
+require 'yaml'
 
 module Pupperware
 module SpecHelpers
@@ -129,8 +130,14 @@ module SpecHelpers
                                 #{command_and_args}", stream: stream)
   end
 
+  def docker_compose_config()
+    YAML.safe_load(docker_compose('config')[:stdout].chomp)
+  end
+
   def docker_compose_up()
     docker_compose('config', stream: STDOUT)
+    docker_compose('up --no-start', stream: STDOUT)
+    docker_compose_preload_cert_volumes() if ENV['PRELOAD_CERTS'] == '1'
     docker_compose('up --detach', stream: STDOUT)
     docker_compose('images', stream: STDOUT)
     wait_on_stack_healthy()
@@ -149,6 +156,48 @@ module SpecHelpers
     docker_compose('ps', stream: STDOUT)
     STDOUT.puts("Running containers in system:")
     run_command('docker ps --all')
+  end
+
+  def docker_compose_preload_cert_volumes()
+    config = docker_compose_config()
+    # list of available certs for services
+    cert_path = Pathname.new(File.join(__dir__, 'certs'))
+    named_volumes = config['volumes'].keys
+
+    config['services'].each do |service_name, service|
+      # for services that have certs
+      source = cert_path.join(service_name)
+      next unless source.directory?
+
+      # where the first service volume name is a registered volume
+      next if service['volumes'].nil?
+      volume, _ = service['volumes'].map { |v| v.split(':') }.first
+      next unless named_volumes.include?(volume)
+
+      # containers don't need to be running to copy data to their volumes
+      STDOUT.puts("Pre-loading certificates for service #{service_name}")
+      docker_volume_cp(src_path: source, dest_volume: volume, dest_dir: 'certs')
+    end
+  end
+
+  # takes a given src_path, and copies files to the dest_dir of dest_volume
+  # uses a transient Alpine container to copy with instead of `docker cp`
+  # to support both Linux and LCOW
+  def docker_volume_cp(src_path:, dest_volume:, dest_dir:, is_compose: true)
+    if is_compose
+      prefix = ENV['COMPOSE_PROJECT_NAME'] || File.basename(Dir.pwd)
+      dest_volume = "#{prefix}_#{dest_volume}"
+    end
+    # create a temp container that bind mounts src_path files
+    # and copies them to the appropriate volume
+    cmd = "docker run \
+      --rm \
+      --volume #{src_path}:/tmp/src \
+      --volume #{dest_volume}:/opt \
+      alpine:3.10 \
+      cp -r /tmp/src /opt/#{dest_dir}"
+    STDOUT.puts("Copying existing files through transient container:\n  from     : #{src_path}\n  to volume: #{dest_volume}/#{dest_dir}")
+    run_command(cmd)
   end
 
   # will simultaneously wait on all containers with healthchecks defined
@@ -487,9 +536,11 @@ LOG
   end
 
   def teardown_container(container)
-    network_id = begin get_container_network(container) rescue 'missing' end
-    STDOUT.puts("Tearing down test container #{container} - disconnecting from network #{network_id}")
-    run_command("docker network disconnect -f #{network_id} #{container}")
+    network_id = begin get_container_network(container) rescue nil end
+    if !network_id.nil? && !network_id.empty?
+      STDOUT.puts("Tearing down test container #{container} - disconnecting from network #{network_id}")
+      run_command("docker network disconnect --force #{network_id} #{container}")
+    end
     run_command("docker container rm --force #{container}")
   end
 
