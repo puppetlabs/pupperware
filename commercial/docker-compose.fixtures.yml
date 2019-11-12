@@ -3,15 +3,6 @@ services:
   puppet:
     environment:
       - CERT_VOLUME=puppetserver
-  postgres-certs:
-    image: alpine:3.10
-    volumes:
-      # this path is irrelevant as long as it exists
-      - puppetdb-postgres:/opt
-    entrypoint: /bin/sh
-    # reset perms to the default postgres uid / gid
-    # NOTE: there is a race here...not guaranteed to come up prior to postgres *always*
-    command: -c "chown -R 999:999 /opt/certs"
   puppet-agent:
     image: puppet/puppet-agent-ubuntu:6.4
     hostname: puppet-agent.test
@@ -38,3 +29,8 @@ services:
       test:
         aliases:
           - test_sshd.test
+volumes:
+  puppetdb-postgres:
+    labels:
+      com.puppet.certs.uid: 999
+      com.puppet.certs.gid: 999
