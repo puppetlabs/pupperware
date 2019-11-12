@@ -171,7 +171,9 @@ module SpecHelpers
 
       # where the first service volume name is a registered volume
       next if service['volumes'].nil?
-      volume, _ = service['volumes'].map { |v| v.split(':') }.first
+      # user-specified ENV var can select the volume when container has multiple
+      volume = service['environment']['CERT_VOLUME'] ||
+        service['volumes'].map { |v| v.split(':') }.first[0]
       next unless named_volumes.include?(volume)
 
       # containers don't need to be running to copy data to their volumes
