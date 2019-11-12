@@ -1,10 +1,8 @@
 version: '3.7'
 services:
-  puppetserver:
-    image: alpine:3.10
-    volumes:
-      # this path must exist for it to work with LCOW
-      - puppetserver:/opt
+  puppet:
+    environment:
+      - CERT_VOLUME=puppetserver
   postgres-certs:
     image: alpine:3.10
     volumes:
