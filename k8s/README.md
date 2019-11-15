@@ -35,7 +35,7 @@ In case a Load Balancer (LB) must sit in front of Puppet Server - please keep in
 
 * Creates four deployments: Puppet Server, PuppetDB, PosgreSQL, and Puppetboard.
 * Creates three Kubernetes Services that expose: Puppet Server, PuppetDB, and PostgreSQL.
-* Creates Secrets to hold credentials for PuppetDB, PosgreSQL, r10k, and git-sync.
+* Creates Secrets to hold credentials for PuppetDB, PosgreSQL, and r10k.
 
 ## Installing the Chart
 
@@ -102,32 +102,6 @@ Parameter | Description | Default
 `puppetserver.ingress.hosts`| puppetserver ingress hostnames |``
 `puppetserver.ingress.tls`| puppetserver ingress tls configuration |``
 `puppetserver.puppeturl`| puppetserver control repo url |``
-`git_sync.name` | git_sync component label | `git_sync`
-`git_sync.image` | git_sync img | `k8s.gcr.io/git-sync`
-`git_sync.tag` | git_sync img tag | `v3.1.2`
-`git_sync.pullPolicy` | git_sync img pull policy | `IfNotPresent`
-`git_sync.branch`| git_sync git branch |``
-`git_sync.viaHttps.enabled` | git_sync repo cloning via https | `true`
-`git_sync.viaHttps.credentials.username`| git_sync https username |``
-`git_sync.viaHttps.credentials.password`| git_sync https password |``
-`git_sync.viaHttps.credentials.existingSecret`| git_sync https secret that holds https username and password |``
-`git_sync.viaSsh.enabled` | git_sync repo cloning via https | `false`
-`git_sync.viaSsh.credentials.ssh.value`| git_sync ssh key file |``
-`git_sync.viaSsh.credentials.known_hosts.value`| git_sync ssh known hosts file |``
-`git_sync.viaSsh.credentials.existingSecret`| git_sync ssh secret that holds ssh ssh key file and known hosts file |``
-`git_sync.name` | git_sync component label | `git_sync`
-`git_sync.image` | git_sync img | `k8s.gcr.io/git-sync`
-`git_sync.tag` | git_sync img tag | `v3.1.2`
-`git_sync.pullPolicy` | git_sync img pull policy | `IfNotPresent`
-`git_sync.branch`| git_sync git branch |``
-`git_sync.viaHttps.enabled` | git_sync repo cloning via https | `true`
-`git_sync.viaHttps.credentials.username`| git_sync https username |``
-`git_sync.viaHttps.credentials.password`| git_sync https password |``
-`git_sync.viaHttps.credentials.existingSecret`| git_sync https secret that holds https username and password |``
-`git_sync.viaSsh.enabled` | git_sync repo cloning via https | `false`
-`git_sync.viaSsh.credentials.ssh.value`| git_sync ssh key file |``
-`git_sync.viaSsh.credentials.known_hosts.value`| git_sync ssh known hosts file |``
-`git_sync.viaSsh.credentials.existingSecret`| git_sync ssh secret that holds ssh key and known hosts files |``
 `r10k.name` | r10k component label | `r10k`
 `r10k.image` | r10k img | `puppet/r10k`
 `r10k.tag` | r10k img tag | `3.3.1`

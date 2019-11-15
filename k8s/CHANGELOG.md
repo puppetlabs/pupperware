@@ -5,6 +5,11 @@ numbering uses [semantic versioning](http://semver.org).
 
 NOTE: The change log until version `v0.2.4` is auto-generated.
 
+## [v1.1.0](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.1.0) (2019-11-19)
+- Switch Pulling the Hiera Data Repo from Using "git_sync" to "r10k".
+
+[Full Changelog](https://github.com/Xtigyro/puppetserver-helm-chart/compare/v1.0.1...v1.1.0)
+
 ## [v1.0.1](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.0.1) (2019-11-11)
 - Fix Permissions for Hiera, Puppet Server and eYaml Configs.
 
