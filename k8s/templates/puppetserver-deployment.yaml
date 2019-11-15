@@ -47,7 +47,6 @@ spec:
               cp /etc/puppetlabs/puppet/configmap/public_key.pkcs7.pem /etc/puppetlabs/puppet/keys/public_key.pkcs7.pem;
               chown puppet:puppet /etc/puppetlabs/puppet/keys/public_key.pkcs7.pem;
               {{- end }}
-              chmod -R 0777 /tmp;
           securityContext:
             runAsUser: 0
             runAsNonRoot: false
@@ -74,9 +73,7 @@ spec:
             - name: eyamlpriv-volume
               mountPath: /etc/puppetlabs/puppet/configmap/private_key.pkcs7.pem
               subPath: private_key.pkcs7.pem
-            {{- end }}            
-            - name: puppet-hiera-storage
-              mountPath: /tmp/
+            {{- end }}
       containers:
         - name: {{ template "puppetserver.fullname" . }}
           image: "{{.Values.puppetserver.image}}:{{.Values.puppetserver.tag}}"
@@ -103,44 +100,6 @@ spec:
               mountPath: /etc/puppetlabs/puppet/
             - name: puppet-serverdata-storage
               mountPath: /opt/puppetlabs/server/data/puppetserver/
-            - name: puppet-hiera-storage
-              mountPath: /hiera
-        {{- if .Values.hiera.hieradataurl }}
-        - name: git-sync-hiera
-          image: "{{.Values.git_sync.image}}:{{.Values.git_sync.tag}}"
-          imagePullPolicy: "{{.Values.git_sync.pullPolicy}}"
-          resources:
-          {{ toYaml .Values.git_sync.resources | nindent 12 }}
-          args:
-            {{- if and (.Values.git_sync.viaSsh.enabled) (.Values.git_sync.viaSsh.credentials.ssh.value) (.Values.git_sync.viaSsh.credentials.known_hosts.value) }}
-            - --ssh
-            {{- end }}
-            {{- if and (.Values.git_sync.viaHttps.credentials.username) (.Values.git_sync.viaHttps.credentials.password) }}
-            - --username={{.Values.git_sync.viaHttps.credentials.username}}
-            - --password={{.Values.git_sync.viaHttps.credentials.password}}
-            {{- end }}
-            - --repo={{ .Values.hiera.hieradataurl }}
-            {{- if .Values.git_sync.branch }}
-            - --branch={{ .Values.git_sync.branch }}
-            {{- end }}
-            - --dest=data
-            - --wait=120
-          securityContext:
-            runAsUser: 65533  # git-sync user
-            readOnlyRootFilesystem: true
-            allowPrivilegeEscalation: false
-          volumeMounts:
-            {{- if and (.Values.git_sync.viaSsh.enabled) (.Values.git_sync.viaSsh.credentials.ssh.value) (.Values.git_sync.viaSsh.credentials.known_hosts.value) }}
-            - name: git-secret
-              mountPath: /etc/git-secret
-            {{- end }}
-            - name: puppet-hiera-storage
-              mountPath: /tmp/
-        {{- end }}
-      {{- if (.Values.hiera.hieradataurl) }}
-      securityContext:
-        fsGroup: 65533  # to make SSH key readable
-      {{- end }}
       volumes:
         - name: puppet-code-storage
           persistentVolumeClaim:
@@ -151,9 +110,6 @@ spec:
         - name: puppet-serverdata-storage
           persistentVolumeClaim:
             claimName: puppet-serverdata-claim
-        - name: puppet-hiera-storage
-          persistentVolumeClaim:
-            claimName: puppet-hiera-claim
         {{- if .Values.hiera.config }}
         - name: hiera-volume
           configMap:
@@ -171,12 +127,6 @@ spec:
         - name: eyamlpriv-volume
           configMap:
             name: eyamlpriv-config
-        {{- end }}
-        {{- if and (.Values.git_sync.viaSsh.enabled) (.Values.git_sync.viaSsh.credentials.ssh.value) (.Values.git_sync.viaSsh.credentials.known_hosts.value) }}
-        - name: git-secret
-          secret:
-            secretName: {{ template "git_sync.secret" . }}
-            defaultMode: 288  # = mode 0440
         {{- end }}
     {{- if (or (.Values.nodeSelector.allPods) (.Values.nodeSelector.commonStoragePods)) }}
       nodeSelector:

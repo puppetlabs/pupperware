@@ -67,49 +67,6 @@ puppetserver:
   ##
   puppeturl: ""   # git@github.com:$SOMEUSER/puppet.git
 
-## Hiera Data Repo Configuration
-##
-git_sync:
-  name: git_sync
-  image: k8s.gcr.io/git-sync
-  tag: v3.1.2
-  pullPolicy: IfNotPresent
-  resources: {}
-  #  requests:
-  #    memory: 200Mi
-  #    cpu: 200m
-  #  limits:
-  #    memory: 400Mi
-  #    cpu: 400m
-  branch: ""
-  ## Cloning via HTTPS method and its creds (if a private repo)
-  ##
-  viaHttps:
-    enabled: true
-    credentials:
-      username: ""
-      ## The password might be your user-generated token
-      ## in case MFA is enabled.
-      password: ""
-      ## Or set the "username" and "password" from a pre-existing K8s secret
-      existingSecret: ""
-  ## Cloning via SSH method and its creds
-  ##
-  viaSsh:
-    enabled: false
-    credentials:
-      ssh:
-        ## A multi-line string
-        value:  # |
-          #  PRIV_KEY CONTENTS
-      known_hosts:
-        ## A multi-line string
-        value:  # |
-          #  KNOWN_HOSTS CONTENTS
-      ## Or set the git-sync Known Hosts file and SSH Private Key
-      ## from a pre-existing K8s secret
-      existingSecret: ""
-
 ## r10k Repo Configuration
 ##
 r10k:
@@ -227,7 +184,7 @@ hiera:
   #  :hierarchy:
   #    - common
   #  :eyaml:
-  #    :datadir: /hiera/git/data   # keep unchanged
+  #    :datadir: /etc/puppetlabs/code/hiera-data   # keep unchanged
   #    :extension: 'yaml'
   #    :pkcs7_private_key: /etc/puppetlabs/puppet/keys/private_key.pkcs7.pem   # keep unchanged
   #    :pkcs7_public_key:  /etc/puppetlabs/puppet/keys/public_key.pkcs7.pem   # keep unchanged
