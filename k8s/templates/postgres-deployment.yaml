@@ -27,6 +27,10 @@ spec:
           resources:
           {{ toYaml .Values.puppetserver.resources | nindent 12 }}
           env:
+            {{- range $key, $value := .Values.postgres.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $value }}
+            {{- end }}
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:

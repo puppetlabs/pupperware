@@ -53,31 +53,38 @@ You can use `kubectl get` to view all of the installed components.
 
 ```console
 $ kubectl get --namespace puppetserver all -l app=puppetserver
-NAME                                READY   STATUS    RESTARTS   AGE
-pod/postgres-77cfcbf9f-md4zh        1/1     Running   0          10m
-pod/puppetboard-7677f4b747-67vbx    1/1     Running   0          10m
-pod/puppetdb-85c799d8fb-94t4h       1/1     Running   0          10m
-pod/puppetserver-6d48cb454b-5drxj   2/2     Running   0          10m
+NAME                                READY   STATUS      RESTARTS   AGE
+pod/postgres-584d75d8b-gw8n6        1/1     Running     0          31m
+pod/puppetdb-5f6fd6df7d-fqbc2       1/1     Running     0          31m
+pod/puppetserver-54f889b9c5-r7gm9   1/1     Running     0          31m
+pod/r10k-deploy-1573860480-5nnp9    0/1     Completed   0          6m6s
+pod/r10k-deploy-1573860600-qhk5j    0/1     Completed   0          4m6s
+pod/r10k-deploy-1573860720-hhkpp    0/1     Completed   0          2m6s
+pod/r10k-deploy-1573860840-tsx2n    0/1     Completed   0          6s
 
-NAME               TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)             AGE
-service/postgres   ClusterIP      10.0.39.67     <none>          5432/TCP            10m
-service/puppet     LoadBalancer   10.0.80.150    192.168.1.101   8140:31499/TCP      10m
-service/puppetdb   ClusterIP      10.0.149.173   <none>          8080/TCP,8081/TCP   10m
+NAME               TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)             AGE
+service/postgres   ClusterIP   10.0.193.66   <none>        5432/TCP            31m
+service/puppet     ClusterIP   10.0.79.57    <none>        8140/TCP            31m
+service/puppetdb   ClusterIP   10.0.232.39   <none>        8080/TCP,8081/TCP   31m
 
 NAME                           READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/postgres       1/1     1            1           10m
-deployment.apps/puppetboard    1/1     1            1           10m
-deployment.apps/puppetdb       1/1     1            1           10m
-deployment.apps/puppetserver   1/1     1            1           10m
+deployment.apps/postgres       1/1     1            1           31m
+deployment.apps/puppetdb       1/1     1            1           31m
+deployment.apps/puppetserver   1/1     1            1           31m
 
 NAME                                      DESIRED   CURRENT   READY   AGE
-replicaset.apps/postgres-77cfcbf9f        1         1         1       10m
-replicaset.apps/puppetboard-7677f4b747    1         1         1       10m
-replicaset.apps/puppetdb-85c799d8fb       1         1         1       10m
-replicaset.apps/puppetserver-6d48cb454b   1         1         1       10m
+replicaset.apps/postgres-584d75d8b        1         1         1       31m
+replicaset.apps/puppetdb-5f6fd6df7d       1         1         1       31m
+replicaset.apps/puppetserver-54f889b9c5   1         1         1       31m
+
+NAME                               COMPLETIONS   DURATION   AGE
+job.batch/r10k-deploy-1573860480   1/1           3s         6m6s
+job.batch/r10k-deploy-1573860600   1/1           3s         4m6s
+job.batch/r10k-deploy-1573860720   1/1           3s         2m6s
+job.batch/r10k-deploy-1573860840   1/1           3s         6s
 
 NAME                        SCHEDULE      SUSPEND   ACTIVE   LAST SCHEDULE   AGE
-cronjob.batch/r10k-deploy   */2 * * * *   False     0        40s             10m
+cronjob.batch/r10k-deploy   */2 * * * *   False     1        14s             31m
 ```
 
 ## Configuration
@@ -88,7 +95,9 @@ Parameter | Description | Default
 --------- | ----------- | -------
 `puppetserver.name` | puppetserver component label | `puppetserver`
 `puppetserver.image` | puppetserver image | `puppet/puppetserver`
-`puppetserver.tag` | puppetserver img tag | `6.6.0`
+`puppetserver.tag` | puppetserver img tag | `6.7.1`
+`puppetserver.resources` | puppetserver resource limits | ``
+`puppetserver.extraEnv` | puppetserver additional container env vars | ``
 `puppetserver.pullPolicy` | puppetserver img pull policy | `IfNotPresent`
 `puppetserver.fqdns.alternateServerNames` | puppetserver alternate fqdns |``
 `puppetserver.service.type` | puppetserver svc type | `ClusterIP`
@@ -104,9 +113,12 @@ Parameter | Description | Default
 `puppetserver.puppeturl`| puppetserver control repo url |``
 `r10k.name` | r10k component label | `r10k`
 `r10k.image` | r10k img | `puppet/r10k`
-`r10k.tag` | r10k img tag | `3.3.1`
+`r10k.tag` | r10k img tag | `3.3.3`
 `r10k.pullPolicy` | r10k img pull policy | `IfNotPresent`
 `r10k.cronJob.schedule` | r10k cron job schedule policy | `*/2 * * * *`
+`r10k.resources` | r10k resource limits | ``
+`r10k.extraArgs` | r10k additional container env args | ``
+`r10k.extraEnv` | r10k additional container env vars | ``
 `r10k.viaHttps.enabled` | r10k repo cloning via https | `true`
 `r10k.viaHttps.credentials.username`| r10k https username |``
 `r10k.viaHttps.credentials.password`| r10k https password |``
@@ -119,10 +131,14 @@ Parameter | Description | Default
 `postgres.image` | postgres img | `postgres`
 `postgres.tag` | postgres img tag | `9.6.15`
 `postgres.pullPolicy` | postgres img pull policy | `IfNotPresent`
+`postgres.resources` | postgres resource limits | ``
+`postgres.extraEnv` | postgres additional container env vars | ``
 `puppetdb.name` | puppetdb component label | `puppetdb`
 `puppetdb.image` | puppetdb img | `puppet/puppetdb`
-`puppetdb.tag` | puppetdb img tag | `6.6.0`
+`puppetdb.tag` | puppetdb img tag | `6.7.3`
 `puppetdb.pullPolicy` | puppetdb img pull policy | `IfNotPresent`
+`puppetdb.resources` | puppetdb resource limits | ``
+`puppetdb.extraEnv` | puppetdb additional container env vars | ``
 `puppetdb.credentials.username`| puppetdb username |`puppetdb`
 `puppetdb.credentials.value.password`| puppetdb password |`20-char randomly generated`
 `puppetdb.credentials.password.existingSecret`| k8s secret that holds puppetdb password |``
@@ -132,6 +148,8 @@ Parameter | Description | Default
 `puppetboard.image` | puppetboard img | `puppet/puppetboard`
 `puppetboard.tag` | puppetboard img tag | `0.3.0`
 `puppetboard.pullPolicy` | puppetboard img pull policy | `IfNotPresent`
+`puppetboard.resources` | puppetboard resource limits | ``
+`puppetboard.extraEnv` | puppetboard additional container env vars | ``
 `hiera.name` | hiera component label | `hiera`
 `hiera.hieradataurl`| hieradata repo url |``
 `hiera.config`| hieradata yaml config |``

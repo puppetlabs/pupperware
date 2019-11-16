@@ -81,6 +81,10 @@ spec:
           resources:
           {{ toYaml .Values.puppetserver.resources | nindent 12 }}
           env:
+            {{- range $key, $value := .Values.puppetserver.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $value }}
+            {{- end }}
             # necessary to set certname and server in puppet.conf, required by
             # puppetserver ca cli application
             - name: PUPPETSERVER_HOSTNAME

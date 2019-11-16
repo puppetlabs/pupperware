@@ -27,6 +27,10 @@ spec:
           resources:
           {{ toYaml .Values.puppetserver.resources | nindent 12 }}
           env:
+            {{- range $key, $value := .Values.puppetdb.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $value }}
+            {{- end }}
             - name: PUPPETSERVER_HOSTNAME
               value: "puppet"
             - name: PUPPETDB_POSTGRES_HOSTNAME

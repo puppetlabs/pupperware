@@ -27,11 +27,19 @@ spec:
               imagePullPolicy: "{{.Values.r10k.pullPolicy}}"
               resources:
               {{ toYaml .Values.r10k.resources | nindent 16 }}
+              env:
+                {{- range $key, $value := .Values.r10k.extraEnv }}
+                - name: {{ $key }}
+                  value: {{ $value }}
+                {{- end }}
               args:
-              - deploy
-              - environment
-              - --config
-              - /etc/puppetlabs/puppet/r10k.yaml
+                - deploy
+                - environment
+                - --config
+                - /etc/puppetlabs/puppet/r10k.yaml
+                {{- range $key, $value := .Values.r10k.extraArgs }}
+                - {{ $key }} {{ $value }}
+                {{- end }}
               volumeMounts:
                 {{- if and (.Values.r10k.viaSsh.enabled) (.Values.r10k.viaSsh.credentials.ssh.value) (.Values.r10k.viaSsh.credentials.known_hosts.value) }}
                 - name: r10k-secret
