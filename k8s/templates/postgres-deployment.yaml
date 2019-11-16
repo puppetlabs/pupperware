@@ -16,7 +16,7 @@ spec:
         {{- include "puppetserver.postgres.labels" . | nindent 8 }}
       {{- if .Values.podAnnotations }}
       annotations:
-{{ toYaml .Values.podAnnotations | nindent 8 }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
       {{- end }}
     spec:
       hostname: postgres
@@ -25,7 +25,7 @@ spec:
           image: "{{.Values.postgres.image}}:{{.Values.postgres.tag}}"
           imagePullPolicy: "{{.Values.postgres.pullPolicy}}"
           resources:
-          {{ toYaml .Values.puppetserver.resources | nindent 12 }}
+            {{- toYaml .Values.postgres.resources | nindent 12 }}
           env:
             {{- range $key, $value := .Values.postgres.extraEnv }}
             - name: {{ $key }}

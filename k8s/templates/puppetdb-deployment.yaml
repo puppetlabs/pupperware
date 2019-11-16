@@ -16,7 +16,7 @@ spec:
         {{- include "puppetserver.puppetdb.labels" . | nindent 8 }}
       {{- if .Values.podAnnotations }}
       annotations:
-{{ toYaml .Values.podAnnotations | nindent 8 }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
       {{- end }}
     spec:
       hostname: puppetdb
@@ -25,7 +25,7 @@ spec:
           image: "{{.Values.puppetdb.image}}:{{.Values.puppetdb.tag}}"
           imagePullPolicy: "{{.Values.puppetdb.pullPolicy}}"
           resources:
-          {{ toYaml .Values.puppetserver.resources | nindent 12 }}
+            {{- toYaml .Values.puppetdb.resources | nindent 12 }}
           env:
             {{- range $key, $value := .Values.puppetdb.extraEnv }}
             - name: {{ $key }}

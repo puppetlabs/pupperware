@@ -17,7 +17,7 @@ spec:
         {{- include "puppetserver.puppetboard.labels" . | nindent 8 }}
       {{- if .Values.podAnnotations }}
       annotations:
-{{ toYaml .Values.podAnnotations | nindent 8 }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
       {{- end }}
     spec:
       hostname: puppetboard
@@ -26,7 +26,7 @@ spec:
           image: "{{.Values.puppetboard.image}}:{{.Values.puppetboard.tag}}"
           imagePullPolicy: "{{.Values.puppetboard.pullPolicy}}"
           resources:
-          {{ toYaml .Values.puppetserver.resources | nindent 12 }}
+            {{- toYaml .Values.puppetboard.resources | nindent 12 }}
           ports:
           env:
             {{- range $key, $value := .Values.puppetboard.extraEnv }}

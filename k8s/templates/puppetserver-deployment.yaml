@@ -17,7 +17,7 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/hiera-configmap.yaml") . | sha256sum }}
       {{- if .Values.podAnnotations }}
-{{ toYaml .Values.podAnnotations | nindent 8 }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
       {{- end }}
     spec:
       hostname: {{ template "puppetserver.puppetserver.serviceName" . }}
@@ -26,7 +26,7 @@ spec:
           image: "{{.Values.puppetserver.image}}:{{.Values.puppetserver.tag}}"
           imagePullPolicy: "{{.Values.puppetserver.pullPolicy}}"
           resources:
-          {{ toYaml .Values.puppetserver.resources | nindent 12 }}
+            {{- toYaml .Values.puppetserver.resources | nindent 12 }}
           command: [ "sh", "-c" ]
           args:
             - mkdir -p /etc/puppetlabs/code/environments;
@@ -79,7 +79,7 @@ spec:
           image: "{{.Values.puppetserver.image}}:{{.Values.puppetserver.tag}}"
           imagePullPolicy: "{{.Values.puppetserver.pullPolicy}}"
           resources:
-          {{ toYaml .Values.puppetserver.resources | nindent 12 }}
+            {{- toYaml .Values.puppetserver.resources | nindent 12 }}
           env:
             {{- range $key, $value := .Values.puppetserver.extraEnv }}
             - name: {{ $key }}
