@@ -5,6 +5,12 @@ numbering uses [semantic versioning](http://semver.org).
 
 NOTE: The change log until version `v0.2.4` is auto-generated.
 
+## [v1.2.1](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.2.1) (2019-11-24)
+- Fixes for "r10k" extra container args.
+- Values file small fixes.
+
+[Full Changelog](https://github.com/Xtigyro/puppetserver-helm-chart/compare/v1.2.0...v1.2.1)
+
 ## [v1.2.0](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.2.0) (2019-11-21)
 - Add optional extra container environment variables.
 - Add optional "r10k" extra container arguments.

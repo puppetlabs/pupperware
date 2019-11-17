@@ -87,9 +87,9 @@ r10k:
     schedule: "*/2 * * * *"
   ## Additional r10k container arguments
   extraArgs: {}
-  # --verbose[=<value>]
-  # --trace
-  # --color
+  #  - --verbose=debug2   # error, warn, notice, info, debug, debug1, debug2
+  #  - --trace
+  #  - --color
   ## Additional puppetserver container environment variables
   extraEnv: {}
   ## Cloning via HTTPS method and its creds (if a private repo)
@@ -206,11 +206,9 @@ hiera:
   #    :pkcs7_public_key:  /etc/puppetlabs/puppet/keys/public_key.pkcs7.pem   # keep unchanged
   eyaml:
     ## A multi-line string
-    ##
     private_key:  # |
       #  PRIV_KEY CONTENTS
     ## A multi-line string
-    ##
     public_key:  # |
       #  PUB_KEY CONTENTS
 
