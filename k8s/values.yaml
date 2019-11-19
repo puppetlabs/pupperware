@@ -16,6 +16,8 @@ puppetserver:
   #  limits:
   #    memory: 768Mi
   #    cpu: 750m
+  ## Additional puppetserver container environment variables
+  extraEnv: {}
   ## Fully qualified domain names (FQDN's) to register
   ## the Puppet Server to be internally reachable via DNS.
   ## That is necessary to configure "certname" and "server" in `puppet.conf`.
@@ -83,6 +85,13 @@ r10k:
   #    cpu: 500m
   cronJob:
     schedule: "*/2 * * * *"
+  ## Additional r10k container arguments
+  extraArgs: {}
+  #  - --verbose=debug2   # error, warn, notice, info, debug, debug1, debug2
+  #  - --trace
+  #  - --color
+  ## Additional puppetserver container environment variables
+  extraEnv: {}
   ## Cloning via HTTPS method and its creds (if a private repo)
   ##
   viaHttps:
@@ -125,6 +134,8 @@ postgres:
   #  limits:
   #    memory: 768Mi
   #    cpu: 750m
+  ## Additional puppetserver container environment variables
+  extraEnv: {}
   ## "credentials" section is going to be added when
   ## this bug with the PuppetDB Docker image is resolved.
   ## Gitissue:
@@ -134,7 +145,7 @@ postgres:
 puppetdb:
   name: puppetdb
   image: puppet/puppetdb
-  tag: 6.7.2
+  tag: 6.7.3
   pullPolicy: IfNotPresent
   resources: {}
   #  requests:
@@ -143,6 +154,9 @@ puppetdb:
   #  limits:
   #    memory: 768Mi
   #    cpu: 750m
+  ## Additional puppetserver container environment variables
+  extraEnv: {}
+  ## Credentials for PuppetDB and PostgreSQL
   credentials:
     username: puppetdb
     ## Override the 20-char random "password" in templates/puppetdb-secret.yaml
@@ -167,6 +181,8 @@ puppetboard:
   #  limits:
   #    memory: 768Mi
   #    cpu: 500m
+  ## Additional puppetserver container environment variables
+  extraEnv: {}
 
 ## Hiera Configuration for Puppet Server
 ##
@@ -190,11 +206,9 @@ hiera:
   #    :pkcs7_public_key:  /etc/puppetlabs/puppet/keys/public_key.pkcs7.pem   # keep unchanged
   eyaml:
     ## A multi-line string
-    ##
     private_key:  # |
       #  PRIV_KEY CONTENTS
     ## A multi-line string
-    ##
     public_key:  # |
       #  PUB_KEY CONTENTS
 
