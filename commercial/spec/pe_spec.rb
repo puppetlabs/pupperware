@@ -30,11 +30,11 @@ describe 'PE stack' do
            --env RBAC_USERNAME=admin \
            --env RBAC_PASSWORD=pupperware \
            --env PUPPETSERVER_HOSTNAME=puppet.test \
+           --env PUPPETDB_HOSTNAME=puppetdb.test \
            --env PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test \
+           --env PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services.test \
            #{CLIENT_TOOLS_IMAGE} \
-           puppet-job run \
-              --nodes puppet-agent.test \
-              --service-url https://pe-orchestration-services.test:8143/")
+           puppet-job run --nodes puppet-agent.test")
     expect(output[:stdout]).to include('Success! 1/1 runs succeeded.')
   end
 
