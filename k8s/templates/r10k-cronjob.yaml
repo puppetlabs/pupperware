@@ -37,6 +37,7 @@ spec:
                 - environment
                 - --config
                 - /etc/puppetlabs/puppet/r10k.yaml
+                - --puppetfile
               {{- range $key, $value := .Values.r10k.extraArgs }}
                 - {{ $value }}
               {{- end }}
