@@ -7,7 +7,7 @@
 puppetserver:
   name: puppetserver
   image: puppet/puppetserver
-  tag: 6.7.1
+  tag: 6.7.2
   pullPolicy: IfNotPresent
   resources: {}
   #  requests:
@@ -84,18 +84,19 @@ r10k:
   #    memory: 512Mi
   #    cpu: 500m
   cronJob:
-    schedule: "*/2 * * * *"
+    schedule: "*/5 * * * *"
   ## Additional r10k container arguments
-  extraArgs: {}
+  extraArgs:
   #  - --verbose=debug2   # error, warn, notice, info, debug, debug1, debug2
   #  - --trace
   #  - --color
   ## Additional puppetserver container environment variables
   extraEnv: {}
-  ## Cloning via HTTPS method and its creds (if a private repo)
+  ## Cloning via HTTPS protocol with authentication
   ##
   viaHttps:
-    enabled: true
+    ## Leave empty - if HTTPS should be used for both - Puppet and Hiera repos.
+    repo: ""   # "puppet_repo" or "hiera_repo"
     credentials:
       username: ""
       ## The password might be your user-generated token
@@ -103,10 +104,11 @@ r10k:
       password: ""
       ## Or set the "username" and "password" from a pre-existing K8s secret
       existingSecret: ""
-  ## Cloning via SSH method and its creds
+  ## Cloning via SSH protocol with authentication
   ##
   viaSsh:
-    enabled: false
+    ## Leave empty - if SSH should be used for both - Puppet and Hiera repos.
+    repo: ""   # "puppet_repo" or "hiera_repo"
     credentials:
       ssh:
         ## A multi-line string

@@ -7,23 +7,61 @@ metadata:
     {{- include "puppetserver.r10k.labels" . | nindent 4 }}
 data:
   r10k.yaml: |
+    # The location to use for storing cached Git repos
     :cachedir: '/var/tmp/r10k_cache'
-    sources:
-      puppet:
+
+    # A list of git repositories to create
+    :sources:
+      # This will clone the git repository and instantiate an environment per
+      # branch in '/etc/puppetlabs/code/environments'
+      :puppet_repo:
         remote: '{{.Values.puppetserver.puppeturl}}'
         basedir: '/etc/puppetlabs/code/environments'
       {{- if .Values.hiera.hieradataurl }}
-      hiera:
+      # This will clone the git repository and instantiate an environment per
+      # branch in '/etc/puppetlabs/code/hiera-data'
+      :hiera_repo:
         remote: '{{.Values.hiera.hieradataurl}}'
         basedir: '/etc/puppetlabs/code/hiera-data'
       {{- end }}
-    git:
+
+    :git:
       provider: 'rugged' # Either 'shellgit' or 'rugged', defaults to 'shellgit'
-      {{- if and (.Values.r10k.viaSsh.enabled) (.Values.r10k.viaSsh.credentials.ssh.value) (.Values.r10k.viaSsh.credentials.known_hosts.value) }}
+      {{- if and (.Values.r10k.viaSsh.credentials.ssh.value) (.Values.r10k.viaSsh.credentials.known_hosts.value) }}
+      {{- if and (not .Values.r10k.viaSsh.repo) (not .Values.r10k.viaHttps.repo) }}
       private_key: '/root/.ssh/id_rsa'
       {{- end }}
+      {{- if (eq (.Values.r10k.viaSsh.repo | toString) "puppet_repo") (ne (.Values.r10k.viaHttps.repo | toString) "puppet_repo") }}
+      repositories:
+        - remote: '{{.Values.puppetserver.puppeturl}}'
+          private_key: '/root/.ssh/id_rsa'
+      {{- end }}
+      {{- if (eq (.Values.r10k.viaSsh.repo | toString) "hiera_repo") (ne (.Values.r10k.viaHttps.repo | toString) "hiera_repo") }}
+      repositories:
+        - remote: '{{.Values.hiera.hieradataurl}}'
+          private_key: '/root/.ssh/id_rsa'
+      {{- end }}
+      {{- end }}
       {{- if and (.Values.r10k.viaHttps.credentials.username) (.Values.r10k.viaHttps.credentials.password) }}
+      {{- if and (not .Values.r10k.viaHttps.repo) (not .Values.r10k.viaSsh.repo) }}
       username: '{{.Values.r10k.viaHttps.credentials.username}}'
       password: '{{.Values.r10k.viaHttps.credentials.password}}'
+      {{- end }}
+      {{- if and (eq (.Values.r10k.viaHttps.repo | toString) "puppet_repo") (ne (.Values.r10k.viaSsh.repo | toString) "puppet_repo") }}
+      {{- if not .Values.r10k.viaSsh.repo }}
+      repositories:
+      {{- end }}
+        - remote: '{{.Values.puppetserver.puppeturl}}'
+          username: '{{.Values.r10k.viaHttps.credentials.username}}'
+          password: '{{.Values.r10k.viaHttps.credentials.password}}'
+      {{- end }}
+      {{- if and (eq (.Values.r10k.viaHttps.repo | toString) "hiera_repo") (ne (.Values.r10k.viaSsh.repo | toString) "hiera_repo") }}
+      {{- if not .Values.r10k.viaSsh.repo }}
+      repositories:
+      {{- end }}
+        - remote: '{{.Values.hiera.hieradataurl}}'
+          username: '{{.Values.r10k.viaHttps.credentials.username}}'
+          password: '{{.Values.r10k.viaHttps.credentials.password}}'
+      {{- end }}
       {{- end }}
 {{- end }}

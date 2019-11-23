@@ -3,15 +3,18 @@
 ## Prerequisites
 
 ### Code Repos
+
 * You must specify your Puppet Control Repo using `puppetserver.puppeturl` variable in the `values.yaml` file or include `--set puppetserver.puppeturl=<your_public_repo>` in the command line of `helm install`. You should specify your separate Hieradata Repo as well using the `hiera.hieradataurl` variable.
 
 * You can also use private repos. Just remember to specify your credentials using `r10k.viaHttps.credentials` or `r10k.viaSsh.credentials`. You can set similar credentials for your Hieradata Repo.
 
 ### Kubernetes Storage Class
+
 Depending on your deployment scenario a certain `StorageClass` object might be required.
 In a big K8s megacluster running in the cloud multiple labeled (and/or tainted) nodes in each Availability Zone (AZ) might be present. In such scenario Puppet Server components that use common storage (`puppetserver` and `r10k`) require their volumes to be created in the same AZ. That can be achieved through a custom `StorageClass`.
 
 Exemplary definition:
+
 ```yaml
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
@@ -29,6 +32,7 @@ allowedTopologies:
 ```
 
 ### Load-Balancing Puppet Server
+
 In case a Load Balancer (LB) must sit in front of Puppet Server - please keep in mind that having a Network LB (operating at OSI Layer 4) is preferable.
 
 ## Chart Components
@@ -97,7 +101,7 @@ Parameter | Description | Default
 `puppetserver.image` | puppetserver image | `puppet/puppetserver`
 `puppetserver.tag` | puppetserver img tag | `6.7.1`
 `puppetserver.resources` | puppetserver resource limits | ``
-`puppetserver.extraEnv` | puppetserver additional container env vars | ``
+`puppetserver.extraEnv` | puppetserver additional container env vars |``
 `puppetserver.pullPolicy` | puppetserver img pull policy | `IfNotPresent`
 `puppetserver.fqdns.alternateServerNames` | puppetserver alternate fqdns |``
 `puppetserver.service.type` | puppetserver svc type | `ClusterIP`
@@ -116,14 +120,14 @@ Parameter | Description | Default
 `r10k.tag` | r10k img tag | `3.3.3`
 `r10k.pullPolicy` | r10k img pull policy | `IfNotPresent`
 `r10k.cronJob.schedule` | r10k cron job schedule policy | `*/2 * * * *`
-`r10k.resources` | r10k resource limits | ``
-`r10k.extraArgs` | r10k additional container env args | ``
-`r10k.extraEnv` | r10k additional container env vars | ``
-`r10k.viaHttps.enabled` | r10k repo cloning via https | `true`
+`r10k.resources` | r10k resource limits |``
+`r10k.extraArgs` | r10k additional container env args |``
+`r10k.extraEnv` | r10k additional container env vars |``
+`r10k.viaHttps.repo`| r10k https repo selector |``
 `r10k.viaHttps.credentials.username`| r10k https username |``
 `r10k.viaHttps.credentials.password`| r10k https password |``
 `r10k.viaHttps.credentials.existingSecret`| r10k https secret that holds https username and password |``
-`r10k.viaSsh.enabled` | r10k repo cloning via https | `false`
+`r10k.viaSsh.repo`| r10k ssh repo selector |``
 `r10k.viaSsh.credentials.ssh.value`| r10k ssh key file |``
 `r10k.viaSsh.credentials.known_hosts.value`| r10k ssh known hosts file |``
 `r10k.viaSsh.credentials.existingSecret`| r10k ssh secret that holds ssh key and known hosts files |``
@@ -131,14 +135,14 @@ Parameter | Description | Default
 `postgres.image` | postgres img | `postgres`
 `postgres.tag` | postgres img tag | `9.6.15`
 `postgres.pullPolicy` | postgres img pull policy | `IfNotPresent`
-`postgres.resources` | postgres resource limits | ``
-`postgres.extraEnv` | postgres additional container env vars | ``
+`postgres.resources` | postgres resource limits |``
+`postgres.extraEnv` | postgres additional container env vars |``
 `puppetdb.name` | puppetdb component label | `puppetdb`
 `puppetdb.image` | puppetdb img | `puppet/puppetdb`
 `puppetdb.tag` | puppetdb img tag | `6.7.3`
 `puppetdb.pullPolicy` | puppetdb img pull policy | `IfNotPresent`
-`puppetdb.resources` | puppetdb resource limits | ``
-`puppetdb.extraEnv` | puppetdb additional container env vars | ``
+`puppetdb.resources` | puppetdb resource limits |``
+`puppetdb.extraEnv` | puppetdb additional container env vars |``
 `puppetdb.credentials.username`| puppetdb username |`puppetdb`
 `puppetdb.credentials.value.password`| puppetdb password |`20-char randomly generated`
 `puppetdb.credentials.password.existingSecret`| k8s secret that holds puppetdb password |``
@@ -148,8 +152,8 @@ Parameter | Description | Default
 `puppetboard.image` | puppetboard img | `puppet/puppetboard`
 `puppetboard.tag` | puppetboard img tag | `0.3.0`
 `puppetboard.pullPolicy` | puppetboard img pull policy | `IfNotPresent`
-`puppetboard.resources` | puppetboard resource limits | ``
-`puppetboard.extraEnv` | puppetboard additional container env vars | ``
+`puppetboard.resources` | puppetboard resource limits |``
+`puppetboard.extraEnv` | puppetboard additional container env vars |``
 `hiera.name` | hiera component label | `hiera`
 `hiera.hieradataurl`| hieradata repo url |``
 `hiera.config`| hieradata yaml config |``
@@ -181,6 +185,6 @@ helm install --namespace puppetserver --name puppetserver ./ -f values.yaml
 
 ## Chart's Dev Team
 
-- Lead Developer: Miroslav Hadzhiev (miroslav.hadzhiev@gmail.com)
-- Developer: Scott Cressi (scottcressi@gmail.com)
-- Developer: Morgan Rhodes (morgan@puppet.com)
+* Lead Developer: Miroslav Hadzhiev (miroslav.hadzhiev@gmail.com)
+* Developer: Scott Cressi (scottcressi@gmail.com)
+* Developer: Morgan Rhodes (morgan@puppet.com)

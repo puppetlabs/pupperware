@@ -42,7 +42,7 @@ spec:
                 - {{ $value }}
               {{- end }}
               volumeMounts:
-                {{- if and (.Values.r10k.viaSsh.enabled) (.Values.r10k.viaSsh.credentials.ssh.value) (.Values.r10k.viaSsh.credentials.known_hosts.value) }}
+                {{- if and (.Values.r10k.viaSsh.credentials.ssh.value) (.Values.r10k.viaSsh.credentials.known_hosts.value) }}
                 - name: r10k-secret
                   mountPath: /root/.ssh
                 {{- end }}
@@ -59,7 +59,7 @@ spec:
             - name: r10k-volume
               configMap:
                 name: r10k-config
-            {{- if and (.Values.r10k.viaSsh.enabled) (.Values.r10k.viaSsh.credentials.ssh.value) (.Values.r10k.viaSsh.credentials.known_hosts.value) }}
+            {{- if and (.Values.r10k.viaSsh.credentials.ssh.value) (.Values.r10k.viaSsh.credentials.known_hosts.value) }}
             - name: r10k-secret
               secret:
                 secretName: {{ template "r10k.secret" . }}
