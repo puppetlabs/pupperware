@@ -86,7 +86,7 @@ r10k:
   cronJob:
     schedule: "*/5 * * * *"
   ## Additional r10k container arguments
-  extraArgs:
+  extraArgs: {}
   #  - --verbose=debug2   # error, warn, notice, info, debug, debug1, debug2
   #  - --trace
   #  - --color
