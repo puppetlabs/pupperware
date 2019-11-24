@@ -5,6 +5,12 @@ numbering uses [semantic versioning](http://semver.org).
 
 NOTE: The change log until version `v0.2.4` is auto-generated.
 
+## [v1.3.1](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.3.1) (2019-11-27)
+
+- Small Values file fix.
+
+[Full Changelog](https://github.com/Xtigyro/puppetserver-helm-chart/compare/v1.3.0...v1.3.1)
+
 ## [v1.3.0](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.3.0) (2019-11-27)
 
 - [Firewall Related] Add support for separate r10k network protocols to gather the code of Puppet and Hiera repos.
