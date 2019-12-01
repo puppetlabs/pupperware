@@ -6,14 +6,14 @@ metadata:
     {{- include "puppetserver.puppetdb.labels" . | nindent 4 }}
 {{- if .Values.storage.annotations }}
   annotations:
-{{ toYaml .Values.storage.annotations | nindent 4 }}
+    {{ toYaml .Values.storage.annotations | nindent 4 }}
 {{- end }}
 spec:
-  {{- if .Values.storage.selector }}
+{{- if .Values.storage.selector }}
   selector:
     matchLabels:
       {{- include "puppetserver.puppetdb.matchLabels" . | nindent 6 }}
-  {{- end }}
+{{- end }}
   accessModes:
     - ReadWriteOnce
   resources:

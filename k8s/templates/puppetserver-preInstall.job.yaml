@@ -1,0 +1,42 @@
+{{- if .Values.puppetserver.preGeneratedCertsJob.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ template "puppetserver.name" . }}--preinstall"
+  labels:
+    {{- include "puppetserver.puppetserver.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": "pre-install"
+    "helm.sh/hook-weight": "2"
+    "helm.sh/hook-delete-policy": "hook-succeeded,hook-failed"
+spec:
+  activeDeadlineSeconds: {{.Values.puppetserver.preGeneratedCertsJob.jobDeadline}}
+  template:
+    metadata:
+      name: "{{ template "puppetserver.fullname" . }}-preinstall"
+      labels:
+        {{- include "puppetserver.puppetserver.labels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: copy-ro-puppetserver-certs
+          image: "{{.Values.puppetserver.image}}:{{.Values.puppetserver.tag}}"
+          imagePullPolicy: "{{.Values.puppetserver.pullPolicy}}"
+          command: [ "sh", "-c" ]
+          args:
+            - mkdir -p /etc/puppetlabs/puppet/ssl;
+              CERTS_FILE=`ls /puppetserver-certs`;
+              tar xf /puppetserver-certs/"$CERTS_FILE" -C /etc/puppetlabs/puppet/ssl --strip-components 1;
+          volumeMounts:
+            - name: puppetserver-certs
+              mountPath: /puppetserver-certs
+            - name: puppet-puppet-storage
+              mountPath: /etc/puppetlabs/puppet/
+      volumes:
+        - name: puppet-puppet-storage
+          persistentVolumeClaim:
+            claimName: puppet-puppet-claim
+        - name: puppetserver-certs
+          configMap:
+            name: "{{ template "puppetserver.fullname" . }}-preinstall"
+{{- end }}

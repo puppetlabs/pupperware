@@ -7,13 +7,13 @@ kind: Ingress
 metadata:
 {{- if .Values.puppetserver.ingress.annotations }}
   annotations:
-{{ toYaml .Values.puppetserver.ingress.annotations | indent 4 }}
+    {{ toYaml .Values.puppetserver.ingress.annotations | indent 4 }}
 {{- end }}
   labels:
     {{- include "puppetserver.puppetserver.labels" . | nindent 4 }}
-{{- range $key, $value := .Values.puppetserver.ingress.extraLabels }}
+  {{- range $key, $value := .Values.puppetserver.ingress.extraLabels }}
     {{ $key }}: {{ $value }}
-{{- end }}
+  {{- end }}
   name: {{ template "puppetserver.fullname" . }}
 spec:
   rules:
@@ -29,6 +29,6 @@ spec:
   {{- end -}}
 {{- if .Values.puppetserver.ingress.tls }}
   tls:
-{{ toYaml .Values.puppetserver.ingress.tls | indent 4 }}
-  {{- end -}}
+    {{ toYaml .Values.puppetserver.ingress.tls | indent 4 }}
+{{- end -}}
 {{- end -}}

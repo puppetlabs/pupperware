@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: puppetboard
+  name: {{ template "puppetserver.name" . }}-puppetboard
   labels:
     {{- include "puppetserver.puppetboard.labels" . | nindent 4 }}
 spec:
@@ -15,10 +15,10 @@ spec:
     metadata:
       labels:
         {{- include "puppetserver.puppetboard.labels" . | nindent 8 }}
-      {{- if .Values.podAnnotations }}
+    {{- if .Values.podAnnotations }}
       annotations:
         {{- toYaml .Values.podAnnotations | nindent 8 }}
-      {{- end }}
+    {{- end }}
     spec:
       hostname: puppetboard
       containers:
@@ -29,10 +29,10 @@ spec:
             {{- toYaml .Values.puppetboard.resources | nindent 12 }}
           ports:
           env:
-            {{- range $key, $value := .Values.puppetboard.extraEnv }}
+          {{- range $key, $value := .Values.puppetboard.extraEnv }}
             - name: {{ $key }}
               value: {{ $value }}
-            {{- end }}
+          {{- end }}
             - name: "PUPPETDB_HOST"
               value: "puppetdb"
             - name: "PUPPETDB_PORT"
@@ -42,15 +42,15 @@ spec:
               containerPort: 8000
     {{- if .Values.nodeSelector.allPods }}
       nodeSelector:
-{{ toYaml .Values.nodeSelector.allPods | nindent 10 }}
+        {{ toYaml .Values.nodeSelector.allPods | nindent 10 }}
     {{- end }}
     {{- if .Values.affinity }}
       affinity:
-{{ toYaml .Values.affinity | nindent 10 }}
+        {{ toYaml .Values.affinity | nindent 10 }}
     {{- end }}
     {{- if .Values.tolerations }}
       tolerations:
-{{ toYaml .Values.tolerations| nindent 10 }}
+        {{ toYaml .Values.tolerations| nindent 10 }}
     {{- end }}
     {{- if and (.Capabilities.APIVersions.Has "scheduling.k8s.io/v1beta1") (.Values.priorityClassName) }}
       priorityClassName: {{ .Values.priorityClassName }}
