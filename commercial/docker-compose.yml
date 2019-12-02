@@ -18,6 +18,7 @@ services:
       # NOTE: for an R10K_REMOTE the id-control_repo.rsa path may be bind mounted like:
       # - ./path/to/codemanager/ssh:/etc/puppetlabs/puppetserver/ssh
       # Additional SSH configuration files may be placed in this directory
+    restart: always
     ports:
       - 8140:8140
       - 8170:8170
@@ -39,6 +40,7 @@ services:
       - PUPPERWARE_ADMIN_PASSWORD=pupperware
     volumes:
       - orchestration-services:/opt/puppetlabs/server/data/orchestration-services
+    restart: always
     ports:
       - 8142:8142
       - 8143:8143
@@ -63,6 +65,7 @@ services:
       - PE_ORCHESTRATION_SERVICES_CERTNAME=pe-orchestration-services.test
     volumes:
       - console-services:/opt/puppetlabs/server/data/console-services
+    restart: always
     ports:
       - 443:4431
       - 4430:4430
@@ -79,6 +82,7 @@ services:
   pe-bolt-server:
     image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-bolt-server:kearney-latest
     hostname: pe-bolt-server.test
+    restart: always
     expose:
       - 62658
       - 62659
@@ -106,6 +110,7 @@ services:
       - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
     volumes:
       - puppetdb:/opt/puppetlabs/server/data/puppetdb
+    restart: always
     ports:
       - 8080:8080
       - 8081:8081
@@ -128,6 +133,7 @@ services:
       - PE_ORCHESTRATION_SERVICES_CERTNAME=pe-orchestration-services.test
     volumes:
       - puppetdb-postgres:/var/lib/postgresql/data
+    restart: always
     expose:
       - 5432
     depends_on:
