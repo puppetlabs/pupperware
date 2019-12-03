@@ -107,8 +107,10 @@ services:
     volumes:
       - puppetdb:/opt/puppetlabs/server/data/puppetdb
     ports:
-      - 8080:8080
-      - 8081:8081
+      # Ports are not published to host for security reasons.
+      # Use docker-compose.override.yml to publish locally.
+      - 8080
+      - 8081
     depends_on:
       - postgres
       - puppet
