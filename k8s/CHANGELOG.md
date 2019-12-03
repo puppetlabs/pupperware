@@ -5,6 +5,13 @@ numbering uses [semantic versioning](http://semver.org).
 
 NOTE: The change log until version `v0.2.4` is auto-generated.
 
+## [v1.5.1](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.5.1) (2019-12-03)
+
+- Small Indentation Fixes.
+- Use Recommended Dir for PostreSQL's PGDATA.
+
+[Full Changelog](https://github.com/Xtigyro/puppetserver-helm-chart/compare/v1.5.0...v1.5.1)
+
 ## [v1.5.0](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.5.0) (2019-12-02)
 
 - Fixes and additions to setting SSH credentials from existing K8s secret.
