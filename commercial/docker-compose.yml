@@ -8,6 +8,11 @@ services:
       - PUPPETDB_HOSTNAME=puppetdb.test
       - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
       - PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services.test
+      # puppet::enterprise class parameters written to hiera.yaml
+      - PUPPETSERVER_PORT=8140
+      - POSTGRES_HOSTNAME=postgres.test
+      - PUPPETDB_SSL_PORT=8081
+      - PE_ORCHESTRATION_SERVICES_PORT=8143
       # Set the control repo URL like https://github.com/puppetlabs/control-repo.git
       # For private repos, use git@github.com:user/repo.git and provide SSH keys
       # - R10K_REMOTE=
