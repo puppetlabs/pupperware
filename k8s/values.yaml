@@ -18,11 +18,11 @@ puppetserver:
   #    cpu: 750m
   ## Additional puppetserver container environment variables
   extraEnv: {}
-  ## Use pre-generated Puppet certs in `./puppet-certs`
+  ## Use pre-generated Puppet certs in `./init/puppet-certs`
   ## Check README for related use cases
   preGeneratedCertsJob:
     enabled: false
-    jobDeadline: 60
+    jobDeadline: 300
   ## Fully qualified domain names (FQDN's) to register
   ## the Puppet Server to be internally reachable via DNS.
   ## That is necessary to configure "certname" and "server" in `puppet.conf`.

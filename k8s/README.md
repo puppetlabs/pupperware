@@ -45,9 +45,9 @@ You will also need to remove the existing certificates in `/etc/puppetlabs/puppe
 
 ### Using Pre-Generated Puppet Master Certificates
 
-If you prefer not to auto-sign or manually sign the Puppet Agents' CSRs - you can use the same Puppet master certificates which you used in your bare-metal setup. Please archive into a file and place your certificates in the `init/puppet-certs` directory and enable their usage in the Values file (`.Values.puppetserver.preGeneratedCertsJob.enabled`).
+If you prefer not to auto-sign or manually sign the Puppet Agents' CSRs - you can use the same Puppet master and PuppetDB certificates which you used in your bare-metal setup. Please archive into two separate files and place your certificates in the `init/puppet-certs/puppetserver` and `init/puppet-certs/puppetdb` directories and enable their usage in the Values file (`.Values.puppetserver.preGeneratedCertsJob.enabled`).
 
-The content of the archive should be very similar to:
+The content of the two archives should be very similar to:
 
 ```console
 root@puppet:/# ll /etc/puppetlabs/puppet/ssl/
@@ -59,19 +59,34 @@ drwxr-xr-x 2 puppet puppet 4096 Nov 26 20:21 certs/
 drwxr-x--- 2 puppet puppet 4096 Nov 26 20:21 private/
 drwxr-x--- 2 puppet puppet 4096 Nov 26 20:21 private_keys/
 drwxr-xr-x 2 puppet puppet 4096 Nov 26 20:21 public_keys/
+
+root@puppetdb:/opt/puppetlabs/server/data/puppetdb/certs# ls -l
+total 20
+drwxr-xr-x 2 puppetdb puppetdb 4096 Dec  5 21:49 certificate_requests
+drwx------ 2 puppetdb puppetdb 4096 Dec  5 22:36 certs
+-rw-r--r-- 1 puppetdb puppetdb  950 Dec  5 21:49 crl.pem
+drwx------ 2 puppetdb puppetdb 4096 Dec  5 22:36 private_keys
+drwxr-xr-x 2 puppetdb puppetdb 4096 Dec  5 21:49 public_keys
 ```
 
-Essentially, on your bare-metal Puppet master that's the content of the directory: `/etc/puppetlabs/puppet/ssl`.
+Essentially, on your bare-metal Puppet master and PuppetDB instance that's the content of the directories: `/etc/puppetlabs/puppet/ssl` and `/opt/puppetlabs/server/data/puppetdb/certs/`.
 
-The content of the `init/puppet-certs` chart's dir should be similar to:
+The content of the `init/puppet-certs/puppetserver` and `init/puppet-certs/puppetdb` chart's dirs should be similar to:
 
 ```console
-/repos/xtigyro/puppetserver-helm-chart # ll init/puppet-certs
+/repos/xtigyro/puppetserver-helm-chart # ll init/puppet-certs/puppetserver/
 total 24
-drwxrws--- 2 puppet puppet 4096 Nov 28 23:47 ./
-drwxrws--- 3 puppet puppet 4096 Nov 28 23:28 ../
--rw-rw---- 1 puppet puppet   71 Nov 28 23:41 .gitignore
--rw-r--r-- 1 puppet puppet 9991 Nov 28 23:47 puppet-certs.gz
+drwxrws--- 2 xtigyro-samba sambashare  4096 Dec  5 22:00 ./
+drwxrws--- 4 xtigyro-samba sambashare  4096 Dec  5 21:45 ../
+-rw-rw---- 1 xtigyro-samba sambashare    71 Dec  5 21:45 .gitignore
+-rw-r--r-- 1 xtigyro-samba sambashare 10013 Dec  5 22:00 puppetserver-certs.gz
+
+/repos/xtigyro/puppetserver-helm-chart # ll init/puppet-certs/puppetdb/
+total 24
+drwxrws--- 2 xtigyro-samba sambashare  4096 Dec  5 22:00 ./
+drwxrws--- 4 xtigyro-samba sambashare  4096 Dec  5 21:45 ../
+-rw-rw---- 1 xtigyro-samba sambashare    71 Dec  5 21:45 .gitignore
+-rw-r--r-- 1 xtigyro-samba sambashare 10158 Dec  5 22:00 puppetdb-certs.gz
 ```
 
 > **NOTE**: For more information please check - [README.md](init/README.md). For more general knowledge on the matter you can also read the article - <https://puppet.com/docs/puppet/5.5/ssl_regenerate_certificates.html.>

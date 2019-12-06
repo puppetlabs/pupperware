@@ -33,10 +33,6 @@ spec:
           {{- end }}
             - name: PUPPETSERVER_HOSTNAME
               value: "puppet"
-          {{- if .Values.puppetserver.preGeneratedCertsJob.enabled }}
-            - name: USE_PUPPETSERVER
-              value: "false"
-          {{- end }}
             - name: PUPPETDB_POSTGRES_HOSTNAME
               value: "postgres"
             - name: PUPPETDB_PASSWORD
@@ -54,7 +50,7 @@ spec:
             - containerPort: 8081
           volumeMounts:
             - name: puppetdb-storage
-              mountPath: /opt/puppetlabs/server/data/puppetdb/certs/
+              mountPath: /opt/puppetlabs/server/data/puppetdb/certs
       volumes:
         - name: puppetdb-storage
           persistentVolumeClaim:

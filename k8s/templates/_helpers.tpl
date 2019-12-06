@@ -38,6 +38,11 @@ chart: {{ .Chart.Name }}-{{ .Chart.Version }}
 heritage: {{ .Release.Service }}
 {{- end -}}
 
+{{- define "puppetserver.puppet.labels" -}}
+{{ include "puppetserver.common.matchLabels" . }}
+{{ include "puppetserver.common.metaLabels" . }}
+{{- end -}}
+
 {{- define "puppetserver.hiera.labels" -}}
 {{ include "puppetserver.hiera.matchLabels" . }}
 {{ include "puppetserver.common.metaLabels" . }}
