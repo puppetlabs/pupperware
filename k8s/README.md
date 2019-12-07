@@ -143,7 +143,7 @@ job.batch/puppetserver-r10k-code-deploy-1575237600   1/1           2s         10
 job.batch/puppetserver-r10k-code-deploy-1575238200   1/1           2s         39s
 
 NAME                                          SCHEDULE       SUSPEND   ACTIVE   LAST SCHEDULE   AGE
-cronjob.batch/puppetserver-r10k-code-deploy   */10 * * * *   False     0        42s             24m
+cronjob.batch/puppetserver-r10k-code-deploy   */15 * * * *   False     0        42s             24m
 ```
 
 ## Configuration

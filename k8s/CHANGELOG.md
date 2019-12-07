@@ -5,6 +5,13 @@ numbering uses [semantic versioning](http://semver.org).
 
 NOTE: The change log until version `v0.2.4` is auto-generated.
 
+## [v1.5.3](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.5.3) (2019-12-09)
+
+- Small README fixes.
+- Add information about the chart in the main [README.md](https://github.com/puppetlabs/pupperware/blob/master/README.md) of Puppetlabs's Pupperware repo.
+
+[Full Changelog](https://github.com/Xtigyro/puppetserver-helm-chart/compare/v1.5.2...v1.5.3)
+
 ## [v1.5.2](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.5.2) (2019-12-06)
 
 - Fix PuppetDB usage of pre-generated Puppet SSL certs.
