@@ -10,7 +10,7 @@ which you will run your Puppet Infrastructure.
 Running Puppet in [Kubernetes](https://kubernetes.io/) is also a very viable option. To get started with that, you will need a running K8s cluster with [Helm](https://helm.sh/) deployed.
 
 We have our own Helm chart which can get you up & running fast. You can find it [here](k8s).
-We have a plan to start hosting it soon as a Helm chart and publish it in the fantastic [Helm Hub](https://hub.helm.sh/). The latter will allow you to deploy it by just adding the repo in your configured Helm repos.
+We have a plan to start hosting it soon as a Helm chart and publish it in the fantastic [Helm Hub](https://hub.helm.sh/). The latter will allow you to make use of it by just adding the repo in your configured Helm repos.
 
 ## Required versions
 
