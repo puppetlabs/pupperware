@@ -1,0 +1,61 @@
+{{- if .Values.puppetserver.preGeneratedCertsJob.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ template "puppetserver.name" . }}-puppet-preinstall"
+  labels:
+    {{- include "puppetserver.puppet.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": "pre-install"
+    "helm.sh/hook-weight": "2"
+    "helm.sh/hook-delete-policy": "hook-succeeded,hook-failed"
+spec:
+  activeDeadlineSeconds: {{.Values.puppetserver.preGeneratedCertsJob.jobDeadline}}
+  template:
+    metadata:
+      name: "{{ template "puppetserver.name" . }}-preinstall"
+      labels:
+        {{- include "puppetserver.puppet.labels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: copy-ro-puppetserver-certs
+          image: "{{.Values.puppetserver.image}}:{{.Values.puppetserver.tag}}"
+          imagePullPolicy: "{{.Values.puppetserver.pullPolicy}}"
+          command: [ "sh", "-c" ]
+          args:
+            - mkdir -p /etc/puppetlabs/puppet/ssl;
+              CERTS_FILE=`ls /puppet-certs/puppetserver`;
+              tar xf /puppet-certs/puppetserver/"$CERTS_FILE" -C /etc/puppetlabs/puppet/ssl --strip-components 1;
+          volumeMounts:
+            - name: puppetserver-certs
+              mountPath: /puppet-certs/puppetserver
+            - name: puppet-puppet-storage
+              mountPath: /etc/puppetlabs/puppet/
+        - name: copy-ro-puppetdb-certs
+          image: "{{.Values.puppetdb.image}}:{{.Values.puppetdb.tag}}"
+          imagePullPolicy: "{{.Values.puppetdb.pullPolicy}}"
+          command: [ "sh", "-c" ]
+          args:
+            - mkdir -p /opt/puppetlabs/server/data/puppetdb/certs;
+              CERTS_FILE=`ls /puppet-certs/puppetdb`;
+              tar xf /puppet-certs/puppetdb/"$CERTS_FILE" -C /opt/puppetlabs/server/data/puppetdb/certs --strip-components 1;
+          volumeMounts:
+            - name: puppetdb-certs
+              mountPath: /puppet-certs/puppetdb
+            - name: puppetdb-storage
+              mountPath: /opt/puppetlabs/server/data/puppetdb/certs
+      volumes:
+        - name: puppet-puppet-storage
+          persistentVolumeClaim:
+            claimName: puppet-puppet-claim
+        - name: puppetdb-storage
+          persistentVolumeClaim:
+            claimName: puppetdb-claim
+        - name: puppetserver-certs
+          configMap:
+            name: "{{ template "puppetserver.name" . }}-puppetserver-preinstall"
+        - name: puppetdb-certs
+          configMap:
+            name: "{{ template "puppetserver.name" . }}-puppetdb-preinstall"
+{{- end }}

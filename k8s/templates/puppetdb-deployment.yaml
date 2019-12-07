@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: puppetdb
+  name: {{ template "puppetserver.name" . }}-puppetdb
   labels:
     {{- include "puppetserver.puppetdb.labels" . | nindent 4 }}
 spec:
@@ -14,10 +14,10 @@ spec:
     metadata:
       labels:
         {{- include "puppetserver.puppetdb.labels" . | nindent 8 }}
-      {{- if .Values.podAnnotations }}
+    {{- if .Values.podAnnotations }}
       annotations:
         {{- toYaml .Values.podAnnotations | nindent 8 }}
-      {{- end }}
+    {{- end }}
     spec:
       hostname: puppetdb
       containers:
@@ -27,10 +27,10 @@ spec:
           resources:
             {{- toYaml .Values.puppetdb.resources | nindent 12 }}
           env:
-            {{- range $key, $value := .Values.puppetdb.extraEnv }}
+          {{- range $key, $value := .Values.puppetdb.extraEnv }}
             - name: {{ $key }}
               value: {{ $value }}
-            {{- end }}
+          {{- end }}
             - name: PUPPETSERVER_HOSTNAME
               value: "puppet"
             - name: PUPPETDB_POSTGRES_HOSTNAME
@@ -50,22 +50,22 @@ spec:
             - containerPort: 8081
           volumeMounts:
             - name: puppetdb-storage
-              mountPath: /opt/puppetlabs/server/data/puppetdb/certs/
+              mountPath: /opt/puppetlabs/server/data/puppetdb/certs
       volumes:
         - name: puppetdb-storage
           persistentVolumeClaim:
             claimName: puppetdb-claim
     {{- if .Values.nodeSelector.allPods }}
       nodeSelector:
-{{ toYaml .Values.nodeSelector.allPods | nindent 10 }}
+        {{ toYaml .Values.nodeSelector.allPods | nindent 10 }}
     {{- end }}
     {{- if .Values.affinity }}
       affinity:
-{{ toYaml .Values.affinity | nindent 10 }}
+        {{ toYaml .Values.affinity | nindent 10 }}
     {{- end }}
     {{- if .Values.tolerations }}
       tolerations:
-{{ toYaml .Values.tolerations| nindent 10 }}
+        {{ toYaml .Values.tolerations| nindent 10 }}
     {{- end }}
     {{- if and (.Capabilities.APIVersions.Has "scheduling.k8s.io/v1beta1") (.Values.priorityClassName) }}
       priorityClassName: {{ .Values.priorityClassName }}

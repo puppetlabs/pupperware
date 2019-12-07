@@ -7,7 +7,7 @@
 puppetserver:
   name: puppetserver
   image: puppet/puppetserver
-  tag: 6.7.1
+  tag: 6.7.2
   pullPolicy: IfNotPresent
   resources: {}
   #  requests:
@@ -18,6 +18,11 @@ puppetserver:
   #    cpu: 750m
   ## Additional puppetserver container environment variables
   extraEnv: {}
+  ## Use pre-generated Puppet certs in `./init/puppet-certs`
+  ## Check README for related use cases
+  preGeneratedCertsJob:
+    enabled: false
+    jobDeadline: 300
   ## Fully qualified domain names (FQDN's) to register
   ## the Puppet Server to be internally reachable via DNS.
   ## That is necessary to configure "certname" and "server" in `puppet.conf`.
@@ -76,49 +81,74 @@ r10k:
   image: puppet/r10k
   tag: 3.3.3
   pullPolicy: IfNotPresent
-  resources: {}
-  #  requests:
-  #    memory: 256Mi
-  #    cpu: 250m
-  #  limits:
-  #    memory: 512Mi
-  #    cpu: 500m
-  cronJob:
-    schedule: "*/2 * * * *"
-  ## Additional r10k container arguments
-  extraArgs: {}
-  #  - --verbose=debug2   # error, warn, notice, info, debug, debug1, debug2
-  #  - --trace
-  #  - --color
-  ## Additional puppetserver container environment variables
-  extraEnv: {}
-  ## Cloning via HTTPS method and its creds (if a private repo)
-  ##
-  viaHttps:
-    enabled: true
-    credentials:
-      username: ""
-      ## The password might be your user-generated token
-      ## in case MFA is enabled.
-      password: ""
-      ## Or set the "username" and "password" from a pre-existing K8s secret
-      existingSecret: ""
-  ## Cloning via SSH method and its creds
-  ##
-  viaSsh:
-    enabled: false
-    credentials:
-      ssh:
-        ## A multi-line string
-        value:  # |
-          #  PRIV_KEY CONTENTS
-      known_hosts:
-        ## A multi-line string
-        value:  # |
-          #  KNOWN_HOSTS CONTENTS
-      ## Or set the git-sync Known Hosts file and SSH Private Key
-      ## from a pre-existing K8s secret
-      existingSecret: ""
+  code:
+    resources: {}
+    #  requests:
+    #    memory: 256Mi
+    #    cpu: 250m
+    #  limits:
+    #    memory: 512Mi
+    #    cpu: 500m
+    cronJob:
+      schedule: "*/15 * * * *"
+      concurrencyPolicy: Forbid
+      restartPolicy: Never
+      startingDeadlineSeconds: 500
+      activeDeadlineSeconds: 750
+    ## Additional r10k code container arguments
+    extraArgs: {}
+    #  - --verbose=debug2   # error, warn, notice, info, debug, debug1, debug2
+    #  - --trace
+    #  - --color
+    ## Additional puppetserver code container environment variables
+    extraEnv: {}
+    viaSsh:
+      credentials:
+        ssh:
+          ## A multi-line string
+          value:  # |
+            #  PRIV_KEY CONTENTS
+        known_hosts:
+          ## A multi-line string
+          value:  # |
+            #  KNOWN_HOSTS CONTENTS
+        ## Or set the git-sync Known Hosts file and SSH Private Key
+        ## from a pre-existing K8s secret
+        existingSecret: ""
+  hiera:
+    resources: {}
+    #  requests:
+    #    memory: 256Mi
+    #    cpu: 250m
+    #  limits:
+    #    memory: 512Mi
+    #    cpu: 500m
+    cronJob:
+      schedule: "*/2 * * * *"
+      concurrencyPolicy: Forbid
+      restartPolicy: Never
+      startingDeadlineSeconds: 60
+      activeDeadlineSeconds: 90
+    ## Additional r10k hiera container arguments
+    extraArgs: {}
+    #  - --verbose=debug2   # error, warn, notice, info, debug, debug1, debug2
+    #  - --trace
+    #  - --color
+    ## Additional puppetserver hiera container environment variables
+    extraEnv: {}
+    viaSsh:
+      credentials:
+        ssh:
+          ## A multi-line string
+          value:  # |
+            #  PRIV_KEY CONTENTS
+        known_hosts:
+          ## A multi-line string
+          value:  # |
+            #  KNOWN_HOSTS CONTENTS
+        ## Or set the git-sync Known Hosts file and SSH Private Key
+        ## from a pre-existing K8s secret
+        existingSecret: ""
 
 ## PostgreSQL Configuration for PuppetDB
 ##
@@ -134,7 +164,7 @@ postgres:
   #  limits:
   #    memory: 768Mi
   #    cpu: 750m
-  ## Additional puppetserver container environment variables
+  ## Additional postgres container environment variables
   extraEnv: {}
   ## "credentials" section is going to be added when
   ## this bug with the PuppetDB Docker image is resolved.
@@ -154,7 +184,7 @@ puppetdb:
   #  limits:
   #    memory: 768Mi
   #    cpu: 750m
-  ## Additional puppetserver container environment variables
+  ## Additional puppetdb container environment variables
   extraEnv: {}
   ## Credentials for PuppetDB and PostgreSQL
   credentials:
@@ -181,7 +211,7 @@ puppetboard:
   #  limits:
   #    memory: 768Mi
   #    cpu: 500m
-  ## Additional puppetserver container environment variables
+  ## Additional puppetboard container environment variables
   extraEnv: {}
 
 ## Hiera Configuration for Puppet Server
@@ -200,11 +230,14 @@ hiera:
   #  :hierarchy:
   #    - common
   #  :eyaml:
-  #    :datadir: /etc/puppetlabs/code/hiera-data   # keep unchanged
+  #    # Set branch name - e.g. "master", "%{::environment}", etc.
+  #    :datadir: /etc/puppetlabs/code/hiera-data/[branch]   # keep base path unchanged.
   #    :extension: 'yaml'
-  #    :pkcs7_private_key: /etc/puppetlabs/puppet/keys/private_key.pkcs7.pem   # keep unchanged
-  #    :pkcs7_public_key:  /etc/puppetlabs/puppet/keys/public_key.pkcs7.pem   # keep unchanged
+  #    :pkcs7_private_key: /etc/puppetlabs/puppet/eyaml/private_key.pkcs7.pem   # keep unchanged
+  #    :pkcs7_public_key:  /etc/puppetlabs/puppet/eyaml/public_key.pkcs7.pem   # keep unchanged
   eyaml:
+    # choose using either a pre-existing configMap containing keys, or the private_key/public_key set
+    existingMap: ""
     ## A multi-line string
     private_key:  # |
       #  PRIV_KEY CONTENTS
