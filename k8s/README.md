@@ -176,6 +176,7 @@ Parameter | Description | Default
 `r10k.image` | r10k img | `puppet/r10k`
 `r10k.tag` | r10k img tag | `3.3.3`
 `r10k.pullPolicy` | r10k img pull policy | `IfNotPresent`
+`r10k.affinity` | r10k pod assignment affinity |``
 `r10k.code.cronJob.schedule` | r10k control repo cron job schedule policy | `*/15 * * * *`
 `r10k.code.cronJob.concurrencyPolicy` | r10k control repo cron job concurrency policy | `Forbid`
 `r10k.code.cronJob.restartPolicy` | r10k control repo cron job restart policy | `Never`

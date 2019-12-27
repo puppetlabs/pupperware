@@ -53,7 +53,7 @@ spec:
               {{- with .Values.r10k.code.viaSsh.credentials }}
               {{- if or (.existingSecret) (and (.ssh.value) (.known_hosts.value)) }}
                 - name: r10k-code-secret
-                  mountPath: /root/.ssh
+                  mountPath: /home/puppet/.ssh
               {{- end }}
               {{- end }}
                 - name: r10k-volume
@@ -61,6 +61,9 @@ spec:
                   subPath: r10k.yaml
                 - name: puppet-code-storage
                   mountPath: /etc/puppetlabs/code/
+          securityContext:
+            runAsUser: 999   # "puppet" UID
+            fsGroup: 999   # "puppet" GID
         {{- with .Values.r10k.code.cronJob }}
         {{- if .restartPolicy }}
           restartPolicy: {{ .restartPolicy }}
@@ -81,6 +84,7 @@ spec:
               secret:
                 secretName: {{ template "r10k.code.secret" . }}
                 defaultMode: 288 # = mode 0440
+                fsGroup: 999   # "puppet" GID
           {{- end }}
         {{- if (or (.Values.nodeSelector.allPods) (.Values.nodeSelector.commonStoragePods)) }}
           nodeSelector:
@@ -91,7 +95,10 @@ spec:
             {{ toYaml .Values.nodeSelector.commonStoragePods | nindent 14 }}
           {{- end }}
         {{- end }}
-        {{- if .Values.affinity }}
+        {{- if .Values.r10k.affinity }}
+          affinity:
+            {{ toYaml .Values.r10k.affinity | nindent 14 }}
+        {{- else if .Values.affinity }}
           affinity:
             {{ toYaml .Values.affinity | nindent 14 }}
         {{- end }}

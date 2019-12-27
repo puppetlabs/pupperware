@@ -22,7 +22,7 @@ data:
       provider: 'rugged' # Either 'shellgit' or 'rugged', defaults to 'shellgit'
     {{- with .Values.r10k.hiera.viaSsh.credentials }}
     {{- if or (.existingSecret) (and (.ssh.value) (.known_hosts.value)) }}
-      private_key: '/root/.ssh/id_rsa'
+      private_key: '/home/puppet/.ssh/id_rsa'
     {{- end }}
     {{- end }}
       repositories:

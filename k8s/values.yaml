@@ -81,6 +81,25 @@ r10k:
   image: puppet/r10k
   tag: 3.3.3
   pullPolicy: IfNotPresent
+  ## Affinity for "r10k" pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ## Note that the "puppetserver" and "r10k" components of the Puppet Server
+  ## use common storage. That common storage requirement might impose
+  ## certain pod assignment scenarios. It might be required the "puppetserver" and "r10k"
+  ## components to sit in the same K8s Node.
+  ## For that matter optional pod affinity is made available for the "r10k" pod if need be.
+  ## The exemplary configuration can be used without modification,
+  ## if "Values.puppetserver.name" is kept unchanged.
+  affinity: {}
+  #  podAffinity:
+  #    requiredDuringSchedulingIgnoredDuringExecution:
+  #    - labelSelector:
+  #        matchExpressions:
+  #        - key: component
+  #          operator: In
+  #          values:
+  #          - puppetserver
+  #      topologyKey: "kubernetes.io/hostname"
   code:
     resources: {}
     #  requests:
