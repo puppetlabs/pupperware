@@ -5,6 +5,14 @@ numbering uses [semantic versioning](http://semver.org).
 
 NOTE: The change log until version `v0.2.4` is auto-generated.
 
+## [v1.6.0](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.6.0) (2019-12-26)
+
+- Add optional affinity for "r10k" pod assignment.
+- File permission fixes for "r10k" jobs' SSH keys.
+- Security fixes for the "r10k" jobs.
+
+[Full Changelog](https://github.com/Xtigyro/puppetserver-helm-chart/compare/v1.5.3...v1.6.0)
+
 ## [v1.5.3](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.5.3) (2019-12-09)
 
 - Small README fixes.
