@@ -57,17 +57,12 @@ of this repository, which is also git ignored.
 ## Code Manager Setup
 
 To specify a control repo, define the `R10K_REMOTE` environment variable on the
-`puppet` service.
+`puppet` service in the `docker-compose.yml`. Both public (via HTTPS) and private (via SSH) git repositories are supported.
 
-If the control repo is private, SSH can be configured to access it. The
-`R10K_REMOTE` URL should use the SSH protocol, such as
-`git@github.com:user/repo.git`.
-
-In addition, an SSH key named `id-control_repo.rsa` must be generated and
-supplied to the `puppet` service via a volume mount at
-`/etc/puppetlabs/puppetserver/ssh`. The public key needs to be added to the
-control repo configuration (on GitHub, or wherever it's hosted).
-Any additional SSH configuration files found in the volume will be used as is.
+If the control repo is private, the `R10K_REMOTE` URL should use the SSH protocol like `git@github.com:user/repo.git`. In addition, an SSH key named `id-control_repo.rsa` must be generated and
+supplied to the `puppet` service via a [Docker bind mount](https://docs.docker.com/storage/bind-mounts/) at
+`/etc/puppetlabs/puppetserver/ssh` (see the commented example in the `docker-compose.yml`). The public key needs to be added to the git
+servers control repo configuration. Additional SSH configuration files `config`, `authorited_keys` and `known_hosts`, will be used if they are present in the bind mount.
 
 ## Additional Information
 
