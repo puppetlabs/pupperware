@@ -49,7 +49,7 @@ describe 'PE stack' do
   end
 
   it 'can recover from services crashing and run puppet' do
-    ['pe-console-services', 'pe-orchestration-services', 'puppet', 'puppetdb'].each do | service |
+    ['pe-console-services', 'pe-orchestration-services', 'puppet', 'puppetdb'].sample(1).each do | service |
       kill_service_and_wait_for_return(service: service, process: 'runuser')
       wait_on_stack_healthy()
     end
