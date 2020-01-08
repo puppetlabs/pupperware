@@ -47,4 +47,14 @@ describe 'PE stack' do
     result = curl_job_number(job_number: 2)
     expect(result).to include('"state":"finished"')
   end
+
+  it 'can recover from services crashing and run puppet' do
+    ['pe-console-services', 'pe-orchestration-services', 'puppet', 'puppetdb'].sample(1).each do | service |
+      kill_service_and_wait_for_return(service: service, process: 'runuser')
+      wait_on_stack_healthy()
+    end
+    output = orchestrate_puppet_run()
+    expect(output[:stdout]).to include('Success!')
+  end
+
 end
