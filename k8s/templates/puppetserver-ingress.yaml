@@ -1,7 +1,7 @@
 {{- if .Values.puppetserver.ingress.enabled -}}
 {{- $releaseName := .Release.Name -}}
 {{- $serviceName := include "puppetserver.puppetserver.serviceName" . }}
-{{- $servicePort := .Values.puppetserver.service.port -}}
+{{- $servicePort := .Values.puppetserver.service.ports.puppetserver.port -}}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:

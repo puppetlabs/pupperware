@@ -6,7 +6,7 @@
 
 * You must specify your Puppet Control Repo using `puppetserver.puppeturl` variable in the `values.yaml` file or include `--set puppetserver.puppeturl=<your_public_repo>` in the command line of `helm install`. You should specify your separate Hieradata Repo as well using the `hiera.hieradataurl` variable.
 
-* You can also use private repos. Just remember to specify your credentials using `r10k.viaHttps.credentials` or `r10k.viaSsh.credentials`. You can set similar credentials for your Hieradata Repo.
+* You can also use private repos. Just remember to specify your credentials using `r10k.code.viaSsh.credentials.ssh.value`. You can set similar credentials for your Hieradata Repo.
 
 ### Kubernetes Storage Class
 
@@ -34,6 +34,10 @@ allowedTopologies:
 ### Load-Balancing Puppet Server
 
 In case a Load Balancer (LB) must sit in front of Puppet Server - please keep in mind that having a Network LB (operating at OSI Layer 4) is preferable.
+
+### NGINX Ingress Controller Configuration
+
+The Ingress resource is disabled by default, but if it is enabled then ssl-passthrough must be used so that puppet agents will get the expected server certificate when connecting to the service.  This feature must be enabled on the Ingress resource itself, but also must be enabled via command line argument to the NGINX Ingress Controller.  More information on that can be found [here](<https://kubernetes.github.io/ingress-nginx/user-guide/cli-arguments/>).
 
 ## Migrating from a Bare-Metal Puppet Master
 
@@ -162,7 +166,7 @@ Parameter | Description | Default
 `puppetserver.pullPolicy` | puppetserver img pull policy | `IfNotPresent`
 `puppetserver.fqdns.alternateServerNames` | puppetserver alternate fqdns |``
 `puppetserver.service.type` | puppetserver svc type | `ClusterIP`
-`puppetserver.service.port` | puppetserver svc port | `8140`
+`puppetserver.service.ports` | puppetserver svc exposed ports | `puppetserver`
 `puppetserver.service.annotations`| puppetserver svc annotations |``
 `puppetserver.service.labels`| puppetserver additional svc labels |``
 `puppetserver.service.loadBalancerIP`| puppetserver svc loadbalancer ip |``
