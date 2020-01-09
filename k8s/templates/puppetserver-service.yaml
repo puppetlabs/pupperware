@@ -13,11 +13,13 @@ metadata:
 {{- end }}
 spec:
   ports:
-    - name: "puppetserver"
-      port: {{.Values.puppetserver.service.port}}
+  {{- range $key, $value := .Values.puppetserver.service.ports }}
+    - name: {{ $key }}
+{{ toYaml $value | indent 6 }}
+  {{- end }}
   selector:
     {{- include "puppetserver.puppetserver.matchLabels" . | nindent 4 }}
   type: {{ .Values.puppetserver.service.type }}
-{{- if .Values.puppetserver.service.loadBalancerIP }}
+{{- if (and (eq .Values.puppetserver.service.type "LoadBalancer") (not (empty .Values.puppetserver.service.loadBalancerIP))) }}
   loadBalancerIP: {{ .Values.puppetserver.service.loadBalancerIP }}
 {{- end }}

@@ -5,6 +5,39 @@ numbering uses [semantic versioning](http://semver.org).
 
 NOTE: The change log until version `v0.2.4` is auto-generated.
 
+## [v1.6.6](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.6.6) (2020-01-09)
+
+- Fix outdated r10k exemplary variable in README.
+
+[Full Changelog](https://github.com/Xtigyro/puppetserver-helm-chart/compare/v1.6.5...v1.6.6)
+
+## [v1.6.5](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.6.5) (2020-01-05)
+
+- Fixes for Helm packaging.
+
+[Full Changelog](https://github.com/Xtigyro/puppetserver-helm-chart/compare/v1.6.4...v1.6.5)
+
+## [v1.6.4](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.6.4) (2020-01-04)
+
+- Corrections and additional info for use of Ingress resource.
+
+[Full Changelog](https://github.com/Xtigyro/puppetserver-helm-chart/compare/v1.6.3...v1.6.4)
+
+## [v1.6.3](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.6.3) (2020-01-03)
+
+- Allow for using the chart as a chart package.
+
+[Full Changelog](https://github.com/Xtigyro/puppetserver-helm-chart/compare/v1.6.2...v1.6.3)
+
+## [v1.6.2](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.6.2) (2020-01-01)
+
+- Puppetserver Service:
+
+1. Allow for more general way of setting the network protocol.
+2. Improve the way of setting the loadBalancerIP.
+
+[Full Changelog](https://github.com/Xtigyro/puppetserver-helm-chart/compare/v1.6.1...v1.6.2)
+
 ## [v1.6.1](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.6.1) (2019-12-31)
 
 - Add comments in Values file for Puppetserver Service.
