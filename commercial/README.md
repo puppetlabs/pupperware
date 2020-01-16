@@ -16,12 +16,14 @@ which you will run your Puppet Infrastructure.
   + [Code Manager Setup](#code-manager-setup)
   + [Verifying status](#verifying-status)
 - [Additional Customization](#further-customization)
-  + [puppet](#puppet)
-  + [pe-orchestration-services](#pe-orchestration-services)
-  + [pe-console-services](#pe-console-services)
-  + [pe-bolt-server](#pe-bolt-server)
-  + [puppetdb](#puppetdb)
-  + [postgres](#postgres)
+  + [Service-specific Docker configuration via environment variables](#Service-specific-docker-configuration-via-environment-variables)
+    * [puppet](#puppet)
+    * [pe-orchestration-services](#pe-orchestration-services)
+    * [pe-console-services](#pe-console-services)
+    * [pe-bolt-server](#pe-bolt-server)
+    * [puppetdb](#puppetdb)
+    * [postgres](#postgres)
+  + [External PostgreSQL](#external-postgresql)
 - [Additional Information](#additional-information)
 
 <!-- markdown-toc end -->
@@ -191,6 +193,100 @@ The following values, many of which are already overriden in the `docker-compose
 | **PUPPETDB_CERTNAME**                   | The primary DNS name on the puppetdb certificate<br><br>`pe-puppetdb`                                  |
 | **PE_CONSOLE_SERVICES_CERTNAME**        | The primary DNS name of the pe-console-services certificate<br><br>`pe-console-services`               |
 | **PE_ORCHESTRATION_SERVICES_CERTNAME**  | The primary DNS name on the pe-orchestration-services certificate<br><br>`pe-orchestration-services`   |
+
+## External PostgreSQL
+
+An external PostgreSQL database can be used instead of using a containerized version of Postgres. This requires setting the Postgres environment variables on the `puppet`, `pe-orchestration-services`, `pe-console-services` and `puppetdb` services and *removing* the `postgres` service and the `puppetdb-postgres` volume from the `docker-compose.yml` configuration.
+
+The PostgreSQL version should be 9.6 or newer. 
+
+The databases `pe-classifier`, `pe-rbac`, `pe-activity`, `pe-inventory`, and `pe-orchestrator` all must exist. Each database requires the extensions `citext`, `pg_trgm`, `plpsql`, and `pgcrypto`. This may be setup by running the following SQL script:
+
+```
+CREATE DATABASE "pe-classifier" OWNER "puppetdb";
+CREATE DATABASE "pe-rbac" OWNER "puppetdb";
+CREATE DATABASE "pe-activity" OWNER "puppetdb";
+CREATE DATABASE "pe-inventory" OWNER "puppetdb";
+CREATE DATABASE "pe-orchestrator" OWNER "puppetdb";
+
+\c "pe-rbac"
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS plpgsql;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+\c "pe-orchestrator"
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS plpgsql;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+\c "pe-inventory"
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS plpgsql;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+\c "puppetdb"
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS plpgsql;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+\c "pe-classifier"
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS plpgsql;
+
+\c "pe-activity"
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS plpgsql;
+
+-- used for the healthcheck SSL check
+\c "postgres"
+CREATE EXTENSION IF NOT EXISTS sslinfo;
+```
+
+### PostgreSQL SSL setup
+
+The PE services connections to PostgreSQL is only supported over SSL. 
+
+#### postgresql.conf
+
+The PostgreSQL node will require the complete certificate authority certificate chain for the external party CA, in PEM format. In the default configuration, these files are stored in the `$PGDATA` directory. The follow settings must be enabled in `$PGDATA/postgresql.conf` to correctly enable SSL:
+
+```
+ssl=on
+# Certificate for the trusted certificate authority (i.e. Puppet master)
+ssl_ca_file=root.crt
+# Certificate for Postgres, signed by the CA
+ssl_cert_file=server.crt
+# Certificate revocation list from the CA
+ssl_crl_file=root.crl
+# Private key for Postgres certificate
+ssl_key_file=server.key
+```
+
+#### pg_ident.conf
+
+The `$PGDATA/pg_ident.conf` must map certificate names for `pe-console-services`, `pe-orchestration-services` and `puppetdb` services to the `puppetdb` user properly, like:
+
+```
+# MAPNAME  SYSTEM-USERNAME                  PG-USERNAME
+usermap    pe-console-services.test         puppetdb
+usermap    pe-orchestration-services.test   puppetdb
+usermap    puppetdb.test                    puppetdb
+```
+
+#### pg_hba.conf
+
+Additionally, `$PGDATA/pg_hba.conf` must be configured with this line to enable the ssl connnections:
+
+```
+# TYPE  DATABASE     USER     ADDRESS     METHOD
+hostssl all          all      all         cert map=usermap
+```
 
 # Additional Information
 
