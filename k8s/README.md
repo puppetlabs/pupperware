@@ -95,6 +95,10 @@ drwxrws--- 4 xtigyro-samba sambashare  4096 Dec  5 21:45 ../
 
 > **NOTE**: For more information please check - [README.md](init/README.md). For more general knowledge on the matter you can also read the article - <https://puppet.com/docs/puppet/5.5/ssl_regenerate_certificates.html.>
 
+## Multiple Puppet Compile Masters
+
+To scale Puppet Server for many thousands of nodes, you’ll need to enable multiple Puppet Compile Masters using `.Values.puppetserver.multiCompilers`. These Servers are known as compile masters, and are simply additional load-balanced Puppet Servers that receive catalog requests from agents and synchronize the results with each other.
+
 ## Chart Components
 
 * Creates four deployments: Puppet Server, PuppetDB, PosgreSQL, and Puppetboard.
@@ -164,6 +168,13 @@ Parameter | Description | Default
 `puppetserver.preGeneratedCertsJob.enabled` | puppetserver pre-generated certs |`false`
 `puppetserver.preGeneratedCertsJob.jobDeadline` | puppetserver pre-generated certs job deadline in seconds |`60`
 `puppetserver.pullPolicy` | puppetserver img pull policy | `IfNotPresent`
+`puppetserver.multiCompilers.enabled` | If true, creates multiple Puppetserver compilers | false
+`puppetserver.multiCompilers.manualScaling.compilers` | If multiple compilers are enabled, this field sets compiler count | `3`
+`puppetserver.multiCompilers.autoScaling.enabled` | If true, creates Horizontal Pod Autoscaler | false
+`puppetserver.multiCompilers.autoScaling.minCompilers` | If autoscaling enabled, this field sets minimum compiler count | `2`
+`puppetserver.multiCompilers.autoScaling.maxCompilers` | If autoscaling enabled, this field sets maximum compiler count | `11`
+`puppetserver.multiCompilers.autoScaling.cpuUtilizationPercentage` | Target CPU utilization percentage to scale | `50`
+`puppetserver.multiCompilers.autoScaling.memoryUtilizationPercentage` | Target memory utilization percentage to scale | `50`
 `puppetserver.fqdns.alternateServerNames` | puppetserver alternate fqdns |``
 `puppetserver.service.type` | puppetserver svc type | `ClusterIP`
 `puppetserver.service.ports` | puppetserver svc exposed ports | `puppetserver`

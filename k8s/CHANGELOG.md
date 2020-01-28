@@ -5,6 +5,15 @@ numbering uses [semantic versioning](http://semver.org).
 
 NOTE: The change log until version `v0.2.4` is auto-generated.
 
+## [v1.7.0](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.7.0) (2020-01-27)
+
+- Add support for multiple Puppet Compile Masters.
+- Fix passing extra container environment variables.
+- Indentation improvements.
+- Bump default PuppetDB version to `6.8.0`.
+
+[Full Changelog](https://github.com/Xtigyro/puppetserver-helm-chart/compare/v1.6.6...v1.7.0)
+
 ## [v1.6.6](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.6.6) (2020-01-09)
 
 - Fix outdated r10k exemplary variable in README.
