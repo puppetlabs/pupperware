@@ -30,8 +30,8 @@ spec:
           ports:
           env:
           {{- range $key, $value := .Values.puppetboard.extraEnv }}
-            - name: {{ $key }}
-              value: {{ $value }}
+            - name: "{{ $key }}"
+              value: "{{ $value }}"
           {{- end }}
             - name: "PUPPETDB_HOST"
               value: "puppetdb"

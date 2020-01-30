@@ -9,6 +9,25 @@ puppetserver:
   image: puppet/puppetserver
   tag: 6.7.2
   pullPolicy: IfNotPresent
+  ## Horizontal Scaling
+  ## Optional deployment of multiple Puppet Server Compilers
+  multiCompilers:
+    enabled: true
+    ## Horizontal Pod Manual Scaling
+    ## Set the desired number of Puppet Server Compilers
+    manualScaling:
+      compilers: 3
+    ## Horizontal Pod Autoscaling
+    ## Automatically scales the number of pods (compilers)
+    ## based on observed CPU/memory utilization
+    ## Note that the metrics must be provided by
+    ## additionally deployed metrics server of your choice
+    autoScaling:
+      enabled: false
+      minCompilers: 1
+      maxCompilers: 5
+      cpuUtilizationPercentage: 50
+      memoryUtilizationPercentage: 50
   resources: {}
   #  requests:
   #    memory: 512Mi
@@ -206,7 +225,7 @@ postgres:
 puppetdb:
   name: puppetdb
   image: puppet/puppetdb
-  tag: 6.7.3
+  tag: 6.8.0
   pullPolicy: IfNotPresent
   resources: {}
   #  requests:

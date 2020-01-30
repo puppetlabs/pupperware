@@ -37,8 +37,8 @@ spec:
                 {{- toYaml .Values.r10k.hiera.resources | nindent 16 }}
               env:
               {{- range $key, $value := .Values.r10k.hiera.extraEnv }}
-                - name: {{ $key }}
-                  value: {{ $value }}
+                - name: "{{ $key }}"
+                  value: "{{ $value }}"
               {{- end }}
               args:
                 - deploy

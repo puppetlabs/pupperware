@@ -5,11 +5,17 @@ metadata:
   labels:
     {{- include "puppetserver.puppetserver.labels" . | nindent 4 }}
 spec:
+  {{- if .Values.puppetserver.multiCompilers.enabled }}
+  replicas: {{ .Values.puppetserver.multiCompilers.manualScaling.compilers }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "puppetserver.puppetserver.matchLabels" . | nindent 6 }}
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels:
@@ -27,27 +33,40 @@ spec:
           imagePullPolicy: "{{.Values.puppetserver.pullPolicy}}"
           resources:
             {{- toYaml .Values.puppetserver.resources | nindent 12 }}
+          {{- if .Values.puppetserver.multiCompilers.enabled }}
+          env:
+            - name: PUPPET_DATA_DIR
+              value: "/etc/puppetlabs/code/environments"
+            - name: PUPPET_SSL_CERT_PEM
+              value: "/etc/puppetlabs/puppet/ssl/certs/{{ template "puppetserver.puppetserver.serviceName" . }}.pem"
+          {{- end }}
           command: [ "sh", "-c" ]
           args:
-            - mkdir -p /etc/puppetlabs/code/environments;
-              mkdir -p /etc/puppetlabs/puppet/eyaml;
+            - mkdir -p /etc/puppetlabs/puppet/eyaml;
+            {{- if .Values.puppetserver.multiCompilers.enabled }}
+              cp /etc/puppetlabs/puppet/configmap/check_for_compilers.sh /etc/puppetlabs/puppet/check_for_compilers.sh;
+              chown puppet:puppet /etc/puppetlabs/puppet/check_for_compilers.sh;
+              chmod +x /etc/puppetlabs/puppet/check_for_compilers.sh;
+              bash /etc/puppetlabs/puppet/check_for_compilers.sh;
+            {{- end }}
+              mkdir -p /etc/puppetlabs/code/environments;
               mkdir -p /etc/puppetlabs/puppet/manifests;
               mkdir -p /etc/puppetlabs/code/r10k_cache;
               chown -R puppet:puppet /etc/puppetlabs;
-              {{- if .Values.hiera.config }}
+            {{- if .Values.hiera.config }}
               cp /etc/puppetlabs/puppet/configmap/hiera.yaml /etc/puppetlabs/puppet/hiera.yaml;
               chown puppet:puppet /etc/puppetlabs/puppet/hiera.yaml;
-              {{- end }}
+            {{- end }}
               cp /etc/puppetlabs/puppet/configmap/site.pp /etc/puppetlabs/puppet/manifests/site.pp;
               chown puppet:puppet /etc/puppetlabs/puppet/manifests/site.pp;
-              {{- if or (.Values.hiera.eyaml.private_key) (.Values.hiera.eyaml.existingMap) }}
+            {{- if or (.Values.hiera.eyaml.private_key) (.Values.hiera.eyaml.existingMap) }}
               cp /etc/puppetlabs/puppet/configmap/eyaml/private_key.pkcs7.pem /etc/puppetlabs/puppet/eyaml/private_key.pkcs7.pem;
               chown puppet:puppet /etc/puppetlabs/puppet/eyaml/private_key.pkcs7.pem;
-              {{- end }}
-              {{- if or (.Values.hiera.eyaml.public_key) (.Values.hiera.eyaml.existingMap) }}
+            {{- end }}
+            {{- if or (.Values.hiera.eyaml.public_key) (.Values.hiera.eyaml.existingMap) }}
               cp /etc/puppetlabs/puppet/configmap/eyaml/public_key.pkcs7.pem /etc/puppetlabs/puppet/eyaml/public_key.pkcs7.pem;
               chown puppet:puppet /etc/puppetlabs/puppet/eyaml/public_key.pkcs7.pem;
-              {{- end }}
+            {{- end }}
           securityContext:
             runAsUser: 0
             runAsNonRoot: false
@@ -57,6 +76,11 @@ spec:
               mountPath: /etc/puppetlabs/code/
             - name: puppet-puppet-storage
               mountPath: /etc/puppetlabs/puppet/
+          {{- if .Values.puppetserver.multiCompilers.enabled }}
+            - name: init-compilers-volume
+              mountPath: /etc/puppetlabs/puppet/configmap/check_for_compilers.sh
+              subPath: check_for_compilers.sh
+          {{- end }}
           {{- if .Values.hiera.config }}
             - name: hiera-volume
               mountPath: /etc/puppetlabs/puppet/configmap/hiera.yaml
@@ -87,8 +111,8 @@ spec:
             {{- toYaml .Values.puppetserver.resources | nindent 12 }}
           env:
           {{- range $key, $value := .Values.puppetserver.extraEnv }}
-            - name: {{ $key }}
-              value: {{ $value }}
+            - name: "{{ $key }}"
+              value: "{{ $value }}"
           {{- end }}
             # necessary to set certname and server in puppet.conf, required by
             # puppetserver ca cli application
@@ -119,6 +143,9 @@ spec:
         - name: puppet-serverdata-storage
           persistentVolumeClaim:
             claimName: puppet-serverdata-claim
+        - name: init-compilers-volume
+          configMap:
+            name: init-compilers-config
       {{- if .Values.hiera.config }}
         - name: hiera-volume
           configMap:
