@@ -7,12 +7,12 @@
 puppetserver:
   name: puppetserver
   image: puppet/puppetserver
-  tag: 6.7.2
+  tag: 6.8.0
   pullPolicy: IfNotPresent
   ## Horizontal Scaling
   ## Optional deployment of multiple Puppet Server Compilers
   multiCompilers:
-    enabled: true
+    enabled: false
     ## Horizontal Pod Manual Scaling
     ## Set the desired number of Puppet Server Compilers
     manualScaling:
@@ -205,7 +205,7 @@ r10k:
 postgres:
   name: postgres
   image: postgres
-  tag: 9.6.15
+  tag: 9.6.16
   pullPolicy: IfNotPresent
   resources: {}
   #  requests:
@@ -225,7 +225,7 @@ postgres:
 puppetdb:
   name: puppetdb
   image: puppet/puppetdb
-  tag: 6.8.0
+  tag: 6.8.1
   pullPolicy: IfNotPresent
   resources: {}
   #  requests:

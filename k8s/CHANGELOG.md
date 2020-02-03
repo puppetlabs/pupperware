@@ -5,6 +5,13 @@ numbering uses [semantic versioning](http://semver.org).
 
 NOTE: The change log until version `v0.2.4` is auto-generated.
 
+## [v1.7.1](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.7.1) (2020-02-01)
+
+- Improve `Chart.yaml`.
+- Bump default versions: Puppetserver to `6.8.0`, PostgreSQL to `9.6.16` and PuppetDB to `6.8.1`.
+
+[Full Changelog](https://github.com/Xtigyro/puppetserver-helm-chart/compare/v1.7.0...v1.7.1)
+
 ## [v1.7.0](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.7.0) (2020-01-27)
 
 - Add support for multiple Puppet Compile Masters.
