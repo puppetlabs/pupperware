@@ -47,9 +47,6 @@ puppetserver:
   ## That is necessary to configure "certname" and "server" in `puppet.conf`.
   ## Required by Puppet server CA CLI application.
   ## "serverName" is mandatory and pre-set to "puppet".
-  ## "serverName" variable is going to be made editable when
-  ## this bug with the PuppetDB Docker image is resolved.
-  ## Gitissue:
   ## "alternateServerNames" is optional.
   ##
   fqdns:
@@ -216,9 +213,6 @@ postgres:
   #    cpu: 750m
   ## Additional postgres container environment variables
   extraEnv: {}
-  ## "credentials" section is going to be added when
-  ## this bug with the PuppetDB Docker image is resolved.
-  ## Gitissue:
 
 ## PuppetDB Configuration
 ##
