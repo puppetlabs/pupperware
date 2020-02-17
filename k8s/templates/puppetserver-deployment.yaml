@@ -133,6 +133,79 @@ spec:
               mountPath: /etc/puppetlabs/puppet/
             - name: puppet-serverdata-storage
               mountPath: /opt/puppetlabs/server/data/puppetserver/
+
+        {{- if .Values.puppetserver.puppeturl }}
+        # r10k Code Sidecar
+        - name: r10k-code
+          image: "{{.Values.r10k.image}}:{{.Values.r10k.tag}}"
+          imagePullPolicy: "{{.Values.r10k.pullPolicy}}"
+          securityContext:
+            runAsUser: 0
+          resources:
+            {{- toYaml .Values.r10k.code.resources | nindent 12 }}
+          env:
+          {{- range $key, $value := .Values.r10k.code.extraEnv }}
+          - name: {{ $key }}
+            value: {{ $value }}
+          {{- end }}
+          command:
+            - /opt/r10k.entrypoint.sh
+          volumeMounts:
+          {{- with .Values.r10k.code.viaSsh.credentials }}
+          {{- if or (.existingSecret) (and (.ssh.value) (.known_hosts.value)) }}
+          - name: r10k-code-secret
+            mountPath: /home/puppet/.ssh
+          {{- end }}
+          {{- end }}
+          - name: r10k-code-volume
+            mountPath: /opt/r10k.cronjob.sh
+            subPath: "r10k.cronjob.sh"
+          - name: r10k-code-volume
+            mountPath: /opt/r10k.entrypoint.sh
+            subPath: "r10k.entrypoint.sh"
+          - name: r10k-code-volume
+            mountPath: /etc/puppetlabs/puppet/r10k.yaml
+            subPath: r10k.yaml
+          - name: puppet-code-storage
+            mountPath: /etc/puppetlabs/code/
+        {{- end }}
+
+        {{- if .Values.hiera.hieradataurl }}
+        # r10k Hiera Sidecar
+        - name: r10k-hiera
+          image: "{{.Values.r10k.image}}:{{.Values.r10k.tag}}"
+          imagePullPolicy: "{{.Values.r10k.pullPolicy}}"
+          securityContext:
+            runAsUser: 0
+          resources:
+            {{- toYaml .Values.r10k.hiera.resources | nindent 12 }}
+          env:
+          {{- range $key, $value := .Values.r10k.hiera.extraEnv }}
+          - name: {{ $key }}
+            value: {{ $value }}
+          {{- end }}
+          command:
+            - /opt/r10k.entrypoint.sh
+          volumeMounts:
+          {{- with .Values.r10k.hiera.viaSsh.credentials }}
+          {{- if or (.existingSecret) (and (.ssh.value) (.known_hosts.value)) }}
+          - name: r10k-hiera-secret
+            mountPath: /home/puppet/.ssh
+          {{- end }}
+          {{- end }}
+          - name: r10k-hiera-volume
+            mountPath: /opt/r10k.cronjob.sh
+            subPath: "r10k.cronjob.sh"
+          - name: r10k-hiera-volume
+            mountPath: /opt/r10k.entrypoint.sh
+            subPath: "r10k.entrypoint.sh"
+          - name: r10k-hiera-volume
+            mountPath: /etc/puppetlabs/puppet/r10k.yaml
+            subPath: r10k.yaml
+          - name: puppet-code-storage
+            mountPath: /etc/puppetlabs/code/
+        {{- end }}
+
       volumes:
         - name: puppet-code-storage
           persistentVolumeClaim:
@@ -168,6 +241,28 @@ spec:
         - name: eyamlpriv-volume
           configMap:
             name: {{ template "puppetserver.hiera.privateMap" . }}
+      {{- end }}
+        - name: r10k-code-volume
+          configMap:
+            name: r10k-code-config
+            defaultMode: 0777
+      {{- if or (.Values.r10k.code.viaSsh.credentials.existingSecret) (and (.Values.r10k.code.viaSsh.credentials.ssh.value) (.Values.r10k.code.viaSsh.credentials.known_hosts.value)) }}
+        - name: r10k-code-secret
+          secret:
+            secretName: {{ template "r10k.code.secret" . }}
+            defaultMode: 288 # = mode 0440
+            fsGroup: 999   # "puppet" GID
+      {{- end }}
+        - name: r10k-hiera-volume
+          configMap:
+            name: r10k-hiera-config
+            defaultMode: 0777
+      {{- if or (.Values.r10k.hiera.viaSsh.credentials.existingSecret) (and (.Values.r10k.hiera.viaSsh.credentials.ssh.value) (.Values.r10k.hiera.viaSsh.credentials.known_hosts.value)) }}
+        - name: r10k-hiera-secret
+          secret:
+            secretName: {{ template "r10k.hiera.secret" . }}
+            defaultMode: 288 # = mode 0440
+            fsGroup: 999   # "puppet" GID
       {{- end }}
     {{- if (or (.Values.nodeSelector.allPods) (.Values.nodeSelector.commonStoragePods)) }}
       nodeSelector:

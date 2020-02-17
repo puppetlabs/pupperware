@@ -18,14 +18,57 @@ data:
         remote: '{{.Values.hiera.hieradataurl}}'
         basedir: '/etc/puppetlabs/code/hiera-data'
 
-    :git:
-      provider: 'rugged' # Either 'shellgit' or 'rugged', defaults to 'shellgit'
-    {{- with .Values.r10k.hiera.viaSsh.credentials }}
-    {{- if or (.existingSecret) (and (.ssh.value) (.known_hosts.value)) }}
-      private_key: '/home/puppet/.ssh/id_rsa'
+  r10k.cronjob.sh: |
+    #!/bin/sh
+
+    # not needed anymore, as crond handels this - .startingDeadlineSeconds: {{ .startingDeadlineSeconds }}
+    # not needed anymore, as crond handels this - .activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
+
+    {{- if .Values.r10k.hiera.cronJob.concurrencyPolicy }}
+      {{- if eq .Values.r10k.hiera.cronJob.concurrencyPolicy "Forbid" }}
+        if [ -e /run/r10k.cronjob.pid ] && pgrep $(</run/r10k.cronjob.pid); then
+          exit 0
+        fi
+      {{- else if eq .Values.r10k.hiera.cronJob.concurrencyPolicy "Replace" }}
+        if [ -e /run/r10k.cronjob.pid ]; then
+          pkill $(</run/r10k.cronjob.pid)
+        fi
+      {{- end }}
     {{- end }}
+
+    echo $PPID > /run/r10k.cronjob.pid
+
+    # extra_args="{{ .Values.r10k.hiera.extraArgs }}"  # parsing yaml-maps to bash?
+    /docker-entrypoint.sh deploy environment --config /etc/puppetlabs/puppet/r10k.yaml --puppetfile
+
+    echo $?
+
+    rm /run/r10k.cronjob.pid
+
+    {{- if .Values.r10k.hiera.cronJob.restartPolicy }}
+      {{- if eq .Values.r10k.hiera.cronJob.restartPolicy "OnFailure" }}
+        if (( $? != 0 )); then
+          /bin/sh -c /r10k.cronjob.sh
+        fi
+      {{- else if eq .Values.r10k.hiera.cronJob.restartPolicy "Never" }}
+        # Never restart? No, this is a cron sidecar, we want this to run forever
+      {{- else if eq .Values.r10k.hiera.cronJob.restartPolicy "Always" }}
+        # Always restart? Yes, this is a cron sidecar, we want this to run forever
+      {{- end }}
     {{- end }}
-      repositories:
-        - remote: '{{.Values.hiera.hieradataurl}}'
+
+  r10k.entrypoint.sh: |
+    #!/bin/sh
+
+    apk add --update busybox-suid
+    touch /tmp/script.log
+
+    /usr/bin/crontab - <<'EOF'
+      {{ .Values.r10k.hiera.cronJob.schedule }} /bin/sh -c /opt/r10k.cronjob.sh >> /var/log/script.log
+    EOF
+
+    crond
+    tail -f /tmp/script.log
+
 {{- end }}
 
