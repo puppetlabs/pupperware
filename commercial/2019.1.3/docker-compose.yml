@@ -5,11 +5,12 @@ services:
     hostname: puppet.test
     environment:
       - CERTNAME=puppet.test
+      - PUPPETSERVER_PORT=8140
+      - PUPPETSERVER_LOG_LEVEL=info
       - PUPPETDB_HOSTNAME=puppetdb.test
       - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
       - PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services.test
       # puppet::enterprise class parameters written to hiera.yaml
-      - PUPPETSERVER_PORT=8140
       - POSTGRES_HOSTNAME=postgres.test
       - PUPPETDB_SSL_PORT=8081
       - PE_ORCHESTRATION_SERVICES_PORT=8143
@@ -37,9 +38,14 @@ services:
     hostname: pe-orchestration-services.test
     environment:
       - CERTNAME=pe-orchestration-services.test
+      - PCP_BROKER_PORT=8142
+      - PE_ORCHESTRATION_SERVICES_PORT=8143
       - PUPPETSERVER_HOSTNAME=puppet.test
+      - PUPPETSERVER_PORT=8140
       - PUPPETDB_HOSTNAME=puppetdb.test
+      - PUPPETDB_SSL_PORT=8081
       - POSTGRES_HOSTNAME=postgres.test
+      - POSTGRES_PORT=5432
       - PE_BOLT_SERVER_HOSTNAME=pe-bolt-server.test
       - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
       - PUPPERWARE_ADMIN_PASSWORD=pupperware
@@ -61,6 +67,7 @@ services:
     hostname: pe-console-services.test
     environment:
       - CERTNAME=pe-console-services.test
+      - PE_CONSOLE_SERVICES_LOG_LEVEL=info
       - PUPPETSERVER_HOSTNAME=puppet.test
       - PUPPETSERVER_CERTNAME=puppet.test
       - PUPPETSERVER_PORT=8140
@@ -71,6 +78,7 @@ services:
       - POSTGRES_PORT=5432
       - PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services.test
       - PE_ORCHESTRATION_SERVICES_CERTNAME=pe-orchestration-services.test
+      - PE_ORCHESTRATION_SERVICES_PORT=8143
     volumes:
       - console-services:/opt/puppetlabs/server/data/console-services
     restart: always
@@ -97,6 +105,7 @@ services:
     environment:
       - CERTNAME=pe-bolt-server.test
       - PUPPETSERVER_HOSTNAME=puppet.test
+      - PUPPETSERVER_PORT=8140
       - PE_BOLT_SERVER_LOGLEVEL=${PE_BOLT_SERVER_LOGLEVEL:-info}
       - WHITELIST_HOSTNAME.0=pe-bolt-server.test
       - WHITELIST_HOSTNAME.1=pe-orchestration-services.test
@@ -111,8 +120,11 @@ services:
     hostname: puppetdb.test
     environment:
       - CERTNAME=puppetdb.test
+      - PUPPETDB_SSL_PORT=8081
+      - PUPPETDB_LOG_LEVEL=info
       - USE_PUPPETSERVER=true
       - PUPPETSERVER_HOSTNAME=puppet.test
+      - PUPPETSERVER_PORT=8140
       - PUPPETDB_POSTGRES_HOSTNAME=postgres.test
       - PUPPETDB_POSTGRES_PORT=5432
       - PUPPETDB_PASSWORD=puppetdb
@@ -138,9 +150,11 @@ services:
     image: ${DOCKER_REGISTRY_PATH}pe-postgres:pe-2019.1.3
     hostname: postgres.test
     environment:
+      - PGPORT=5432
       - CERTNAME=postgres.test
       - POSTGRES_PASSWORD=puppetdb
       - PUPPETSERVER_HOSTNAME=puppet.test
+      - PUPPETSERVER_PORT=8140
       - PUPPETDB_CERTNAME=puppetdb.test
       - PE_CONSOLE_SERVICES_CERTNAME=pe-console-services.test
       - PE_ORCHESTRATION_SERVICES_CERTNAME=pe-orchestration-services.test
