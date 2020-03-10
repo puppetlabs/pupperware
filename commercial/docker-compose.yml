@@ -84,9 +84,10 @@ services:
     restart: always
     ports:
       - 443:4431
-      - 4430:4430
-      - 4432:4432
       - 4433:4433
+    expose:
+      - 4430
+      - 4432
     depends_on:
       - postgres
       - puppet
@@ -101,7 +102,6 @@ services:
     restart: always
     expose:
       - 62658
-      - 62659
     environment:
       - CERTNAME=pe-bolt-server.test
       - PUPPETSERVER_HOSTNAME=puppet.test
@@ -134,10 +134,9 @@ services:
       - puppetdb:/opt/puppetlabs/server/data/puppetdb
     restart: always
     ports:
-      # Ports are not published to host for security reasons.
-      # Use docker-compose.override.yml to publish locally.
+      - 8081:8081
+    expose:
       - 8080
-      - 8081
     depends_on:
       - postgres
       - puppet
