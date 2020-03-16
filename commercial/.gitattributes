@@ -1,1 +1,2 @@
 spec/*                                   text  eol=lf
+postgres-custom/*                        text  eol=lf
