@@ -12,19 +12,13 @@
 # that the puppet agent would put them, which is /etc/puppetlabs/puppet/ssl,
 # unless the SSLDIR environment variable is specified.
 #
-# The certname can be provided as the first argument to this script, or
-# as the CERTNAME environment variable. If both are found, the argument
-# takes precedence over the environment variable. If neither are found,
+# The certname is provided as the CERTNAME environment variable. If not found,
 # the HOSTNAME will be used.
 #
 # Supports DNS alt names via the DNS_ALT_NAMES environment variable, which
 # is a comma-separated string of names. The Puppet Server CA must be configured
 # to allow subject alt names, by default it will reject certificate requests
 # with them.
-#
-# Arguments:
-#   $1  (Optional) Certname to use. Overrides the CERTNAME environment variable.
-#                  If neither are set, the $HOSTNAME will be used.
 #
 # Optional environment variables:
 #   CERTNAME               Certname to use, unless an argument is passed in
@@ -95,6 +89,9 @@ PUPPETSERVER_HOSTNAME="${PUPPETSERVER_HOSTNAME:-puppet}"
 PUPPETSERVER_PORT="${PUPPETSERVER_PORT:-8140}"
 SSLDIR="${SSLDIR:-/etc/puppetlabs/puppet/ssl}"
 WAITFORCERT=${WAITFORCERT:-120}
+# Can't use DNS alt names because the version of openssl
+# available on this postgres image isn't new enough to
+# support the flags that ssl.sh uses
 DNS_ALT_NAMES=${DNS_ALT_NAMES}
 
 ### Create directories and files
@@ -143,6 +140,8 @@ msg "* CA: '${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}${CA}'"
 msg "* SSLDIR: '${SSLDIR}'"
 msg "* WAITFORCERT: '${WAITFORCERT}' seconds"
 
+# when Postgres first starts and performs init, these certs don't need to exist just yet
+# as long as everything is present after the entrypoint runs and the actual DB starts
 if [ -f "${SSLDIR}/certs/${CERTNAME}.pem" ]; then
     msg "Certificates have already been generated - exiting!"
     exit 0
