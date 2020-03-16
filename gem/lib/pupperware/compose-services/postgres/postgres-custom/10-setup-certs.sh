@@ -32,26 +32,6 @@ host    all             all             ::1/128                 trust
 hostssl all all all cert map=usermap
 EOF
 
-master_running() {
-    status=$(curl --silent --fail --insecure \
-        "https://${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}/status/v1/simple")
-    test "$status" = "running"
-}
-
-# when Postgres first starts and performs init, these certs don't need to exist just yet
-# as long as everything is present after the entrypoint runs and the actual DB starts
-if [ ! -f "${SSLDIR}/certs/${CERTNAME}.pem" ]; then
-    echo "Waiting for master ${PUPPETSERVER_HOSTNAME} to be running to generate certificates..."
-    while ! master_running; do
-        sleep 1
-    done
-
-    # Can't use DNS alt names because the version of openssl
-    # available on this postgres image isn't new enough to
-    # support the flags that ssl.sh uses
-    /ssl.sh "$CERTNAME"
-fi
-
 # NOTE: this does nothing when certs are pre-loaded into VOLUME
 # as Postgres drops permissions with gosu when running this script
 chown -R "$SSLDIR_UID":"$SSLDIR_GID" "$SSLDIR"

@@ -2,14 +2,15 @@
 #
 # Get a signed certificate for this host.
 #
-# Uses OpenSSL and curl directly to generate a new CSR and get it signed by the
+# Uses OpenSSL directly to generate a new CSR and get it signed by the
 # Puppet Server CA.
 #
 # Intended to be used in place of a full-blown puppet agent run that is solely
 # for getting SSL certificates onto the host.
 #
 # Files will be placed in the same default directory location and structure
-# that the puppet agent would put them, which is /etc/puppetlabs/puppet/ssl.
+# that the puppet agent would put them, which is /etc/puppetlabs/puppet/ssl,
+# unless the SSLDIR environment variable is specified.
 #
 # The certname can be provided as the first argument to this script, or
 # as the CERTNAME environment variable. If both are found, the argument
@@ -30,6 +31,7 @@
 #   WAITFORCERT            Number of seconds to wait for certificate to be
 #                          signed, defaults to 120
 #   PUPPETSERVER_HOSTNAME  Hostname of Puppet Server CA, defaults to "puppet"
+#   PUPPETSERVER_PORT      Port of Puppet Server CA, defaults to 8140
 #   SSLDIR                 Root directory to write files to, defaults to
 #                          "/etc/puppetlabs/puppet/ssl"
 #   DNS_ALT_NAMES          Comma-separated string of DNS subject alternative
@@ -44,14 +46,53 @@ error() {
     exit 1
 }
 
+# use openssl s_client to create HTTP requests and parse the response
+# a 200 OK will set a 0 return value, all other responses are non-zero
+# the HTTP response body is returned over stdout
+# $1 is request value
+httpsreq() {
+    httpsreq_insecure "$1" "-CAfile ""${CACERTFILE}"""
+}
+
+# use openssl s_client to create HTTP requests and parse the response
+# a 200 OK will set a 0 return value, all other responses are non-zero
+# the HTTP response body is returned over stdout
+# $1 is request value
+# $2 is additional s_client CLI flags
+httpsreq_insecure() {
+    CLIENTFLAGS="-connect ""${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}"" -ign_eof -quiet $2"
+
+    response=$(echo "$1" | openssl s_client ${CLIENTFLAGS} 2>/dev/null)
+    # extract the HTTP status code from first line of response
+    # RFC2616 defines first line header as Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+    status=$(echo "$response" | head -1 | cut -d ' ' -f 2)
+
+    # write HTTP payload over stdout by collecting all lines after header\r
+    # same as: awk -v bl=1 'bl{bl=0; h=($0 ~ /HTTP\/1/)} /^\r?$/{bl=1} {if(!h) print}'
+    body=false
+    echo "${response}" | while read -r line
+    do
+      [ $body = true ] && printf '%s\n' "$line"
+      # a lone CR means the separator between headers and body has been reached
+      [ "$line" = "$(printf "\r")" ] && body=true
+    done
+
+    # treat a 200 as 0 exit code
+    [ "${status}" = "200" ] && return 0 || return "$((status))"
+}
+
+master_running() {
+    test "$(httpsreq_insecure "GET /status/v1/simple HTTP/1.0\r\n\r\n")" = "running"
+}
+
 ### Verify dependencies available
 ! command -v openssl > /dev/null && error "openssl not found on PATH"
-! command -v curl > /dev/null && error "curl not found on PATH"
 
 ### Verify options are valid
 CERTNAME="${1:-${CERTNAME:-${HOSTNAME}}}"
 [ -z "${CERTNAME}" ] && error "certificate name must be non-empty value"
 PUPPETSERVER_HOSTNAME="${PUPPETSERVER_HOSTNAME:-puppet}"
+PUPPETSERVER_PORT="${PUPPETSERVER_PORT:-8140}"
 SSLDIR="${SSLDIR:-/etc/puppetlabs/puppet/ssl}"
 WAITFORCERT=${WAITFORCERT:-120}
 DNS_ALT_NAMES=${DNS_ALT_NAMES}
@@ -69,10 +110,9 @@ CERTFILE="${CERTDIR}/${CERTNAME}.pem"
 CACERTFILE="${CERTDIR}/ca.pem"
 CRLFILE="${SSLDIR}/crl.pem"
 
-CA="https://${PUPPETSERVER_HOSTNAME}:8140/puppet-ca/v1"
+CA="/puppet-ca/v1"
 CERTSUBJECT="/CN=${CERTNAME}"
 CERTHEADER="-----BEGIN CERTIFICATE-----"
-CURLFLAGS="--silent --show-error --cacert ${CACERTFILE} --retry 5 --retry-connrefused --retry-delay 2"
 
 ### Handle certificate extensions
 # NOTE If we want to expand support for more extensions, it would be better
@@ -99,13 +139,23 @@ fi
 msg "Using configuration values:"
 msg "* CERTNAME: '${CERTNAME}' (${CERTSUBJECT})"
 msg "* DNS_ALT_NAMES: '${DNS_ALT_NAMES}'"
-msg "* CA: '${CA}'"
+msg "* CA: '${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}${CA}'"
 msg "* SSLDIR: '${SSLDIR}'"
 msg "* WAITFORCERT: '${WAITFORCERT}' seconds"
 
+if [ -f "${SSLDIR}/certs/${CERTNAME}.pem" ]; then
+    msg "Certificates have already been generated - exiting!"
+    exit 0
+fi
+
+msg "Waiting for master ${PUPPETSERVER_HOSTNAME} to be running to generate certificates..."
+while ! master_running; do
+    sleep 1
+done
+
 ### Get the CA certificate for use with subsequent requests
 ### Fail-fast if curl errors or the CA certificate can't be parsed
-curl --insecure --silent --show-error --output "${CACERTFILE}" --retry 5 --retry-connrefused --retry-delay 2 "${CA}/certificate/ca"
+httpsreq_insecure "GET ${CA}/certificate/ca HTTP/1.0\r\n\r\n" > "${CACERTFILE}"
 if [ $? -ne 0 ]; then
     error "cannot reach CA host '${PUPPETSERVER_HOSTNAME}'"
 elif ! openssl x509 -subject -issuer -noout -in "${CACERTFILE}"; then
@@ -113,14 +163,15 @@ elif ! openssl x509 -subject -issuer -noout -in "${CACERTFILE}"; then
 fi
 
 ### Get the CRL from the CA for use with client-side validation
-curl ${CURLFLAGS} --output "${CRLFILE}" "${CA}/certificate_revocation_list/ca"
+httpsreq "GET ${CA}/certificate_revocation_list/ca HTTP/1.0\r\n\r\n" > "${CRLFILE}"
 if ! openssl crl -text -noout -in "${CRLFILE}" > /dev/null; then
     error "invalid CRL"
 fi
 
 ### Check the CA does not already have a signed certificate for this host
-output="$(curl ${CURLFLAGS} "${CA}/certificate/${CERTNAME}")"
-if [ "$(echo "${output}" | head -1)" = "${CERTHEADER}" ]; then
+CERTREQ="GET ${CA}/certificate/${CERTNAME} HTTP/1.0\r\n\r\n"
+httpsreq "$CERTREQ" >/dev/null
+if [ $? -eq 0 ]; then
     error "CA already has signed certificate for '${CERTNAME}'"
 fi
 
@@ -133,9 +184,17 @@ openssl rsa -in "${PRIVKEYFILE}" -pubout -out "${PUBKEYFILE}"
 openssl req -new -key "${PRIVKEYFILE}" -out "${CSRFILE}" -subj "${CERTSUBJECT}" ${CERTEXTENSIONS}
 
 ### Submit CSR and fail gracefully on certain error conditions
-output="$(curl ${CURLFLAGS} -X PUT -H "Content-Type: text/plain" \
-               --data-binary "@${CSRFILE}" "${CA}/certificate_request/${CERTNAME}")"
-if [ -n "${output}" ]; then
+CSRREQ=$(cat <<EOF
+PUT ${CA}/certificate_request/${CERTNAME} HTTP/1.0
+Content-Length:$(wc -c < "${CSRFILE}")
+Content-Type: text/plain
+
+$(cat "${CSRFILE}")
+EOF
+)
+
+output=$(httpsreq "$CSRREQ")
+if [ $? -ne 0 ]; then
     cert_already_exists="${CERTNAME} already has a requested certificate; ignoring certificate request"
     altnames_disallowed="CSR '${CERTNAME}' contains subject alternative names*which are disallowed*"
     case "${output}" in
@@ -148,14 +207,14 @@ fi
 ### Retrieve signed certificate; wait and try again with a timeout
 sleeptime=10
 timewaited=0
-cert="$(curl ${CURLFLAGS} "${CA}/certificate/${CERTNAME}")"
-while [ "$(echo "${cert}" | head -1)" != "${CERTHEADER}" ]; do
+cert=$(httpsreq "$CERTREQ")
+while [ $? -ne 0 ]; do
     [ ${timewaited} -ge $((WAITFORCERT)) ] && \
         error "timed-out waiting for certificate to be signed"
     msg "Waiting for certificate to be signed..."
     sleep ${sleeptime}
     timewaited=$((timewaited+sleeptime))
-    cert="$(curl ${CURLFLAGS} "${CA}/certificate/${CERTNAME}")"
+    cert=$(httpsreq "$CERTREQ")
 done
 echo "${cert}" > "${CERTFILE}"
 
