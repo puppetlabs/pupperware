@@ -33,16 +33,9 @@ hostssl all all all cert map=usermap
 EOF
 
 master_running() {
-    if [ "$CONSUL_ENABLED" = "true" ]; then
-        status=$(curl --silent --fail \
-            "http://${CONSUL_HOSTNAME}:${CONSUL_PORT}/v1/health/checks/puppet" \
-            | grep -q '"Status": "passing"')
-        test "$?" = "0"
-    else
-        status=$(curl --silent --fail --insecure \
-            "https://${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}/status/v1/simple")
-        test "$status" = "running"
-    fi
+    status=$(curl --silent --fail --insecure \
+        "https://${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}/status/v1/simple")
+    test "$status" = "running"
 }
 
 # when Postgres first starts and performs init, these certs don't need to exist just yet
