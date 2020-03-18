@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cat << EOF > ${PGDATA}/pg_ident.conf
+cat << EOF > "${PGDATA}/pg_ident.conf"
 # MAPNAME       SYSTEM-USERNAME         PG-USERNAME
 usermap ${PE_CONSOLE_SERVICES_CERTNAME} puppetdb
 usermap ${PE_ORCHESTRATION_SERVICES_CERTNAME} puppetdb
@@ -12,7 +12,7 @@ EOF
 # containers don't use pg_ctl, but a SQL function can be used instead
 # https://www.postgresql.org/docs/9.6/config-setting.html
 # psql --username=puppetdb --dbname=postgres --command "SELECT pg_reload_conf();" 2>&1
-cat << EOF > ${PGDATA}/pg_hba.conf
+cat << EOF > "${PGDATA}/pg_hba.conf"
 # TYPE  DATABASE        USER            ADDRESS                 METHOD
 
 # "local" is for Unix domain socket connections only
@@ -66,13 +66,13 @@ chmod 600 \
 # https://www.postgresql.org/docs/10/ssl-tcp.html#SSL-SERVER-FILES
 # ssl_key_file
 # server private key  proves server certificate was sent by the owner; does not indicate certificate owner is trustworthy
-ln -s -f ${SSLDIR}/private_keys/${CERTNAME}.pem ${PGDATA}/server.key
+ln -s -f "${SSLDIR}/private_keys/${CERTNAME}.pem" "${PGDATA}/server.key"
 # ssl_cert_file
 # server certificate  sent to client to indicate server's identity
-ln -s -f ${SSLDIR}/certs/${CERTNAME}.pem ${PGDATA}/server.crt
+ln -s -f "${SSLDIR}/certs/${CERTNAME}.pem" "${PGDATA}/server.crt"
 # ssl_ca_file
 # trusted certificate authorities checks that client certificate is signed by a trusted certificate authority
-ln -s -f ${SSLDIR}/certs/ca.pem ${PGDATA}/root.crt
+ln -s -f "${SSLDIR}/certs/ca.pem" "${PGDATA}/root.crt"
 # ssl_crl_file
 # certificates revoked by certificate authorities client certificate must not be on this list
-ln -s -f ${SSLDIR}/crl.pem ${PGDATA}/root.crl
+ln -s -f "${SSLDIR}/crl.pem" "${PGDATA}/root.crl"

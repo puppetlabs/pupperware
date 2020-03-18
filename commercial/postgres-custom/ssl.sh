@@ -150,11 +150,11 @@ sleeptime=10
 timewaited=0
 cert="$(curl ${CURLFLAGS} "${CA}/certificate/${CERTNAME}")"
 while [ "$(echo "${cert}" | head -1)" != "${CERTHEADER}" ]; do
-    [ ${timewaited} -ge ${WAITFORCERT} ] && \
+    [ ${timewaited} -ge $((WAITFORCERT)) ] && \
         error "timed-out waiting for certificate to be signed"
     msg "Waiting for certificate to be signed..."
     sleep ${sleeptime}
-    timewaited=$((${timewaited}+${sleeptime}))
+    timewaited=$((timewaited+sleeptime))
     cert="$(curl ${CURLFLAGS} "${CA}/certificate/${CERTNAME}")"
 done
 echo "${cert}" > "${CERTFILE}"
