@@ -6,7 +6,9 @@ metadata:
     {{- include "puppetserver.puppetserver.labels" . | nindent 4 }}
 spec:
   {{- if .Values.puppetserver.multiCompilers.enabled }}
+  {{- if not (.Values.puppetserver.multiCompilers.autoScaling.enabled) }}
   replicas: {{ .Values.puppetserver.multiCompilers.manualScaling.compilers }}
+  {{- end }}
   {{- end }}
   selector:
     matchLabels:

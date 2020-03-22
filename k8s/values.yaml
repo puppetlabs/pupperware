@@ -7,7 +7,7 @@
 puppetserver:
   name: puppetserver
   image: puppet/puppetserver
-  tag: 6.8.0
+  tag: 6.9.0
   pullPolicy: IfNotPresent
   ## Horizontal Scaling
   ## Optional deployment of multiple Puppet Server Compilers
@@ -219,7 +219,7 @@ postgres:
 puppetdb:
   name: puppetdb
   image: puppet/puppetdb
-  tag: 6.8.1
+  tag: 6.9.0
   pullPolicy: IfNotPresent
   resources: {}
   #  requests:
@@ -236,9 +236,10 @@ puppetdb:
     ## Override the 20-char random "password" in templates/puppetdb-secret.yaml
     password:
       value: ""
-      ## Or set the PuppetDB password from a pre-existing K8s secret
-      existingSecret: ""
-      existingSecretKey: ""
+    # if used, the following existing secret must contain "username" and "password" keys, already base64 encoded.
+    # using this secret supercedes all other credentials settings.
+    existingSecret: ""
+
 
 ## Puppetboard Configuration
 ##

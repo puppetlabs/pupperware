@@ -12,7 +12,7 @@ spec:
 {{- if .Values.storage.selector }}
   selector:
     matchLabels:
-      {{- include "puppetserver.puppetserver.matchLabels" . | nindent 6 }}
+      {{- include "puppetserver.r10k.matchLabels" . | nindent 6 }}
 {{- end }}
   accessModes:
     - ReadWriteOnce
