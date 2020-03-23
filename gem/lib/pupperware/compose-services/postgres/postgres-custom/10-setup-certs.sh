@@ -34,7 +34,7 @@ EOF
 
 # NOTE: this does nothing when certs are pre-loaded into VOLUME
 # as Postgres drops permissions with gosu when running this script
-chown -R "$SSLDIR_UID":"$SSLDIR_GID" "$SSLDIR"
+chown -R 999:999 "$SSLDIR"
 
 # Postgres wants these files to have restricted access
 chmod 600 \
