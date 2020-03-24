@@ -45,6 +45,12 @@ error() {
     exit 1
 }
 
+master_running() {
+    status=$(curl --silent --fail --insecure \
+        "https://${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}/status/v1/simple")
+    test "$status" = "running"
+}
+
 ### Verify dependencies available
 ! command -v openssl > /dev/null && error "openssl not found on PATH"
 ! command -v curl > /dev/null && error "curl not found on PATH"
@@ -105,6 +111,16 @@ msg "* DNS_ALT_NAMES: '${DNS_ALT_NAMES}'"
 msg "* CA: '${CA}'"
 msg "* SSLDIR: '${SSLDIR}'"
 msg "* WAITFORCERT: '${WAITFORCERT}' seconds"
+
+if [ -f "${SSLDIR}/certs/${CERTNAME}.pem" ]; then
+    msg "Certificates have already been generated - exiting!"
+    exit 0
+fi
+
+msg "Waiting for master ${PUPPETSERVER_HOSTNAME} to be running to generate certificates..."
+while ! master_running; do
+    sleep 1
+done
 
 ### Get the CA certificate for use with subsequent requests
 ### Fail-fast if curl errors or the CA certificate can't be parsed
