@@ -30,6 +30,7 @@
 #   WAITFORCERT            Number of seconds to wait for certificate to be
 #                          signed, defaults to 120
 #   PUPPETSERVER_HOSTNAME  Hostname of Puppet Server CA, defaults to "puppet"
+#   PUPPETSERVER_PORT      Port of Puppet Server CA, defaults to 8140
 #   SSLDIR                 Root directory to write files to, defaults to
 #                          "/etc/puppetlabs/puppet/ssl"
 #   DNS_ALT_NAMES          Comma-separated string of DNS subject alternative
@@ -53,6 +54,7 @@ error() {
 CERTNAME="${1:-${CERTNAME:-${HOSTNAME}}}"
 [ -z "${CERTNAME}" ] && error "certificate name must be non-empty value"
 PUPPETSERVER_HOSTNAME="${PUPPETSERVER_HOSTNAME:-puppet}"
+PUPPETSERVER_PORT="${PUPPETSERVER_PORT:-8140}"
 SSLDIR="${SSLDIR:-/etc/puppetlabs/puppet/ssl}"
 WAITFORCERT=${WAITFORCERT:-120}
 DNS_ALT_NAMES=${DNS_ALT_NAMES}
@@ -70,7 +72,7 @@ CERTFILE="${CERTDIR}/${CERTNAME}.pem"
 CACERTFILE="${CERTDIR}/ca.pem"
 CRLFILE="${SSLDIR}/crl.pem"
 
-CA="https://${PUPPETSERVER_HOSTNAME}:8140/puppet-ca/v1"
+CA="https://${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}/puppet-ca/v1"
 CERTSUBJECT="/CN=${CERTNAME}"
 CERTHEADER="-----BEGIN CERTIFICATE-----"
 CURLFLAGS="--silent --show-error --cacert ${CACERTFILE} --retry 5 --retry-connrefused --retry-delay 2"
