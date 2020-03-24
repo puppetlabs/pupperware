@@ -49,6 +49,7 @@ error() {
 ! command -v curl > /dev/null && error "curl not found on PATH"
 
 ### Verify options are valid
+# shellcheck disable=SC2039 # Docker injects $HOSTNAME
 CERTNAME="${1:-${CERTNAME:-${HOSTNAME}}}"
 [ -z "${CERTNAME}" ] && error "certificate name must be non-empty value"
 PUPPETSERVER_HOSTNAME="${PUPPETSERVER_HOSTNAME:-puppet}"
@@ -130,6 +131,7 @@ fi
 [ -s "${CSRFILE}" ] && error "certificate request '${CSRFILE}' already exists"
 openssl genrsa -out "${PRIVKEYFILE}" 4096
 openssl rsa -in "${PRIVKEYFILE}" -pubout -out "${PUBKEYFILE}"
+# shellcheck disable=SC2086 # $CERTEXTENSIONS shouldn't be quoted
 openssl req -new -key "${PRIVKEYFILE}" -out "${CSRFILE}" -subj "${CERTSUBJECT}" ${CERTEXTENSIONS}
 
 ### Submit CSR and fail gracefully on certain error conditions
@@ -138,8 +140,9 @@ output="$(curl ${CURLFLAGS} -X PUT -H "Content-Type: text/plain" \
 if [ -n "${output}" ]; then
     cert_already_exists="${CERTNAME} already has a requested certificate; ignoring certificate request"
     altnames_disallowed="CSR '${CERTNAME}' contains subject alternative names*which are disallowed*"
+    # shellcheck disable=SC2254 # string contains * used for globbing
     case "${output}" in
-        $cert_already_exists) error "unsigned CSR for '${CERTNAME}' already exists on CA" ;;
+        "$cert_already_exists") error "unsigned CSR for '${CERTNAME}' already exists on CA" ;;
         $altnames_disallowed) error "DNS Alt Names not allowed by the CA" ;;
         *) msg "[WARNING] CSR response: ${output}" ;;
     esac
@@ -150,11 +153,11 @@ sleeptime=10
 timewaited=0
 cert="$(curl ${CURLFLAGS} "${CA}/certificate/${CERTNAME}")"
 while [ "$(echo "${cert}" | head -1)" != "${CERTHEADER}" ]; do
-    [ ${timewaited} -ge ${WAITFORCERT} ] && \
+    [ ${timewaited} -ge $((WAITFORCERT)) ] && \
         error "timed-out waiting for certificate to be signed"
     msg "Waiting for certificate to be signed..."
     sleep ${sleeptime}
-    timewaited=$((${timewaited}+${sleeptime}))
+    timewaited=$((timewaited+sleeptime))
     cert="$(curl ${CURLFLAGS} "${CA}/certificate/${CERTNAME}")"
 done
 echo "${cert}" > "${CERTFILE}"
