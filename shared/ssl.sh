@@ -56,7 +56,16 @@ get() {
 # the HTTP response body is returned over stdout
 # $1 is request value
 httpsreq() {
-    CLIENTFLAGS="-connect ""${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}"" -ign_eof -quiet -CAfile ""${CACERTFILE}"""
+    httpsreq_insecure "$1" "-CAfile ""${CACERTFILE}"""
+}
+
+# use openssl s_client to create HTTP requests and parse the response
+# a 200 OK will set a 0 return value, all other responses are non-zero
+# the HTTP response body is returned over stdout
+# $1 is request value
+# $2 is additional s_client CLI flags
+httpsreq_insecure() {
+    CLIENTFLAGS="-connect ""${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}"" -ign_eof -quiet $2"
 
     # shellcheck disable=SC2086 # $CLIENTFLAGS shouldn't be quoted
     response=$(echo "$1" | openssl s_client ${CLIENTFLAGS} 2>/dev/null)
@@ -79,12 +88,7 @@ httpsreq() {
 }
 
 master_running() {
-    status=$(printf "%s" "$(get '/status/v1/simple')" | \
-        openssl s_client -connect "${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}" -ign_eof -quiet 2>/dev/null | \
-        awk -v bl=1 'bl{bl=0; h=($0 ~ /HTTP\/1/)} /^\r?$/{bl=1} {if(!h) print}'
-    )
-
-    test "$status" = "running"
+    test "$(httpsreq_insecure "$(get '/status/v1/simple')")" = "running"
 }
 
 ### Verify dependencies available
@@ -159,10 +163,7 @@ done
 
 ### Get the CA certificate for use with subsequent requests
 ### Fail-fast if openssl errors connecting or the CA certificate can't be parsed
-printf "%s" "$(get "${CA}/certificate/ca")" | \
-    openssl s_client -connect "${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}" -ign_eof -quiet 2>/dev/null | \
-    sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' \
-    > "${CACERTFILE}"
+httpsreq_insecure "$(get "${CA}/certificate/ca")" > "${CACERTFILE}"
 if [ $? -ne 0 ]; then
     error "cannot reach CA host '${PUPPETSERVER_HOSTNAME}'"
 elif ! openssl x509 -subject -issuer -noout -in "${CACERTFILE}"; then
