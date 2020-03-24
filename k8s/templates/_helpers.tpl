@@ -108,6 +108,16 @@ component: {{ .Values.puppetserver.name | quote }}
 {{ include "puppetserver.common.matchLabels" . }}
 {{- end -}}
 
+{{- define "puppetserver.puppetserver-data.labels" -}}
+{{ include "puppetserver.puppetserver-data.matchLabels" . }}
+{{ include "puppetserver.common.metaLabels" . }}
+{{- end -}}
+
+{{- define "puppetserver.puppetserver-data.matchLabels" -}}
+component: "{{ .Values.puppetserver.name}}-serverdata"
+{{ include "puppetserver.common.matchLabels" . }}
+{{- end -}}
+
 {{/*
 Set mandatory Puppet Server Service name.
 */}}
