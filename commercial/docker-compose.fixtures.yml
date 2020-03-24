@@ -3,6 +3,10 @@ services:
   puppet:
     environment:
       - CERT_VOLUME=puppetserver
+  postgres:
+    environment:
+      # Testing specific variable needed to bootstrap cert preloading
+      - CERT_VOLUME=puppetdb-postgres
   puppet-agent:
     image: puppet/puppet-agent-ubuntu:6.4
     hostname: puppet-agent.test

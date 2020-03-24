@@ -1,0 +1,44 @@
+CREATE DATABASE "pe-classifier" OWNER "puppetdb";
+CREATE DATABASE "pe-rbac" OWNER "puppetdb";
+CREATE DATABASE "pe-activity" OWNER "puppetdb";
+CREATE DATABASE "pe-inventory" OWNER "puppetdb";
+CREATE DATABASE "pe-orchestrator" OWNER "puppetdb";
+
+\c "pe-rbac"
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS plpgsql;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+\c "pe-orchestrator"
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS plpgsql;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+\c "pe-inventory"
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS plpgsql;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- \c "pe-puppetdb"
+\c "puppetdb"
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS plpgsql;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+\c "pe-classifier"
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS plpgsql;
+
+\c "pe-activity"
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS plpgsql;
+
+-- used for the healthcheck SSL check
+\c "postgres"
+CREATE EXTENSION IF NOT EXISTS sslinfo;
