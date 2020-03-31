@@ -57,15 +57,15 @@ httpsreq_insecure() {
     CLIENTFLAGS="-connect ""${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}"" -ign_eof -quiet $2"
 
     # shellcheck disable=SC2086 # $CLIENTFLAGS shouldn't be quoted
-    response=$(echo "$1" | openssl s_client ${CLIENTFLAGS} 2>/dev/null)
+    response=$(printf "%s\n\n" "$1" | openssl s_client ${CLIENTFLAGS} 2>/dev/null)
     # extract the HTTP status code from first line of response
     # RFC2616 defines first line header as Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
-    status=$(echo "$response" | head -1 | cut -d ' ' -f 2)
+    status=$(printf "%s" "$response" | head -1 | cut -d ' ' -f 2)
 
     # write HTTP payload over stdout by collecting all lines after header\r
     # same as: awk -v bl=1 'bl{bl=0; h=($0 ~ /HTTP\/1/)} /^\r?$/{bl=1} {if(!h) print}'
     body=false
-    echo "${response}" | while read -r line
+    printf "%s\n" "$response" | while read -r line
     do
       [ $body = true ] && printf '%s\n' "$line"
       # a lone CR means the separator between headers and body has been reached
@@ -77,7 +77,7 @@ httpsreq_insecure() {
 }
 
 master_running() {
-    test "$(httpsreq_insecure "GET /status/v1/simple HTTP/1.0\r\n\r\n")" = "running"
+    test "$(httpsreq_insecure "GET /status/v1/simple HTTP/1.0")" = "running"
 }
 
 ### Verify dependencies available
@@ -123,7 +123,7 @@ CERTEXTENSIONS=""
 if [ -n "${DNS_ALT_NAMES}" ]; then
     names=""
     first=true
-    for name in $(echo "${DNS_ALT_NAMES}" | tr "," " "); do
+    for name in $(printf "%s" "${DNS_ALT_NAMES}" | tr "," " "); do
         if $first; then
             first=false
             names="DNS:${name}"
@@ -154,7 +154,7 @@ done
 
 ### Get the CA certificate for use with subsequent requests
 ### Fail-fast if openssl errors connecting or the CA certificate can't be parsed
-httpsreq_insecure "GET ${CA}/certificate/ca HTTP/1.0\r\n\r\n" > "${CACERTFILE}"
+httpsreq_insecure "GET ${CA}/certificate/ca HTTP/1.0" > "${CACERTFILE}"
 if [ $? -ne 0 ]; then
     error "cannot reach CA host '${PUPPETSERVER_HOSTNAME}'"
 elif ! openssl x509 -subject -issuer -noout -in "${CACERTFILE}"; then
@@ -162,13 +162,13 @@ elif ! openssl x509 -subject -issuer -noout -in "${CACERTFILE}"; then
 fi
 
 ### Get the CRL from the CA for use with client-side validation
-httpsreq "GET ${CA}/certificate_revocation_list/ca HTTP/1.0\r\n\r\n" > "${CRLFILE}"
+httpsreq "GET ${CA}/certificate_revocation_list/ca HTTP/1.0" > "${CRLFILE}"
 if ! openssl crl -text -noout -in "${CRLFILE}" > /dev/null; then
     error "invalid CRL"
 fi
 
 ### Check the CA does not already have a signed certificate for this host
-CERTREQ="GET ${CA}/certificate/${CERTNAME} HTTP/1.0\r\n\r\n"
+CERTREQ="GET ${CA}/certificate/${CERTNAME} HTTP/1.0"
 httpsreq "$CERTREQ" >/dev/null
 if [ $? -eq 0 ]; then
     error "CA already has signed certificate for '${CERTNAME}'"
@@ -186,7 +186,7 @@ openssl req -new -key "${PRIVKEYFILE}" -out "${CSRFILE}" -subj "${CERTSUBJECT}" 
 ### Submit CSR and fail gracefully on certain error conditions
 CSRREQ=$(cat <<EOF
 PUT ${CA}/certificate_request/${CERTNAME} HTTP/1.0
-Content-Length:$(wc -c < "${CSRFILE}")
+Content-Length: $(wc -c < "${CSRFILE}")
 Content-Type: text/plain
 
 $(cat "${CSRFILE}")
@@ -217,7 +217,7 @@ while [ $? -ne 0 ]; do
     timewaited=$((timewaited+sleeptime))
     cert=$(httpsreq "$CERTREQ")
 done
-echo "${cert}" > "${CERTFILE}"
+printf "%s\n" "${cert}" > "${CERTFILE}"
 
 ### Verify we got a signed certificate
 if [ -f "${CERTFILE}" ] && [ "$(head -1 "${CERTFILE}")" = "${CERTHEADER}" ]; then
