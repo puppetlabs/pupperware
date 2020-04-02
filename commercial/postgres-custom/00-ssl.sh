@@ -79,9 +79,12 @@ httpsreq_insecure() {
     body=false
     printf "%s\n" "$response" | while read -r line
     do
-      [ $body = true ] && printf '%s\n' "$line"
-      # a lone CR means the separator between headers and body has been reached
-      [ "$line" = "$(printf "\r")" ] && body=true
+        if [ $body = true ]; then
+            printf '%s\n' "$line"
+        # a lone CR means the separator between headers and body has been reached
+        elif [ "$line" = "$(printf "\r")" ]; then
+            body=true
+        fi
     done
 
     # treat a 200 as 0 exit code
