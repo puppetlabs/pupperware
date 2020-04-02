@@ -21,7 +21,7 @@
 # with them.
 #
 # Optional environment variables:
-#   CERTNAME               Certname to use, unless an argument is passed in
+#   CERTNAME               Certname to use
 #   WAITFORCERT            Number of seconds to wait for certificate to be
 #                          signed, defaults to 120
 #   PUPPETSERVER_HOSTNAME  Hostname of Puppet Server CA, defaults to "puppet"
@@ -97,7 +97,7 @@ master_running() {
 
 ### Verify options are valid
 # shellcheck disable=SC2039 # Docker injects $HOSTNAME
-CERTNAME="${1:-${CERTNAME:-${HOSTNAME}}}"
+CERTNAME="${CERTNAME:-${HOSTNAME}}"
 [ -z "${CERTNAME}" ] && error "certificate name must be non-empty value"
 PUPPETSERVER_HOSTNAME="${PUPPETSERVER_HOSTNAME:-puppet}"
 PUPPETSERVER_PORT="${PUPPETSERVER_PORT:-8140}"
@@ -149,6 +149,9 @@ fi
 
 ### Print configuration for troubleshooting
 msg "Using configuration values:"
+# shellcheck disable=SC2039 # Docker injects $HOSTNAME
+msg "* HOSTNAME: '${HOSTNAME}'"
+msg "* hostname -f: '$(hostname -f)'"
 msg "* CERTNAME: '${CERTNAME}' (${CERTSUBJECT})"
 msg "* DNS_ALT_NAMES: '${DNS_ALT_NAMES}'"
 msg "* CA: '${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}${CA}'"
