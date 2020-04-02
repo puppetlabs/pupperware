@@ -106,9 +106,6 @@ PUPPETSERVER_HOSTNAME="${PUPPETSERVER_HOSTNAME:-puppet}"
 PUPPETSERVER_PORT="${PUPPETSERVER_PORT:-8140}"
 SSLDIR="${SSLDIR:-/etc/puppetlabs/puppet/ssl}"
 WAITFORCERT=${WAITFORCERT:-120}
-# Can't use DNS alt names because the version of openssl
-# available on this postgres image isn't new enough to
-# support the flags that ssl.sh uses
 DNS_ALT_NAMES=${DNS_ALT_NAMES}
 
 ### Create directories and files
@@ -123,6 +120,7 @@ CSRFILE="${CSRDIR}/${CERTNAME}.pem"
 CERTFILE="${CERTDIR}/${CERTNAME}.pem"
 CACERTFILE="${CERTDIR}/ca.pem"
 CRLFILE="${SSLDIR}/crl.pem"
+ALTNAMEFILE="/tmp/altnames.conf"
 
 CA="/puppet-ca/v1"
 CERTSUBJECT="/CN=${CERTNAME}"
@@ -147,7 +145,12 @@ if [ -n "${DNS_ALT_NAMES}" ]; then
             names="${names},DNS:${name}"
         fi
     done
-    CERTEXTENSIONS="-addext subjectAltName=${names}"
+
+    # openssl 1.1.1+ supports -addext subjectAltName=${names}
+    # but Postgres 9.6 image uses openssl 1.1.0 and has no such flag, so have to use -config
+    printf "[req]\ndistinguished_name=dn\nreq_extensions=ext\n[dn]\n[ext]\nsubjectAltName=%s\n" "${names}" > "${ALTNAMEFILE}"
+
+    CERTEXTENSIONS="-config ${ALTNAMEFILE}"
 fi
 
 ### Print configuration for troubleshooting
@@ -200,6 +203,7 @@ openssl genrsa -out "${PRIVKEYFILE}" 4096
 openssl rsa -in "${PRIVKEYFILE}" -pubout -out "${PUBKEYFILE}"
 # shellcheck disable=SC2086 # $CERTEXTENSIONS shouldn't be quoted
 openssl req -new -key "${PRIVKEYFILE}" -out "${CSRFILE}" -subj "${CERTSUBJECT}" ${CERTEXTENSIONS}
+[ -f "${ALTNAMEFILE}" ] && rm "${ALTNAMEFILE}"
 
 ### Submit CSR and fail gracefully on certain error conditions
 CSRREQ=$(cat <<EOF
@@ -237,7 +241,9 @@ printf "%s\n" "${cert}" > "${CERTFILE}"
 
 ### Verify we got a signed certificate
 if [ -f "${CERTFILE}" ] && [ "$(head -1 "${CERTFILE}")" = "${CERTHEADER}" ]; then
-    if openssl x509 -subject -issuer -noout -in "${CERTFILE}"; then
+    altnames="-certopt no_subject,no_header,no_version,no_serial,no_signame,no_validity,no_issuer,no_pubkey,no_sigdump,no_aux"
+    # shellcheck disable=SC2086 # $altnames shouldn't be quoted
+    if openssl x509 -subject -issuer -text -noout -in "${CERTFILE}" $altnames; then
         msg "Successfully signed certificate '${CERTFILE}'"
     else
         error "invalid signed certificate '${CERTFILE}'"
