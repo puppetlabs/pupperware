@@ -48,7 +48,7 @@ error() {
 
 # builds the GET http request given a URI
 get() {
-    printf "GET %s HTTP/1.0\n%s\n\n" "$1" "$HOSTHEADER"
+    printf "GET %s HTTP/1.0\n%s" "$1" "$HOSTHEADER"
 }
 
 # use openssl s_client to create HTTP requests and parse the response
@@ -68,15 +68,15 @@ httpsreq_insecure() {
     CLIENTFLAGS="-connect ""${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}"" -ign_eof -quiet $2"
 
     # shellcheck disable=SC2086 # $CLIENTFLAGS shouldn't be quoted
-    response=$(echo "$1" | openssl s_client ${CLIENTFLAGS} 2>/dev/null)
+    response=$(printf "%s\n\n" "$1" | openssl s_client ${CLIENTFLAGS} 2>/dev/null)
     # extract the HTTP status code from first line of response
     # RFC2616 defines first line header as Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
-    status=$(echo "$response" | head -1 | cut -d ' ' -f 2)
+    status=$(printf "%s" "$response" | head -1 | cut -d ' ' -f 2)
 
     # write HTTP payload over stdout by collecting all lines after header\r
     # same as: awk -v bl=1 'bl{bl=0; h=($0 ~ /HTTP\/1/)} /^\r?$/{bl=1} {if(!h) print}'
     body=false
-    echo "${response}" | while read -r line
+    printf "%s\n" "$response" | while read -r line
     do
       [ $body = true ] && printf '%s\n' "$line"
       # a lone CR means the separator between headers and body has been reached
@@ -132,7 +132,7 @@ CERTEXTENSIONS=""
 if [ -n "${DNS_ALT_NAMES}" ]; then
     names=""
     first=true
-    for name in $(echo "${DNS_ALT_NAMES}" | tr "," " "); do
+    for name in $(printf "%s" "${DNS_ALT_NAMES}" | tr "," " "); do
         if $first; then
             first=false
             names="DNS:${name}"
@@ -196,7 +196,7 @@ openssl req -new -key "${PRIVKEYFILE}" -out "${CSRFILE}" -subj "${CERTSUBJECT}" 
 CSRREQ=$(cat <<EOF
 PUT ${CA}/certificate_request/${CERTNAME} HTTP/1.0
 ${HOSTHEADER}
-Content-Length:$(wc -c < "${CSRFILE}")
+Content-Length: $(wc -c < "${CSRFILE}")
 Content-Type: text/plain
 
 $(cat "${CSRFILE}")
@@ -227,7 +227,7 @@ while [ $? -ne 0 ]; do
     timewaited=$((timewaited+sleeptime))
     cert=$(httpsreq "$CERTREQ")
 done
-echo "${cert}" > "${CERTFILE}"
+printf "%s\n" "${cert}" > "${CERTFILE}"
 
 ### Verify we got a signed certificate
 if [ -f "${CERTFILE}" ] && [ "$(head -1 "${CERTFILE}")" = "${CERTHEADER}" ]; then
