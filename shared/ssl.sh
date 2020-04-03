@@ -68,7 +68,14 @@ httpsreq_insecure() {
     CLIENTFLAGS="-connect ""${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}"" -ign_eof -quiet $2"
 
     # shellcheck disable=SC2086 # $CLIENTFLAGS shouldn't be quoted
-    response=$(printf "%s\n\n" "$1" | openssl s_client ${CLIENTFLAGS} 2>/dev/null)
+    if ! response=$(printf "%s\n\n" "$1" | openssl s_client ${CLIENTFLAGS} 2>/dev/null); then
+        # possibly due to DNS errors or connnection refused
+        return 1
+    fi
+
+    # an empty response doesn't include a status code, so abort
+    [ -z "$response" ] && return 1
+
     # extract the HTTP status code from first line of response
     # RFC2616 defines first line header as Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
     status=$(printf "%s" "$response" | head -1 | cut -d ' ' -f 2)
@@ -163,23 +170,22 @@ done
 
 ### Get the CA certificate for use with subsequent requests
 ### Fail-fast if openssl errors connecting or the CA certificate can't be parsed
-httpsreq_insecure "$(get "${CA}/certificate/ca")" > "${CACERTFILE}"
-if [ $? -ne 0 ]; then
+if ! httpsreq_insecure "$(get "${CA}/certificate/ca")" > "${CACERTFILE}"; then
     error "cannot reach CA host '${PUPPETSERVER_HOSTNAME}'"
 elif ! openssl x509 -subject -issuer -noout -in "${CACERTFILE}"; then
     error "invalid CA certificate"
 fi
 
 ### Get the CRL from the CA for use with client-side validation
-httpsreq "$(get "${CA}/certificate_revocation_list/ca")" > "${CRLFILE}"
-if ! openssl crl -text -noout -in "${CRLFILE}" > /dev/null; then
+if ! httpsreq "$(get "${CA}/certificate_revocation_list/ca")" > "${CRLFILE}"; then
+    error "cannot reach CRL host '${PUPPETSERVER_HOSTNAME}'"
+elif ! openssl crl -text -noout -in "${CRLFILE}" > /dev/null; then
     error "invalid CRL"
 fi
 
 ### Check the CA does not already have a signed certificate for this host
 CERTREQ=$(get "${CA}/certificate/${CERTNAME}")
-httpsreq "$CERTREQ" >/dev/null
-if [ $? -eq 0 ]; then
+if httpsreq "$CERTREQ" >/dev/null; then
     error "CA already has signed certificate for '${CERTNAME}'"
 fi
 
@@ -203,8 +209,7 @@ $(cat "${CSRFILE}")
 EOF
 )
 
-output=$(httpsreq "$CSRREQ")
-if [ $? -ne 0 ]; then
+if ! output=$(httpsreq "$CSRREQ"); then
     cert_already_exists="${CERTNAME} already has a requested certificate; ignoring certificate request"
     altnames_disallowed="CSR '${CERTNAME}' contains subject alternative names*which are disallowed*"
     # shellcheck disable=SC2254 # string contains * used for globbing
@@ -218,14 +223,12 @@ fi
 ### Retrieve signed certificate; wait and try again with a timeout
 sleeptime=10
 timewaited=0
-cert=$(httpsreq "$CERTREQ")
-while [ $? -ne 0 ]; do
+while ! cert=$(httpsreq "$CERTREQ"); do
     [ ${timewaited} -ge $((WAITFORCERT)) ] && \
         error "timed-out waiting for certificate to be signed"
     msg "Waiting for certificate to be signed..."
     sleep ${sleeptime}
     timewaited=$((timewaited+sleeptime))
-    cert=$(httpsreq "$CERTREQ")
 done
 printf "%s\n" "${cert}" > "${CERTFILE}"
 
