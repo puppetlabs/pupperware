@@ -12,9 +12,7 @@
 # that the puppet agent would put them, which is /etc/puppetlabs/puppet/ssl,
 # unless the SSLDIR environment variable is specified.
 #
-# The certname can be provided as the first argument to this script, or
-# as the CERTNAME environment variable. If both are found, the argument
-# takes precedence over the environment variable. If neither are found,
+# The certname is provided as the CERTNAME environment variable. If not found,
 # the HOSTNAME will be used.
 #
 # Supports DNS alt names via the DNS_ALT_NAMES environment variable, which
@@ -22,12 +20,8 @@
 # to allow subject alt names, by default it will reject certificate requests
 # with them.
 #
-# Arguments:
-#   $1  (Optional) Certname to use. Overrides the CERTNAME environment variable.
-#                  If neither are set, the $HOSTNAME will be used.
-#
 # Optional environment variables:
-#   CERTNAME               Certname to use, unless an argument is passed in
+#   CERTNAME               Certname to use
 #   WAITFORCERT            Number of seconds to wait for certificate to be
 #                          signed, defaults to 120
 #   PUPPETSERVER_HOSTNAME  Hostname of Puppet Server CA, defaults to "puppet"
@@ -103,7 +97,7 @@ master_running() {
 
 ### Verify options are valid
 # shellcheck disable=SC2039 # Docker injects $HOSTNAME
-CERTNAME="${1:-${CERTNAME:-${HOSTNAME}}}"
+CERTNAME="${CERTNAME:-${HOSTNAME}}"
 [ -z "${CERTNAME}" ] && error "certificate name must be non-empty value"
 PUPPETSERVER_HOSTNAME="${PUPPETSERVER_HOSTNAME:-puppet}"
 PUPPETSERVER_PORT="${PUPPETSERVER_PORT:-8140}"
@@ -152,6 +146,9 @@ fi
 
 ### Print configuration for troubleshooting
 msg "Using configuration values:"
+# shellcheck disable=SC2039 # Docker injects $HOSTNAME
+msg "* HOSTNAME: '${HOSTNAME}'"
+msg "* hostname -f: '$(hostname -f)'"
 msg "* CERTNAME: '${CERTNAME}' (${CERTSUBJECT})"
 msg "* DNS_ALT_NAMES: '${DNS_ALT_NAMES}'"
 msg "* CA: '${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}${CA}'"
