@@ -56,6 +56,7 @@ httpsreq() {
 httpsreq_insecure() {
     CLIENTFLAGS="-connect ""${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}"" -ign_eof -quiet $2"
 
+    # shellcheck disable=SC2086 # $CLIENTFLAGS shouldn't be quoted
     response=$(echo "$1" | openssl s_client ${CLIENTFLAGS} 2>/dev/null)
     # extract the HTTP status code from first line of response
     # RFC2616 defines first line header as Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
@@ -83,6 +84,7 @@ master_running() {
 ! command -v openssl > /dev/null && error "openssl not found on PATH"
 
 ### Verify options are valid
+# shellcheck disable=SC2039 # Docker injects $HOSTNAME
 CERTNAME="${1:-${CERTNAME:-${HOSTNAME}}}"
 [ -z "${CERTNAME}" ] && error "certificate name must be non-empty value"
 PUPPETSERVER_HOSTNAME="${PUPPETSERVER_HOSTNAME:-puppet}"
@@ -140,8 +142,6 @@ msg "* CA: '${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}${CA}'"
 msg "* SSLDIR: '${SSLDIR}'"
 msg "* WAITFORCERT: '${WAITFORCERT}' seconds"
 
-# when Postgres first starts and performs init, these certs don't need to exist just yet
-# as long as everything is present after the entrypoint runs and the actual DB starts
 if [ -f "${SSLDIR}/certs/${CERTNAME}.pem" ]; then
     msg "Certificates have already been generated - exiting!"
     exit 0
@@ -153,7 +153,7 @@ while ! master_running; do
 done
 
 ### Get the CA certificate for use with subsequent requests
-### Fail-fast if curl errors or the CA certificate can't be parsed
+### Fail-fast if openssl errors connecting or the CA certificate can't be parsed
 httpsreq_insecure "GET ${CA}/certificate/ca HTTP/1.0\r\n\r\n" > "${CACERTFILE}"
 if [ $? -ne 0 ]; then
     error "cannot reach CA host '${PUPPETSERVER_HOSTNAME}'"
@@ -180,6 +180,7 @@ fi
 [ -s "${CSRFILE}" ] && error "certificate request '${CSRFILE}' already exists"
 openssl genrsa -out "${PRIVKEYFILE}" 4096
 openssl rsa -in "${PRIVKEYFILE}" -pubout -out "${PUBKEYFILE}"
+# shellcheck disable=SC2086 # $CERTEXTENSIONS shouldn't be quoted
 openssl req -new -key "${PRIVKEYFILE}" -out "${CSRFILE}" -subj "${CERTSUBJECT}" ${CERTEXTENSIONS}
 
 ### Submit CSR and fail gracefully on certain error conditions
@@ -196,8 +197,9 @@ output=$(httpsreq "$CSRREQ")
 if [ $? -ne 0 ]; then
     cert_already_exists="${CERTNAME} already has a requested certificate; ignoring certificate request"
     altnames_disallowed="CSR '${CERTNAME}' contains subject alternative names*which are disallowed*"
+    # shellcheck disable=SC2254 # string contains * used for globbing
     case "${output}" in
-        $cert_already_exists) error "unsigned CSR for '${CERTNAME}' already exists on CA" ;;
+        "$cert_already_exists") error "unsigned CSR for '${CERTNAME}' already exists on CA" ;;
         $altnames_disallowed) error "DNS Alt Names not allowed by the CA" ;;
         *) msg "[WARNING] CSR response: ${output}" ;;
     esac
