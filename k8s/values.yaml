@@ -26,14 +26,14 @@ puppetserver:
       enabled: false
       minCompilers: 1
       maxCompilers: 5
-      cpuUtilizationPercentage: 50
-      memoryUtilizationPercentage: 50
+      cpuUtilizationPercentage: 80
+      memoryUtilizationPercentage: 80
   resources: {}
   #  requests:
-  #    memory: 512Mi
+  #    memory: 768Mi
   #    cpu: 500m
   #  limits:
-  #    memory: 768Mi
+  #    memory: 1Gi
   #    cpu: 750m
   ## Additional puppetserver container environment variables
   extraEnv: {}
