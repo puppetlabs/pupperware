@@ -5,6 +5,15 @@ numbering uses [semantic versioning](http://semver.org).
 
 NOTE: The change log until version `v0.2.4` is auto-generated.
 
+## [v1.8.3](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.8.3) (2020-04-08)
+
+- Improved documentation.
+- Log msg fixes.
+- Bump versions of Puppet Server (to v6.9.2) and PuppetDB (to v6.9.1).
+- Other small fixes.
+
+[Full Changelog](https://github.com/Xtigyro/puppetserver-helm-chart/compare/v1.8.2...v1.8.3)
+
 ## [v1.8.2](https://github.com/Xtigyro/puppetserver-helm-chart/tree/v1.8.2) (2020-03-22)
 
 - Better default auto-scaling and resource limits values for Puppetserver.

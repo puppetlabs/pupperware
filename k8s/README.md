@@ -13,11 +13,13 @@
 Depending on your deployment scenario a certain `StorageClass` object might be required.
 In a big K8s megacluster running in the cloud multiple labeled (and/or tainted) nodes in each Availability Zone (AZ) might be present. In such scenario Puppet Server components that use common storage (`puppetserver` and `r10k`) require their volumes to be created in the same AZ. That can be achieved through a custom `StorageClass`.
 
-Exemplary definition:
+#### Exemplary definitions
+
+* for Amazon Web Services:
 
 ```yaml
-kind: StorageClass
 apiVersion: storage.k8s.io/v1
+kind: StorageClass
 metadata:
   name: puppetserver-sc
 provisioner: kubernetes.io/aws-ebs
@@ -28,8 +30,30 @@ allowedTopologies:
 - matchLabelExpressions:
   - key: failure-domain.beta.kubernetes.io/zone
     values:
-    - us-east-1d
+    - eu-central-1
 ```
+
+* for Google Cloud Platform:
+
+```yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: puppetserver-sc
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-standard
+volumeBindingMode: WaitForFirstConsumer
+allowedTopologies:
+- matchLabelExpressions:
+  - key: failure-domain.beta.kubernetes.io/zone
+    values:
+    - europe-west3
+```
+
+### Common Storage Required for r10k and Puppet Server
+
+Right now we use K8s Cron job to sync the Puppet and Hiera code. We have plans to switch to a sidecar container when we release support for running multiple Puppet compile masters on different K8s nodes. Until then please take advantage of the examples for pod affinity constraint for r10k or the common storage node selector in [values.yaml](values.yaml).
 
 ### Load-Balancing Puppet Server
 
@@ -121,37 +145,43 @@ helm install --namespace puppetserver --name puppetserver ./ --set puppetserver.
 You can use `kubectl get` to view all of the installed components.
 
 ```console
-$ kubectl get --namespace puppetserver all -l app=puppetserver
-NAME                                                 READY   STATUS      RESTARTS   AGE
-pod/puppetserver-postgres-bf55d954b-qxw5h            1/1     Running     0          24m
-pod/puppetserver-puppetdb-6f949987f5-59qpj           1/1     Running     0          24m
-pod/puppetserver-puppetserver-57687cd786-jcm6v       1/1     Running     0          24m
-pod/puppetserver-r10k-code-deploy-1575237000-lqfkb   0/1     Completed   0          16m
-pod/puppetserver-r10k-code-deploy-1575237600-tnj9m   0/1     Completed   0          10m
-pod/puppetserver-r10k-code-deploy-1575238200-9rklj   0/1     Completed   0          39s
+$ kubectl get --namespace puppetserver all -l release=puppetserver
+NAME                                                                  READY   STATUS      RESTARTS   AGE
+pod/puppetserver-puppetserver-helm-cha-postgres-5479895bb9-pblfd      1/1     Running     0          10m
+pod/puppetserver-puppetserver-helm-cha-puppetdb-8698789c7f-glzdf      1/1     Running     0          10m
+pod/puppetserver-puppetserver-helm-cha-puppetserver-d99c99896-99z4h   1/1     Running     0          10m
+pod/puppetserver-puppetserver-helm-cha-puppetserver-d99c99896-fhpk4   1/1     Running     0          8m18s
+pod/puppetserver-puppetserver-helm-cha-r10k-code-deploy-158610249kr   0/1     Completed   0          6m3s
+pod/puppetserver-puppetserver-helm-cha-r10k-code-deploy-1586109f2t2   0/1     Completed   0          4m3s
+pod/puppetserver-puppetserver-helm-cha-r10k-code-deploy-158610s2568   0/1     Completed   0          3s
+pod/puppetserver-puppetserver-helm-cha-r10k-code-deploy-158610zfdrp   0/1     Completed   0          2m3s
 
-NAME               TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)             AGE
-service/postgres   ClusterIP   10.0.198.132   <none>        5432/TCP            24m
-service/puppet     ClusterIP   10.0.68.216    <none>        8140/TCP            24m
-service/puppetdb   ClusterIP   10.0.164.209   <none>        8080/TCP,8081/TCP   24m
+NAME               TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)             AGE
+service/postgres   ClusterIP   10.96.197.10    <none>        5432/TCP            10m
+service/puppet     ClusterIP   10.96.128.168   <none>        8140/TCP            10m
+service/puppetdb   ClusterIP   10.96.114.113   <none>        8080/TCP,8081/TCP   10m
 
-NAME                                        READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/puppetserver-postgres       1/1     1            1           24m
-deployment.apps/puppetserver-puppetdb       1/1     1            1           24m
-deployment.apps/puppetserver-puppetserver   1/1     1            1           24m
+NAME                                                              READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/puppetserver-puppetserver-helm-cha-postgres       1/1     1            1           10m
+deployment.apps/puppetserver-puppetserver-helm-cha-puppetdb       1/1     1            1           10m
+deployment.apps/puppetserver-puppetserver-helm-cha-puppetserver   2/2     2            2           10m
 
-NAME                                                   DESIRED   CURRENT   READY   AGE
-replicaset.apps/puppetserver-postgres-bf55d954b        1         1         1       24m
-replicaset.apps/puppetserver-puppetdb-6f949987f5       1         1         1       24m
-replicaset.apps/puppetserver-puppetserver-57687cd786   1         1         1       24m
+NAME                                                                        DESIRED   CURRENT   READY   AGE
+replicaset.apps/puppetserver-puppetserver-helm-cha-postgres-5479895bb9      1         1         1       10m
+replicaset.apps/puppetserver-puppetserver-helm-cha-puppetdb-8698789c7f      1         1         1       10m
+replicaset.apps/puppetserver-puppetserver-helm-cha-puppetserver-d99c99896   2         2         2       10m
 
-NAME                                                 COMPLETIONS   DURATION   AGE
-job.batch/puppetserver-r10k-code-deploy-1575237000   1/1           15s        16m
-job.batch/puppetserver-r10k-code-deploy-1575237600   1/1           2s         10m
-job.batch/puppetserver-r10k-code-deploy-1575238200   1/1           2s         39s
+NAME                                                                                REFERENCE                                                    TARGETS           MINPODS   MAXPODS   REPLICAS   AGE
+horizontalpodautoscaler.autoscaling/puppetserver-puppetserver-helm-cha-autoscaler   Deployment/puppetserver-puppetserver-helm-cha-puppetserver   65%/80%, 0%/80%   1         5         2          10m
 
-NAME                                          SCHEDULE       SUSPEND   ACTIVE   LAST SCHEDULE   AGE
-cronjob.batch/puppetserver-r10k-code-deploy   */15 * * * *   False     0        42s             24m
+NAME                                                                       COMPLETIONS   DURATION   AGE
+job.batch/puppetserver-puppetserver-helm-cha-r10k-code-deploy-1586100120   1/1           1s         6m3s
+job.batch/puppetserver-puppetserver-helm-cha-r10k-code-deploy-1586100240   1/1           2s         4m3s
+job.batch/puppetserver-puppetserver-helm-cha-r10k-code-deploy-1586100360   1/1           2s         2m3s
+job.batch/puppetserver-puppetserver-helm-cha-r10k-code-deploy-1586100480   1/1           2s         3s
+
+NAME                                                                SCHEDULE      SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+cronjob.batch/puppetserver-puppetserver-helm-cha-r10k-code-deploy   */2 * * * *   False     1        3s              10m
 ```
 
 ## Configuration
@@ -162,7 +192,7 @@ Parameter | Description | Default
 --------- | ----------- | -------
 `puppetserver.name` | puppetserver component label | `puppetserver`
 `puppetserver.image` | puppetserver image | `puppet/puppetserver`
-`puppetserver.tag` | puppetserver img tag | `6.8.0`
+`puppetserver.tag` | puppetserver img tag | `6.9.2`
 `puppetserver.resources` | puppetserver resource limits | ``
 `puppetserver.extraEnv` | puppetserver additional container env vars |``
 `puppetserver.preGeneratedCertsJob.enabled` | puppetserver pre-generated certs |`false`
@@ -222,7 +252,7 @@ Parameter | Description | Default
 `postgres.extraEnv` | postgres additional container env vars |``
 `puppetdb.name` | puppetdb component label | `puppetdb`
 `puppetdb.image` | puppetdb img | `puppet/puppetdb`
-`puppetdb.tag` | puppetdb img tag | `6.8.1`
+`puppetdb.tag` | puppetdb img tag | `6.9.1`
 `puppetdb.pullPolicy` | puppetdb img pull policy | `IfNotPresent`
 `puppetdb.resources` | puppetdb resource limits |``
 `puppetdb.extraEnv` | puppetdb additional container env vars |``
@@ -264,6 +294,36 @@ helm install --namespace puppetserver --name puppetserver ./ -f values.yaml
 ```
 
 > **Tip**: You can use the default [values.yaml](values.yaml)
+
+## Testing the Deployed Chart Resources
+
+```bash
+kubectl port-forward -n puppetserver svc/puppet 8140:8140 &
+
+echo '127.0.0.1 puppet' > ~/.tmp_puppet_hosts
+export HOSTALIASES=~/.tmp_puppet_hosts
+
+docker run -dit --network host --name goofy_xtigyro --entrypoint /bin/bash puppet/puppet-agent
+docker exec -it goofy_xtigyro bash
+puppet agent -t --certname ubuntu-goofy_xtigyro
+exit
+docker rm -f goofy_xtigyro
+
+docker run -dit --network host --name buggy_xtigyro --entrypoint /bin/bash puppet/puppet-agent
+docker exec -it buggy_xtigyro bash
+puppet agent -t --certname ubuntu-buggy_xtigyro
+exit
+docker rm -f buggy_xtigyro
+
+rm ~/.tmp_puppet_hosts
+unset HOSTALIASES
+
+jobs | grep 'port-forward' | grep 'puppetserver'
+# [1]+  Running                 kubectl port-forward -n puppetserver svc/puppet 8140:8140 &
+kill %[job_number_above]
+# or execute ¯¯¯\/
+## kill %$(jobs | grep 'port-forward' | grep 'puppetserver' | cut -d'+' -f1 | tr -d '[' | tr -d ']')
+```
 
 ## Chart's Dev Team
 
