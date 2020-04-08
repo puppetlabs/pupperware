@@ -145,9 +145,11 @@ spec:
         - name: puppet-serverdata-storage
           persistentVolumeClaim:
             claimName: puppet-serverdata-claim
+      {{- if .Values.puppetserver.multiCompilers.enabled }}
         - name: init-compilers-volume
           configMap:
             name: init-compilers-config
+      {{- end }}
       {{- if .Values.hiera.config }}
         - name: hiera-volume
           configMap:

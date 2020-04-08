@@ -6,9 +6,6 @@ metadata:
   labels:
     {{- include "puppetserver.r10k.labels" . | nindent 4 }}
 spec:
-  selector:
-    matchLabels:
-      {{- include "puppetserver.r10k.matchLabels" . | nindent 6 }}
 {{- with .Values.r10k.hiera.cronJob }}
   schedule: "{{.schedule}}"
 {{- if .concurrencyPolicy }}
@@ -63,6 +60,7 @@ spec:
                   mountPath: /etc/puppetlabs/code/
           securityContext:
             runAsUser: 999   # "puppet" UID
+            runAsGroup: 999 # "puppet" GID
             fsGroup: 999   # "puppet" GID
         {{- with .Values.r10k.hiera.cronJob }}
         {{- if .restartPolicy }}
@@ -84,7 +82,6 @@ spec:
               secret:
                 secretName: {{ template "r10k.hiera.secret" . }}
                 defaultMode: 288 # = mode 0440
-                fsGroup: 999   # "puppet" GID
           {{- end }}
         {{- if (or (.Values.nodeSelector.allPods) (.Values.nodeSelector.commonStoragePods)) }}
           nodeSelector:
