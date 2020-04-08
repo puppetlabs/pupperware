@@ -7,7 +7,7 @@
 puppetserver:
   name: puppetserver
   image: puppet/puppetserver
-  tag: 6.9.0
+  tag: 6.9.2
   pullPolicy: IfNotPresent
   ## Horizontal Scaling
   ## Optional deployment of multiple Puppet Server Compilers
@@ -219,7 +219,7 @@ postgres:
 puppetdb:
   name: puppetdb
   image: puppet/puppetdb
-  tag: 6.9.0
+  tag: 6.9.1
   pullPolicy: IfNotPresent
   resources: {}
   #  requests:
