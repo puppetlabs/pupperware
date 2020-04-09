@@ -2,7 +2,7 @@ require 'rspec'
 require 'pupperware/spec_helper'
 include Pupperware::SpecHelpers
 
-CLIENT_TOOLS_IMAGE = 'artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:kearney-latest'
+CLIENT_TOOLS_IMAGE = 'artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:latest'
 
 RSpec.configure do |c|
   c.before(:suite) do
