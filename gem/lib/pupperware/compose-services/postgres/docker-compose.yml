@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   puppet:
-    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-puppetserver:kearney-latest
+    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-puppetserver:latest
     hostname: puppet.test
     environment:
       - CERTNAME=puppet.test
@@ -34,7 +34,7 @@ services:
         aliases:
          - puppet.test
   pe-orchestration-services:
-    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-orchestration-services:kearney-latest
+    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-orchestration-services:latest
     hostname: pe-orchestration-services.test
     environment:
       - CERTNAME=pe-orchestration-services.test
@@ -63,7 +63,7 @@ services:
         aliases:
          - pe-orchestration-services.test
   pe-console-services:
-    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-console-services:kearney-latest
+    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-console-services:latest
     hostname: pe-console-services.test
     environment:
       - CERTNAME=pe-console-services.test
@@ -97,7 +97,7 @@ services:
         aliases:
           - pe-console-services.test
   pe-bolt-server:
-    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-bolt-server:kearney-latest
+    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-bolt-server:latest
     hostname: pe-bolt-server.test
     restart: always
     expose:
@@ -116,7 +116,7 @@ services:
         aliases:
           - pe-bolt-server.test
   puppetdb:
-    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-puppetdb:kearney-latest
+    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-puppetdb:latest
     hostname: puppetdb.test
     environment:
       - CERTNAME=puppetdb.test
