@@ -1,4 +1,4 @@
-CLIENT_TOOLS_IMAGE := artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:kearney-latest
+CLIENT_TOOLS_IMAGE := artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:latest
 
 pull:
 	docker-compose pull --ignore-pull-failures
