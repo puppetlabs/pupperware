@@ -40,6 +40,11 @@ error() {
     exit 1
 }
 
+# builds the GET http request given a URI
+get() {
+    printf "GET %s HTTP/1.0\n%s" "$1" "$HOSTHEADER"
+}
+
 # use openssl s_client to create HTTP requests and parse the response
 # a 200 OK will set a 0 return value, all other responses are non-zero
 # the HTTP response body is returned over stdout
@@ -77,7 +82,7 @@ httpsreq_insecure() {
 }
 
 master_running() {
-    test "$(httpsreq_insecure "GET /status/v1/simple HTTP/1.0")" = "running"
+    test "$(httpsreq_insecure "$(get '/status/v1/simple')")" = "running"
 }
 
 ### Verify dependencies available
@@ -112,6 +117,7 @@ CRLFILE="${SSLDIR}/crl.pem"
 CA="/puppet-ca/v1"
 CERTSUBJECT="/CN=${CERTNAME}"
 CERTHEADER="-----BEGIN CERTIFICATE-----"
+HOSTHEADER="Host: ${PUPPETSERVER_HOSTNAME}"
 
 ### Handle certificate extensions
 # NOTE If we want to expand support for more extensions, it would be better
@@ -154,7 +160,7 @@ done
 
 ### Get the CA certificate for use with subsequent requests
 ### Fail-fast if openssl errors connecting or the CA certificate can't be parsed
-httpsreq_insecure "GET ${CA}/certificate/ca HTTP/1.0" > "${CACERTFILE}"
+httpsreq_insecure "$(get "${CA}/certificate/ca")" > "${CACERTFILE}"
 if [ $? -ne 0 ]; then
     error "cannot reach CA host '${PUPPETSERVER_HOSTNAME}'"
 elif ! openssl x509 -subject -issuer -noout -in "${CACERTFILE}"; then
@@ -162,13 +168,13 @@ elif ! openssl x509 -subject -issuer -noout -in "${CACERTFILE}"; then
 fi
 
 ### Get the CRL from the CA for use with client-side validation
-httpsreq "GET ${CA}/certificate_revocation_list/ca HTTP/1.0" > "${CRLFILE}"
+httpsreq "$(get "${CA}/certificate_revocation_list/ca")" > "${CRLFILE}"
 if ! openssl crl -text -noout -in "${CRLFILE}" > /dev/null; then
     error "invalid CRL"
 fi
 
 ### Check the CA does not already have a signed certificate for this host
-CERTREQ="GET ${CA}/certificate/${CERTNAME} HTTP/1.0"
+CERTREQ=$(get "${CA}/certificate/${CERTNAME}")
 httpsreq "$CERTREQ" >/dev/null
 if [ $? -eq 0 ]; then
     error "CA already has signed certificate for '${CERTNAME}'"
@@ -186,6 +192,7 @@ openssl req -new -key "${PRIVKEYFILE}" -out "${CSRFILE}" -subj "${CERTSUBJECT}" 
 ### Submit CSR and fail gracefully on certain error conditions
 CSRREQ=$(cat <<EOF
 PUT ${CA}/certificate_request/${CERTNAME} HTTP/1.0
+${HOSTHEADER}
 Content-Length: $(wc -c < "${CSRFILE}")
 Content-Type: text/plain
 
