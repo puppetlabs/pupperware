@@ -8,7 +8,7 @@ services:
       # Testing specific variable needed to bootstrap cert preloading
       - CERT_VOLUME=puppetdb-postgres
   puppet-agent:
-    image: puppet/puppet-agent-ubuntu:6.4
+    image: puppet/puppet-agent-ubuntu:latest
     hostname: puppet-agent.test
     networks:
       test:
@@ -24,6 +24,7 @@ services:
                            --ssl-ca-cert /etc/puppetlabs/puppet/ssl/certs/ca.pem
                            --ssl-cert /etc/puppetlabs/puppet/ssl/certs/puppet-agent.test.pem
                            --ssl-key /etc/puppetlabs/puppet/ssl/private_keys/puppet-agent.test.pem
+                           --foreground
                            --pcp-version 2"
   test-sshd:
     image: rastasheep/ubuntu-sshd:18.04
