@@ -187,7 +187,7 @@ module SpecHelpers
 
   # takes a given src_path, and copies files to the dest_dir of dest_volume
   # uses a transient Alpine container to copy with instead of `docker cp`
-  # to support both Linux and LCOW
+  # initially built to support both Linux and LCOW, even though LCOW no longer in use
   def docker_volume_cp(src_path:, dest_volume:, dest_dir:, is_compose: true, uid:, gid:)
     uid ||= 'root'
     gid ||= 'root'
@@ -737,14 +737,6 @@ LOG
   # Puppet Agent Helpers
   ######################################################################
 
-  # When testing with the `puppet/puppet-agent-alpine` image on windows
-  # systems with LCOW we had intermittent failures in DNS resolution that
-  # occurred fairly regularly. It seems to be specifically interaction
-  # between the base alpine (3.8 and 3.9) images with windows/LCOW.
-  #
-  # Two issues related to this issue are
-  # https://github.com/docker/libnetwork/issues/2371 and
-  # https://github.com/Microsoft/opengcs/issues/303
   def run_agent(agent_name, network, server: get_container_hostname(get_service_container('puppet')), ca: get_container_hostname(get_service_container('puppet')), masterport: 8140, ca_port: nil)
     # default ca_port to masterport if unset
     ca_port = masterport if ca_port.nil?
