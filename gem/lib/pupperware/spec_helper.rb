@@ -744,7 +744,12 @@ LOG
     # setting up a Windows TTY is difficult, so we don't
     # allocating a TTY will show container pull output on Linux, but that's not good for tests
     STDOUT.puts("running agent #{agent_name} in network #{network} against #{server} / ca #{ca}")
-    result = run_command("docker run --rm --network #{network} --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-ubuntu agent --verbose --onetime --no-daemonize --summarize --server #{server} --masterport #{masterport} --ca_server #{ca} --ca_port #{ca_port}")
+    # In certain environments (like Travis), the hosts dns suffix may be appended
+    # to the agents name, making an agent name become foo.travis.internal rather
+    # than simply foo, which makes identifying that agent in reports difficult later
+    # Docker flags --domainname --dns-opt --network-alias and --dns-search do not
+    # seem to influence this behavior, but the agents certname can be set!
+    result = run_command("docker run --rm --network #{network} --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-ubuntu agent --verbose --onetime --no-daemonize --summarize --server #{server} --certname #{agent_name} --masterport #{masterport} --ca_server #{ca} --ca_port #{ca_port}")
     return result[:status].exitstatus
   end
 

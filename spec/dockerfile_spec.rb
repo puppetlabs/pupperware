@@ -19,7 +19,7 @@ end
 describe 'The docker-compose file works' do
   before(:all) do
     @timestamps = []
-    @test_agent ||= "puppet_test#{Random.rand(1000)}.test"
+    @test_agent ||= "puppet_test#{Random.rand(1000)}"
   end
 
   describe 'when starting' do
