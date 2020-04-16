@@ -187,7 +187,7 @@ module SpecHelpers
 
   # takes a given src_path, and copies files to the dest_dir of dest_volume
   # uses a transient Alpine container to copy with instead of `docker cp`
-  # to support both Linux and LCOW
+  # initially built to support both Linux and LCOW, even though LCOW no longer in use
   def docker_volume_cp(src_path:, dest_volume:, dest_dir:, is_compose: true, uid:, gid:)
     uid ||= 'root'
     gid ||= 'root'
@@ -737,14 +737,6 @@ LOG
   # Puppet Agent Helpers
   ######################################################################
 
-  # When testing with the `puppet/puppet-agent-alpine` image on windows
-  # systems with LCOW we had intermittent failures in DNS resolution that
-  # occurred fairly regularly. It seems to be specifically interaction
-  # between the base alpine (3.8 and 3.9) images with windows/LCOW.
-  #
-  # Two issues related to this issue are
-  # https://github.com/docker/libnetwork/issues/2371 and
-  # https://github.com/Microsoft/opengcs/issues/303
   def run_agent(agent_name, network, server: get_container_hostname(get_service_container('puppet')), ca: get_container_hostname(get_service_container('puppet')), masterport: 8140, ca_port: nil)
     # default ca_port to masterport if unset
     ca_port = masterport if ca_port.nil?
@@ -752,7 +744,12 @@ LOG
     # setting up a Windows TTY is difficult, so we don't
     # allocating a TTY will show container pull output on Linux, but that's not good for tests
     STDOUT.puts("running agent #{agent_name} in network #{network} against #{server} / ca #{ca}")
-    result = run_command("docker run --rm --network #{network} --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-ubuntu agent --verbose --onetime --no-daemonize --summarize --server #{server} --masterport #{masterport} --ca_server #{ca} --ca_port #{ca_port}")
+    # In certain environments (like Travis), the hosts dns suffix may be appended
+    # to the agents name, making an agent name become foo.travis.internal rather
+    # than simply foo, which makes identifying that agent in reports difficult later
+    # Docker flags --domainname --dns-opt --network-alias and --dns-search do not
+    # seem to influence this behavior, but the agents certname can be set!
+    result = run_command("docker run --rm --network #{network} --name #{agent_name} --hostname #{agent_name} puppet/puppet-agent-ubuntu agent --verbose --onetime --no-daemonize --summarize --server #{server} --certname #{agent_name} --masterport #{masterport} --ca_server #{ca} --ca_port #{ca_port}")
     return result[:status].exitstatus
   end
 

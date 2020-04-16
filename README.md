@@ -15,13 +15,13 @@ We've been developing our own Helm chart which can get you up & running fast. Yo
 
 * Docker Compose - must support `version: '3'` of the compose file format, which requires Docker Engine `1.13.0+`. [Full compatibility matrix](https://docs.docker.com/compose/compose-file/compose-versioning/)
   * Linux is tested with docker-compose `1.22`
-  * Windows is tested with `docker-compose version 1.24.0-rc1, build 0f3d4dda`
+  * Windows is tested with `docker-compose version 1.26.0-rc3, build 46118bc5`
   * OSX is tested with `docker-compose version 1.23.2, build 1110ad01`
 * Docker Engine support is only tested on versions newer than `17.09.0-ce`
   * Linux is tested with (client and server) `17.09.0-ce` using API version `1.32` (`Git commit:   afdb6d4`)
-  * Windows is tested with newer nightly versions that enable LCOW support / fix bugs in the Docker runtime (minimum required is edge release `18.02`, but latest highly recommended)
-      - Client `master-dockerproject-2019-01-08` using API version `1.40` (`Git commit:        d04b6165`)
-      - Server `master-dockerproject-2019-01-08` using API version `1.40 (minimum version 1.24)` (`Git commit:        77df18c`) with `Experimental: true`
+  * Windows is tested with Docker Desktop Edge 2.2.3.0 on Windows 10 2004 with WSL2 and Ubuntu 18.04
+      - Client `19.03.8` using API version `1.40` (`Git commit:        afacb8b`)
+      - Server `19.03.8` using API version `1.40 (minimum version 1.12)` (`Git commit:        afacb8b`) with `Experimental: true`
   * OSX is tested during development with `Docker Engine - Community` edition
       - Client `18.09.1` using API version `1.39` (`Git commit:        4c52b90`)
       - Server `18.09.1` using API version `1.39 (minimum version 1.12)` (`Git commit:       4c52b90`)
@@ -35,21 +35,12 @@ Once you have Docker Compose installed, you can start the stack on Linux or OSX 
 
 The value of `DNS_ALT_NAMES` must list all the names, as a comma-separated
 list, under which the Puppet server in the stack can be reached from
-agents. It will have `puppet` and `puppet.test` prepended to it as that
+agents. It will have `puppet` prepended to it as that
 name is used by PuppetDB to communicate with the Puppet server. The value of
 `DNS_ALT_NAMES` only has an effect the first time you start the stack, as it
 is placed into the server's SSL certificate. If you need to change it after
 that, you will need to properly revoke the server's certificate and restart
 the stack with the changed `DNS_ALT_NAMES` value.
-
-Optionally, you may also provide a desired `DOMAIN` value, other than default
-value of `test` to further define how the service hosts are named. It is
-not necessary to change `DNS_ALT_NAMES` as the default value already takes into
-account any custom domain.
-
-```
-    DOMAIN=foo docker-compose up -d
-```
 
 When you first start the Puppet Infrastructure, the stack will create a number of Docker volumes to store the persistent data that should survive the restart of your infrastructure. The actual location on disk of these volumes may be examined with the `docker inspect` command. The following volumes include:
 
@@ -69,9 +60,9 @@ By default, the puppetserver and puppetdb containers will use the `latest` tag.
 added to the compose file so you can pin versions if you need to by setting those
 on the command line, or in a `.env` file.
 
-## Pupperware on Windows (using LCOW)
+## Pupperware on Windows (using WSL2)
 
-Complete instructions for provisiong a server with LCOW support are in [README-windows.md](./README-windows.md)
+Complete instructions for provisiong a server with WSL2 support are in [README-windows.md](./README-windows.md)
 
 Creating the stack from PowerShell is nearly identical to other platforms, aside from how environment variables are declared:
 
@@ -107,8 +98,6 @@ PS> docker-compose down
 Removing network pupperware_default
 ...
 ```
-
-Note that `docker-compose down` may perform slowly on Windows - see [docker/for-win 629](https://github.com/docker/for-win/issues/629) and [docker/compose](https://github.com/docker/compose/issues/3419) for further information.
 
 ## Managing the stack
 
