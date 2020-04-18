@@ -39,10 +39,10 @@ To see things working, try doing a puppet-code deploy:
 ```shell
 docker run --rm --network pupperware-commercial \
   -e RBAC_USERNAME=admin -e RBAC_PASSWORD=pupperware \
-  -e PUPPETSERVER_HOSTNAME=puppet.test \
-  -e PUPPETDB_HOSTNAME=puppetdb.test \
-  -e PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test \
-  -e PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services.test \
+  -e PUPPETSERVER_HOSTNAME=puppet \
+  -e PUPPETDB_HOSTNAME=puppetdb \
+  -e PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services \
+  -e PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services \
   artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:kearney-latest \
   puppet-code deploy --dry-run
 ```
@@ -59,7 +59,7 @@ Make sure the stack isn't already running, then: `make test`
 
 ## Default Stack Configuration
 
-The `docker-compose.yml` contains a nominally configured Puppet Enterprise stack that uses the `.test` DNS TLD (top-level domain) inside the Docker container network and overrides many of the default environment variables for containers. It also provisions a customized version of Postgres inside of a container, rather than using an external Postgres instance.
+The `docker-compose.yml` contains a nominally configured Puppet Enterprise stack that overrides many of the default environment variables for containers. It also provisions a customized version of Postgres inside of a container, rather than using an external Postgres instance.
 
 ## Local Configuration
 
@@ -289,9 +289,9 @@ The `$PGDATA/pg_ident.conf` must map certificate names for `pe-console-services`
 
 ```
 # MAPNAME  SYSTEM-USERNAME                  PG-USERNAME
-usermap    pe-console-services.test         puppetdb
-usermap    pe-orchestration-services.test   puppetdb
-usermap    puppetdb.test                    puppetdb
+usermap    pe-console-services              puppetdb
+usermap    pe-orchestration-services        puppetdb
+usermap    puppetdb                         puppetdb
 ```
 
 #### pg_hba.conf
