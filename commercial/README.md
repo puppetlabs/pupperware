@@ -43,7 +43,7 @@ docker run --rm --network pupperware-commercial \
   -e PUPPETDB_HOSTNAME=puppetdb \
   -e PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services \
   -e PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services \
-  artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:kearney-latest \
+  artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:latest \
   puppet-code deploy --dry-run
 ```
 
