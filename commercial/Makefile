@@ -32,10 +32,10 @@ client:
 		--network pupperware-commercial \
 		--env RBAC_USERNAME=admin \
 		--env RBAC_PASSWORD=pupperware \
-		--env PUPPETSERVER_HOSTNAME=puppet.test \
-		--env PUPPETDB_HOSTNAME=puppetdb.test \
-		--env PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test \
-		--env PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services.test \
+		--env PUPPETSERVER_HOSTNAME=puppet \
+		--env PUPPETDB_HOSTNAME=puppetdb \
+		--env PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services \
+		--env PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services \
 		$(CLIENT_TOOLS_IMAGE)
 
 .PHONY: pull test up down start stop logs console client

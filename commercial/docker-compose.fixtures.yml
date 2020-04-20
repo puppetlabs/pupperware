@@ -9,31 +9,24 @@ services:
       - CERT_VOLUME=puppetdb-postgres
   puppet-agent:
     image: puppet/puppet-agent-ubuntu:latest
-    hostname: puppet-agent.test
-    networks:
-      test:
-        aliases:
-          - puppet-agent.test
+    hostname: puppet-agent
     entrypoint: /bin/bash
     command: -c "echo 'waiting for orchestration services to be up' &&
-                 while true; sleep 5; do if curl -k --fail --silent https://pe-orchestration-services.test:8143/status/v1/simple; then break; fi; done &&
-                 puppet config set server puppet.test &&
-                 puppet agent -t &&
+                 while true; sleep 5; do if curl -k --fail --silent https://pe-orchestration-services:8143/status/v1/simple; then break; fi; done &&
+                 puppet config set server puppet &&
+                 puppet agent --certname puppet-agent -t &&
                  echo 'starting pxp services' &&
-                 pxp-agent --broker-ws-uri wss://pe-orchestration-services.test:8142/pcp2/
+                 pxp-agent --broker-ws-uri wss://pe-orchestration-services:8142/pcp2/
                            --ssl-ca-cert /etc/puppetlabs/puppet/ssl/certs/ca.pem
-                           --ssl-cert /etc/puppetlabs/puppet/ssl/certs/puppet-agent.test.pem
-                           --ssl-key /etc/puppetlabs/puppet/ssl/private_keys/puppet-agent.test.pem
+                           --ssl-cert /etc/puppetlabs/puppet/ssl/certs/puppet-agent.pem
+                           --ssl-key /etc/puppetlabs/puppet/ssl/private_keys/puppet-agent.pem
                            --foreground
                            --pcp-version 2"
   test-sshd:
     image: rastasheep/ubuntu-sshd:18.04
     expose:
       - 22
-    networks:
-      test:
-        aliases:
-          - test_sshd.test
+
 volumes:
   puppetdb-postgres:
     labels:

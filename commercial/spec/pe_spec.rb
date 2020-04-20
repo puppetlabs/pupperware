@@ -20,7 +20,7 @@ end
 
 describe 'PE stack' do
   before(:all) do
-    wait_for_pxp_agent_to_connect(agent_name: 'puppet-agent.test')
+    wait_for_pxp_agent_to_connect(agent_name: 'puppet-agent')
   end
 
   it 'can orchestrate a puppet run on an agent via the client tools' do
@@ -29,17 +29,17 @@ describe 'PE stack' do
            --network pupperware-commercial \
            --env RBAC_USERNAME=admin \
            --env RBAC_PASSWORD=pupperware \
-           --env PUPPETSERVER_HOSTNAME=puppet.test \
-           --env PUPPETDB_HOSTNAME=puppetdb.test \
-           --env PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test \
-           --env PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services.test \
+           --env PUPPETSERVER_HOSTNAME=puppet \
+           --env PUPPETDB_HOSTNAME=puppetdb \
+           --env PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services \
+           --env PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services \
            #{CLIENT_TOOLS_IMAGE} \
-           puppet-job run --nodes puppet-agent.test")
+           puppet-job run --nodes puppet-agent")
     expect(output[:stdout]).to include('Success! 1/1 runs succeeded.')
   end
 
   it 'will recieve an API request to run a task over SSH' do
-    result = curl_console_task(target_nodes: 'test_sshd.test')
+    result = curl_console_task(target_nodes: 'test-sshd')
     expect(result).to include('"job":"2"')
   end
 
@@ -53,7 +53,14 @@ describe 'PE stack' do
       kill_service_and_wait_for_return(service: service, process: 'runuser')
       wait_on_stack_healthy()
     end
-    output = orchestrate_puppet_run()
+
+    output = orchestrate_puppet_run(
+        target_agent: 'puppet-agent',
+        puppetserver: 'puppet',
+        pe_console_services: 'pe-console-services',
+        pe_orchestration_services: 'pe-orchestration-services'
+      )
+
     expect(output[:stdout]).to include('Success!')
   end
 

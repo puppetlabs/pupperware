@@ -2,16 +2,16 @@ version: '3.7'
 services:
   puppet:
     image: ${DOCKER_REGISTRY_PATH}pe-puppetserver:pe-2019.1.3
-    hostname: puppet.test
+    hostname: puppet
     environment:
-      - CERTNAME=puppet.test
+      - CERTNAME=puppet
       - PUPPETSERVER_PORT=8140
       - PUPPETSERVER_LOG_LEVEL=info
-      - PUPPETDB_HOSTNAME=puppetdb.test
-      - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
-      - PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services.test
+      - PUPPETDB_HOSTNAME=puppetdb
+      - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services
+      - PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services
       # puppet::enterprise class parameters written to hiera.yaml
-      - POSTGRES_HOSTNAME=postgres.test
+      - POSTGRES_HOSTNAME=postgres
       - PUPPETDB_SSL_PORT=8081
       - PE_ORCHESTRATION_SERVICES_PORT=8143
       # Set the control repo URL like https://github.com/puppetlabs/control-repo.git
@@ -28,26 +28,22 @@ services:
     ports:
       - 8140:8140
       - 8170:8170
-    dns_search: test
-    networks:
-      test:
-        aliases:
-         - puppet.test
+
   pe-orchestration-services:
     image: ${DOCKER_REGISTRY_PATH}pe-orchestration-services:pe-2019.1.3
-    hostname: pe-orchestration-services.test
+    hostname: pe-orchestration-services
     environment:
-      - CERTNAME=pe-orchestration-services.test
+      - CERTNAME=pe-orchestration-services
       - PCP_BROKER_PORT=8142
       - PE_ORCHESTRATION_SERVICES_PORT=8143
-      - PUPPETSERVER_HOSTNAME=puppet.test
+      - PUPPETSERVER_HOSTNAME=puppet
       - PUPPETSERVER_PORT=8140
-      - PUPPETDB_HOSTNAME=puppetdb.test
+      - PUPPETDB_HOSTNAME=puppetdb
       - PUPPETDB_SSL_PORT=8081
-      - POSTGRES_HOSTNAME=postgres.test
+      - POSTGRES_HOSTNAME=postgres
       - POSTGRES_PORT=5432
-      - PE_BOLT_SERVER_HOSTNAME=pe-bolt-server.test
-      - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
+      - PE_BOLT_SERVER_HOSTNAME=pe-bolt-server
+      - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services
       - PUPPERWARE_ADMIN_PASSWORD=pupperware
     volumes:
       - orchestration-services:/opt/puppetlabs/server/data/orchestration-services
@@ -57,27 +53,23 @@ services:
       - 8143:8143
     depends_on:
       - puppet
-    dns_search: test
-    networks:
-      test:
-        aliases:
-         - pe-orchestration-services.test
+
   pe-console-services:
     image: ${DOCKER_REGISTRY_PATH}pe-console-services:pe-2019.1.3
-    hostname: pe-console-services.test
+    hostname: pe-console-services
     environment:
-      - CERTNAME=pe-console-services.test
+      - CERTNAME=pe-console-services
       - PE_CONSOLE_SERVICES_LOG_LEVEL=info
-      - PUPPETSERVER_HOSTNAME=puppet.test
-      - PUPPETSERVER_CERTNAME=puppet.test
+      - PUPPETSERVER_HOSTNAME=puppet
+      - PUPPETSERVER_CERTNAME=puppet
       - PUPPETSERVER_PORT=8140
-      - PUPPETDB_HOSTNAME=puppetdb.test
-      - PUPPETDB_CERTNAME=puppetdb.test
+      - PUPPETDB_HOSTNAME=puppetdb
+      - PUPPETDB_CERTNAME=puppetdb
       - PUPPETDB_SSL_PORT=8081
-      - POSTGRES_HOSTNAME=postgres.test
+      - POSTGRES_HOSTNAME=postgres
       - POSTGRES_PORT=5432
-      - PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services.test
-      - PE_ORCHESTRATION_SERVICES_CERTNAME=pe-orchestration-services.test
+      - PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services
+      - PE_ORCHESTRATION_SERVICES_CERTNAME=pe-orchestration-services
       - PE_ORCHESTRATION_SERVICES_PORT=8143
     volumes:
       - console-services:/opt/puppetlabs/server/data/console-services
@@ -91,45 +83,38 @@ services:
     depends_on:
       - postgres
       - puppet
-    dns_search: test
-    networks:
-      test:
-        aliases:
-          - pe-console-services.test
+
   pe-bolt-server:
     image: ${DOCKER_REGISTRY_PATH}pe-bolt-server:pe-2019.1.3
-    hostname: pe-bolt-server.test
+    hostname: pe-bolt-server
     restart: always
     expose:
       - 62658
     environment:
-      - CERTNAME=pe-bolt-server.test
-      - PUPPETSERVER_HOSTNAME=puppet.test
+      - CERTNAME=pe-bolt-server
+      - PUPPETSERVER_HOSTNAME=puppet
       - PUPPETSERVER_PORT=8140
       - PE_BOLT_SERVER_LOGLEVEL=${PE_BOLT_SERVER_LOGLEVEL:-info}
-      - WHITELIST_HOSTNAME.0=pe-bolt-server.test
-      - WHITELIST_HOSTNAME.1=pe-orchestration-services.test
+      - WHITELIST_HOSTNAME.0=pe-bolt-server
+      - WHITELIST_HOSTNAME.1=pe-orchestration-services
     volumes:
       - bolt-server:/opt/puppetlabs/server/data/bolt-server
-    networks:
-      test:
-        aliases:
-          - pe-bolt-server.test
+
   puppetdb:
     image: ${DOCKER_REGISTRY_PATH}pe-puppetdb:pe-2019.1.3
-    hostname: puppetdb.test
+    hostname: puppetdb
     environment:
-      - CERTNAME=puppetdb.test
+      - CERTNAME=puppetdb
       - PUPPETDB_SSL_PORT=8081
       - PUPPETDB_LOG_LEVEL=info
       - USE_PUPPETSERVER=true
-      - PUPPETSERVER_HOSTNAME=puppet.test
+      - PUPPETSERVER_HOSTNAME=puppet
       - PUPPETSERVER_PORT=8140
-      - PUPPETDB_POSTGRES_HOSTNAME=postgres.test
+      - PUPPETDB_POSTGRES_HOSTNAME=postgres
       - PUPPETDB_POSTGRES_PORT=5432
       - PUPPETDB_PASSWORD=puppetdb
       - PUPPETDB_USER=puppetdb
-      - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services.test
+      - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services
     volumes:
       - puppetdb:/opt/puppetlabs/server/data/puppetdb
     restart: always
@@ -140,29 +125,25 @@ services:
     depends_on:
       - postgres
       - puppet
-    dns_search: test
-    networks:
-      test:
-        aliases:
-          - puppetdb.test
+
   postgres:
     image: postgres:9.6.15
-    hostname: postgres.test
+    hostname: postgres
     environment:
       # to be able to preload certs, PGDATA must be empty when booting, so set
       # its directory as a subdirectory of the default /var/lib/postgresql/data VOLUME
       - PGDATA=/var/lib/postgresql/data/pgdata
       - PGPORT=5432
       - SSLDIR=/var/lib/postgresql/data/certs
-      - CERTNAME=postgres.test
+      - CERTNAME=postgres
       - POSTGRES_USER=puppetdb
       - POSTGRES_PASSWORD=puppetdb
       - POSTGRES_DB=puppetdb
-      - PUPPETSERVER_HOSTNAME=puppet.test
+      - PUPPETSERVER_HOSTNAME=puppet
       - PUPPETSERVER_PORT=8140
-      - PUPPETDB_CERTNAME=puppetdb.test
-      - PE_CONSOLE_SERVICES_CERTNAME=pe-console-services.test
-      - PE_ORCHESTRATION_SERVICES_CERTNAME=pe-orchestration-services.test
+      - PUPPETDB_CERTNAME=puppetdb
+      - PE_CONSOLE_SERVICES_CERTNAME=pe-console-services
+      - PE_ORCHESTRATION_SERVICES_CERTNAME=pe-orchestration-services
     command: [ "postgres",
       "-c", "max_connections=400",
       "-c", "ssl=on",
@@ -203,13 +184,9 @@ services:
       - 5432
     depends_on:
       - puppet
-    dns_search: test
-    networks:
-      test:
-        aliases:
-          - postgres.test
+
 networks:
-  test:
+  default:
     name: pupperware-commercial
 volumes:
   puppetserver:
