@@ -646,9 +646,9 @@ LOG
         rbac_password: 'pupperware',
         puppetserver: 'puppet.test',
         pe_console_services: 'pe-console-services.test',
-        pe_orchestration_services: 'pe-orchestration-services.test'
+        pe_orchestration_services: 'pe-orchestration-services.test',
+        image: 'artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:latest'
       )
-    image = 'artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:kearney-latest'
     run_command("docker pull #{image}")
     run_command("docker run \
            --rm \
