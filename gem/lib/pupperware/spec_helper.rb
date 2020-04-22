@@ -640,13 +640,13 @@ LOG
   end
 
   def orchestrate_puppet_run(
-        target_agent: 'puppet-agent.test',
+        target_agent: 'puppet-agent',
         network: 'pupperware-commercial',
         rbac_username: 'admin',
         rbac_password: 'pupperware',
-        puppetserver: 'puppet.test',
-        pe_console_services: 'pe-console-services.test',
-        pe_orchestration_services: 'pe-orchestration-services.test',
+        puppetserver: 'puppet',
+        pe_console_services: 'pe-console-services',
+        pe_orchestration_services: 'pe-orchestration-services',
         image: 'artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:latest'
       )
     run_command("docker pull #{image}")
