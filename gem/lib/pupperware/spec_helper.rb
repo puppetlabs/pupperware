@@ -772,7 +772,7 @@ LOG
     end
   end
 
-  def wait_for_pxp_agent_to_connect(agent_name: 'puppet-agent.test', timeout: 180)
+  def wait_for_pxp_agent_to_connect(agent_name: 'puppet-agent', timeout: 180)
     generate_rbac_token()
     puts "Waiting for the puppet-agent's pxp-agent to connect to the pe-orchestration-service"
     return retry_block_up_to_timeout(timeout) do
