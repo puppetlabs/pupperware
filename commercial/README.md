@@ -123,7 +123,8 @@ The following values, many of which are already overriden in the `docker-compose
 | Name                                    | Usage / Default                                                                                                                                                                    |
 |-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **CERTNAME**                            | The DNS name used on this services SSL certificate<br><br>`pe-orchestration-services`                                                                                              |
-| **DNS_ALT_NAMES**                       | Additional DNS names to add to the services SSL certificate (Dockers `hostname` and FQDN are already included)<br><br>`${HOSTNAME},$(hostname -s),$(hostname -f),${DNS_ALT_NAMES}` |
+| **DNS_ALT_NAMES**                       | Additional DNS names to add to the services SSL certificate<br><br>unset                                                                                                           |
+| **WAITFORCERT**                         | Number of seconds to wait for certificate to be signed<br><br>`120`                                                                                                                |
 | **PCP_BROKER_PORT**                     | The listening port for the pcp-broker service<br><br>`8142`                                                                                                                        |
 | **PE_ORCHESTRATION_SERVICES_PORT**      | The listening port for the pe-orchestration-services service<br><br>`8143`                                                                                                         |
 | **PUPPETSERVER_HOSTNAME**               | The DNS hostname of the puppet master<br><br>`puppet`                                                                                                                              |
@@ -133,18 +134,19 @@ The following values, many of which are already overriden in the `docker-compose
 | **POSTGRES_HOSTNAME**                   | The DNS hostname of the postgres service<br><br>`postgres`                                                                                                                         |
 | **POSTGRES_PORT**                       | The port for postgres<br><br>`5432`                                                                                                                                                |
 | **PE_BOLT_SERVER_HOSTNAME**             | The DNS hostname of the pe-bolt-server service<br><br>`pe-bolt-server`                                                                                                             |
+| **PE_ACE_SERVER_HOSTNAME**              | The DNS hostname of the ace-server service<br><br>`ace`                                                                                                                            |
 | **PE_CONSOLE_SERVICES_HOSTNAME**        | The DNS hostname of the pe-console-services service<br><br>`pe-console-services`                                                                                                   |
 | **PUPPERWARE_ADMIN_PASSWORD**           | Log into the PE console using the username `admin` and this password value, once all containers are healthy<br><br>`pupperware`                                                    |
 | **PE_ORCHESTRATION_SERVICES_LOG_LEVEL** | The logging level to use for this service<br><br>`info`                                                                                                                            |
 | **PE_ORCHESTRATION_SERVICES_JAVA_ARGS** | Arguments passed directly to the JVM when starting the service<br><br>`-Xmx1g`                                                                                                     |
-
 
 ### pe-console-services
 
 | Name                                    | Usage / Default                                                                                                                                                                    |
 |-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **CERTNAME**                            | The DNS name used on this services SSL certificate<br><br>`pe-console-services`                                                                                                    |
-| **DNS_ALT_NAMES**                       | Additional DNS names to add to the services SSL certificate (Dockers `hostname` and FQDN are already included)<br><br>`${HOSTNAME},$(hostname -s),$(hostname -f),${DNS_ALT_NAMES}` |
+| **DNS_ALT_NAMES**                       | Additional DNS names to add to the services SSL certificate<br><br>unset                                                                                                           |
+| **WAITFORCERT**                         | Number of seconds to wait for certificate to be signed<br><br>`120`                                                                                                                |
 | **PUPPETSERVER_HOSTNAME**               | The DNS hostname of the puppet master<br><br>`puppet`                                                                                                                              |
 | **PUPPETSERVER_CERTNAME**               | The primary DNS name on the puppet master certificate<br><br>`pe-puppetserver`                                                                                                     |
 | **PUPPETSERVER_PORT**                   | The port of the puppet master<br><br>`8140`                                                                                                                                        |
@@ -164,7 +166,8 @@ The following values, many of which are already overriden in the `docker-compose
 | Name                                    | Usage / Default                                                                                                                                                                    |
 |-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **CERTNAME**                            | The DNS name used on this services SSL certificate<br><br>`pe-bolt-server`                                                                                                         |
-| **DNS_ALT_NAMES**                       | Additional DNS names to add to the services SSL certificate (Dockers `hostname` and FQDN are already included)<br><br>`${HOSTNAME},$(hostname -s),$(hostname -f),${DNS_ALT_NAMES}` |
+| **DNS_ALT_NAMES**                       | Additional DNS names to add to the services SSL certificate<br><br>unset                                                                                                           |
+| **WAITFORCERT**                         | Number of seconds to wait for certificate to be signed<br><br>`120`                                                                                                                |
 | **PUPPETSERVER_HOSTNAME**               | The DNS hostname of the puppet master<br><br>`puppet`                                                                                                                              |
 | **PUPPETSERVER_PORT**                   | The port of the puppet master<br><br>`8140`                                                                                                                                        |
 | **PE_BOLT_SERVER_LOGLEVEL**             | The logging level to use for this service<br><br>`info`                                                                                                                            |
@@ -176,7 +179,8 @@ The following values, many of which are already overriden in the `docker-compose
 | Name                                    | Usage / Default                                                                                                                                                                    |
 |-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **CERTNAME**                            | The DNS name used on this services SSL certificate<br><br>`pe-puppetdb`                                                                                                            |
-| **DNS_ALT_NAMES**                       | Additional DNS names to add to the services SSL certificate (Dockers `hostname` and FQDN are already included)<br><br>`${HOSTNAME},$(hostname -s),$(hostname -f),${DNS_ALT_NAMES}` |
+| **DNS_ALT_NAMES**                       | Additional DNS names to add to the services SSL certificate<br><br>unset                                                                                                           |
+| **WAITFORCERT**                         | Number of seconds to wait for certificate to be signed<br><br>`120`                                                                                                                |
 | **PUPPETDB_SSL_PORT**                   | The listening SSL port for puppetdb<br><br>`8081`                                                                                                                                  |
 | **PUPPETDB_LOGLEVEL**                   | The logging level to use for this service<br><br>`info`                                                                                                                            |
 | **USE_PUPPETSERVER**                    | Should always be set to `true`<br><br>`true`                                                                                                                                       |
@@ -191,7 +195,18 @@ The following values, many of which are already overriden in the `docker-compose
 | **PUPPETDB_NODE_PURGE_TTL**             | Automatically delete nodes that have been deactivated or expired for the specified amount of time<br><br>`14d`                                                                     |
 | **PUPPETDB_REPORT_TTL**                 | Automatically delete reports that are older than the specified amount of time<br><br>`14d`                                                                                         |
 | **PE_CONSOLE_SERVICES_HOSTNAME**        | The DNS hostname of the pe-console-services service<br><br>`pe-console-services`                                                                                                   |
-| **PUPPETDB_JAVA_ARGS**                  | Arguments passed directly to the JVM when starting the service<br><br>`-Xms256m -Xmx256m -XX:+PrintGCDetails -XX:+PrintGCDateStamps-Xloggc:/opt/puppetlabs/server/data/puppetdb/logs/puppetdb_gc.log-XX:+UseGCLogFileRotation-XX:NumberOfGCLogFiles=16 -XX:GCLogFileSize=64m` |
+| **PUPPETDB_JAVA_ARGS**                  | Arguments passed directly to the JVM when starting the service<br><br>`-Xms256m -Xmx256m -XX:+UseParallelGC -Xlog:gc*:file=/opt/puppetlabs/server/data/puppetdb/logs/puppetdb_gc.log::filecount=16,filesize=65536 -Djdk.tls.ephemeralDHKeySize=2048` |
+
+### pe-client-tools
+
+| Name                                    | Usage / Default                                                                                                                                                                    |
+|-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **RBAC_USERNAME**                       | Required. The PE user of the user that will run pe-client-tools.                                                                                                                   |
+| **RBAC_PASSWORD**                       | Required. The password to the PE user's account that will run pe-client-tools.                                                                                                     |
+| **PUPPETSERVER_HOSTNAME**               | The DNS hostname of the puppet master<br><br>`puppet`                                                                                                                              |
+| **PUPPETDB_HOSTNAME**                   | The DNS hostname of the puppetdb service<br><br>`puppetdb`                                                                                                                         |
+| **PE_CONSOLE_SERVICES_HOSTNAME**        | The DNS hostname of the pe-console-services service<br><br>`pe-console-services`                                                                                                   |
+| **PE_ORCHESTRATION_SERVICES_HOSTNAME**  | The DNS hostname of the pe-orchestration-services service<br><br>`pe-orchestration-services`                                                                                       |
 
 ### postgres
 
@@ -199,6 +214,7 @@ The following values, many of which are already overriden in the `docker-compose
 |-----------------------------------------|--------------------------------------------------------------------------------------------------------|
 | **CERTNAME**                            | The DNS name used on this services SSL certificate<br><br>`postgres`                                   |
 | **DNS_ALT_NAMES**                       | Additional DNS names to add to the services SSL certificate                                            |
+| **WAITFORCERT**                         | Number of seconds to wait for certificate to be signed<br><br>`120`                                    |
 | **PGPORT**                              | The listening port for postgres<br><br>`5432`                                                          |
 | **POSTGRES_DB**                         | The name of the puppetdb database in postgres<br><br>`puppetdb`                                        |
 | **POSTGRES_USER**                       | The puppetdb database user<br><br>`puppetdb`                                                           |
