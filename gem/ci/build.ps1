@@ -47,9 +47,9 @@ function Get-EnterpriseContainerVersion(
 function Lint-Dockerfile(
     $Name,
     $Path = "docker/$Name/Dockerfile",
-    $Ignore = @('DL3008','DL3018','DL4000','DL4001'))
+    $Ignore = @())
 {
-    $ignores = $Ignore | % { '--ignore', $_ }
+    $ignores = $Ignore | % { if ($_) { '--ignore', $_ } }
     Write-Host "& cmd.exe /c docker run --rm -i hadolint/hadolint hadolint $ignores -< $Path"
 
     # while a simpler method works locally, there appears to be a bug with stdin in Azure injecting BOMs?
