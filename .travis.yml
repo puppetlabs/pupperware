@@ -10,7 +10,7 @@ rvm:
 
 env:
   global:
-    - DOCKER_COMPOSE_VERSION=1.25.0-rc2
+    - DOCKER_COMPOSE_VERSION=1.25.5
     - COMPOSE_PROJECT_NAME=pupperware
 
 before_install:
