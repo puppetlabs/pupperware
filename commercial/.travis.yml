@@ -1,3 +1,4 @@
+dist: focal
 sudo: required
 
 services:
@@ -6,7 +7,7 @@ services:
 language:
   - ruby
 rvm:
-  - 2.5.5
+  - 2.6.6
 
 env:
   global:
