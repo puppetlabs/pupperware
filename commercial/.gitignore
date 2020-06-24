@@ -16,3 +16,6 @@ docker-compose.override.yml
 
 # Provide a convenient location for end-users to mount in additional files.
 volumes/
+
+# ignore tmp directory used for building from PE tag
+tmp/
