@@ -61,16 +61,14 @@ services:
       - CERTNAME=pe-console-services
       - PE_CONSOLE_SERVICES_LOG_LEVEL=info
       - PUPPETSERVER_HOSTNAME=puppet
-      - PUPPETSERVER_CERTNAME=puppet
       - PUPPETSERVER_PORT=8140
       - PUPPETDB_HOSTNAME=puppetdb
-      - PUPPETDB_CERTNAME=puppetdb
       - PUPPETDB_SSL_PORT=8081
       - POSTGRES_HOSTNAME=postgres
       - POSTGRES_PORT=5432
       - PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services
-      - PE_ORCHESTRATION_SERVICES_CERTNAME=pe-orchestration-services
       - PE_ORCHESTRATION_SERVICES_PORT=8143
+      - RBAC_CERTIFICATE_ALLOWLIST=puppet,puppetdb,pe-orchestration-services
     volumes:
       - console-services:/opt/puppetlabs/server/data/console-services
     restart: always
