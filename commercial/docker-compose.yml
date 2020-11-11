@@ -139,9 +139,7 @@ services:
       - POSTGRES_DB=puppetdb
       - PUPPETSERVER_HOSTNAME=puppet
       - PUPPETSERVER_PORT=8140
-      - PUPPETDB_CERTNAME=puppetdb
-      - PE_CONSOLE_SERVICES_CERTNAME=pe-console-services
-      - PE_ORCHESTRATION_SERVICES_CERTNAME=pe-orchestration-services
+      - ALLOWED_CERT_NAMES=puppetdb,pe-console-services,pe-orchestration-services
     command: [ "postgres",
       "-c", "max_connections=400",
       "-c", "ssl=on",

@@ -219,9 +219,7 @@ The following values, many of which are already overriden in the `docker-compose
 | **POSTGRES_PASSWORD**                   | The puppetdb database password<br><br>`puppetdb`                                                       |
 | **PUPPETSERVER_HOSTNAME**               | The DNS hostname of the puppet master<br><br>`puppet`                                                  |
 | **PUPPETSERVER_PORT**                   | The port of the puppet master<br><br>`8140`                                                            |
-| **PUPPETDB_CERTNAME**                   | The primary DNS name on the puppetdb certificate<br><br>`pe-puppetdb`                                  |
-| **PE_CONSOLE_SERVICES_CERTNAME**        | The primary DNS name of the pe-console-services certificate<br><br>`pe-console-services`               |
-| **PE_ORCHESTRATION_SERVICES_CERTNAME**  | The primary DNS name on the pe-orchestration-services certificate<br><br>`pe-orchestration-services`   |
+| **ALLOWED_CERT_NAMES**                  | The primary DNS cert names for all clients allowed to contact Postgres<br><br>`pe-puppetdb,pe-console-services,pe-orchestration-services`    |
 
 ## External PostgreSQL
 
