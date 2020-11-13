@@ -116,8 +116,10 @@ CERTDIR="${SSLDIR}/certs"
 mkdir -p "${SSLDIR}" "${PUBKEYDIR}" "${PRIVKEYDIR}" "${CSRDIR}" "${CERTDIR}"
 PUBKEYFILE="${PUBKEYDIR}/${CERTNAME}.pem"
 PRIVKEYFILE="${PRIVKEYDIR}/${CERTNAME}.pem"
+CANONICAL_PRIVKEYFILE="${PRIVKEYDIR}/server.key"
 CSRFILE="${CSRDIR}/${CERTNAME}.pem"
 CERTFILE="${CERTDIR}/${CERTNAME}.pem"
+CANONICAL_CERTFILE="${CERTDIR}/server.crt"
 CACERTFILE="${CERTDIR}/ca.pem"
 CRLFILE="${SSLDIR}/crl.pem"
 ALTNAMEFILE="/tmp/altnames.conf"
@@ -147,7 +149,8 @@ if [ -n "${DNS_ALT_NAMES}" ]; then
     done
 
     # openssl 1.1.1+ supports -addext subjectAltName=${names}
-    # but Postgres 9.6 image uses openssl 1.1.0 and has no such flag, so have to use -config
+    # previously used Postgres 9.6 image uses openssl 1.1.0 and has no such flag, so have to use -config
+    # postgres 12.4 has openssl 1.1.1d
     printf "[req]\ndistinguished_name=dn\nreq_extensions=ext\n[dn]\n[ext]\nsubjectAltName=%s\n" "${names}" > "${ALTNAMEFILE}"
 
     CERTEXTENSIONS="-config ${ALTNAMEFILE}"
@@ -200,6 +203,8 @@ fi
 [ -s "${PUBKEYFILE}" ] && error "public key '${PUBKEYFILE}' already exists"
 [ -s "${CSRFILE}" ] && error "certificate request '${CSRFILE}' already exists"
 openssl genrsa -out "${PRIVKEYFILE}" 4096
+# using a well known filename makes this easier to consume in k8s
+ln -s -f "${PRIVKEYFILE}" "${CANONICAL_PRIVKEYFILE}"
 openssl rsa -in "${PRIVKEYFILE}" -pubout -out "${PUBKEYFILE}"
 # shellcheck disable=SC2086 # $CERTEXTENSIONS shouldn't be quoted
 openssl req -new -key "${PRIVKEYFILE}" -out "${CSRFILE}" -subj "${CERTSUBJECT}" ${CERTEXTENSIONS}
@@ -238,6 +243,8 @@ while ! cert=$(httpsreq "$CERTREQ"); do
     timewaited=$((timewaited+sleeptime))
 done
 printf "%s\n" "${cert}" > "${CERTFILE}"
+# using a well known filename makes this easier to consume in k8s
+ln -s -f "${CERTFILE}" "${CANONICAL_CERTFILE}"
 
 ### Verify we got a signed certificate
 if [ -f "${CERTFILE}" ] && [ "$(head -1 "${CERTFILE}")" = "${CERTHEADER}" ]; then
