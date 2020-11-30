@@ -23,7 +23,7 @@
 # Optional environment variables:
 #   CERTNAME               Certname to use
 #   WAITFORCERT            Number of seconds to wait for certificate to be
-#                          signed, defaults to 120
+#                          signed, defaults to 300
 #   PUPPETSERVER_HOSTNAME  Hostname of Puppet Server CA, defaults to "puppet"
 #   PUPPETSERVER_PORT      Port of Puppet Server CA, defaults to 8140
 #   SSLDIR                 Root directory to write files to, defaults to
@@ -105,7 +105,7 @@ CERTNAME="${CERTNAME:-${HOSTNAME}}"
 PUPPETSERVER_HOSTNAME="${PUPPETSERVER_HOSTNAME:-puppet}"
 PUPPETSERVER_PORT="${PUPPETSERVER_PORT:-8140}"
 SSLDIR="${SSLDIR:-/etc/puppetlabs/puppet/ssl}"
-WAITFORCERT=${WAITFORCERT:-120}
+WAITFORCERT=${WAITFORCERT:-300}
 DNS_ALT_NAMES=${DNS_ALT_NAMES}
 
 ### Create directories and files
