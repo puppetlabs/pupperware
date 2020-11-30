@@ -23,7 +23,7 @@
 # Optional environment variables:
 #   CERTNAME               Certname to use
 #   WAITFORCERT            Number of seconds to wait for certificate to be
-#                          signed, defaults to 120
+#                          signed, defaults to 300
 #   PUPPETSERVER_HOSTNAME  Hostname of Puppet Server CA, defaults to "puppet"
 #   PUPPETSERVER_PORT      Port of Puppet Server CA, defaults to 8140
 #   SSLDIR                 Root directory to write files to, defaults to
@@ -105,7 +105,7 @@ CERTNAME="${CERTNAME:-${HOSTNAME}}"
 PUPPETSERVER_HOSTNAME="${PUPPETSERVER_HOSTNAME:-puppet}"
 PUPPETSERVER_PORT="${PUPPETSERVER_PORT:-8140}"
 SSLDIR="${SSLDIR:-/etc/puppetlabs/puppet/ssl}"
-WAITFORCERT=${WAITFORCERT:-120}
+WAITFORCERT=${WAITFORCERT:-300}
 DNS_ALT_NAMES=${DNS_ALT_NAMES}
 
 ### Create directories and files
@@ -115,6 +115,7 @@ CSRDIR="${SSLDIR}/certificate_requests"
 CERTDIR="${SSLDIR}/certs"
 mkdir -p "${SSLDIR}" "${PUBKEYDIR}" "${PRIVKEYDIR}" "${CSRDIR}" "${CERTDIR}"
 PUBKEYFILE="${PUBKEYDIR}/${CERTNAME}.pem"
+CANONICAL_PUBKEYFILE="${PUBKEYDIR}/server.pub"
 PRIVKEYFILE="${PRIVKEYDIR}/${CERTNAME}.pem"
 CANONICAL_PRIVKEYFILE="${PRIVKEYDIR}/server.key"
 CSRFILE="${CSRDIR}/${CERTNAME}.pem"
@@ -206,6 +207,8 @@ openssl genrsa -out "${PRIVKEYFILE}" 4096
 # using a well known filename makes this easier to consume in k8s
 ln -s -f "${PRIVKEYFILE}" "${CANONICAL_PRIVKEYFILE}"
 openssl rsa -in "${PRIVKEYFILE}" -pubout -out "${PUBKEYFILE}"
+# using a well known filename makes this easier to consume in k8s
+ln -s -f "${PUBKEYFILE}" "${CANONICAL_PUBKEYFILE}"
 # shellcheck disable=SC2086 # $CERTEXTENSIONS shouldn't be quoted
 openssl req -new -key "${PRIVKEYFILE}" -out "${CSRFILE}" -subj "${CERTSUBJECT}" ${CERTEXTENSIONS}
 [ -f "${ALTNAMEFILE}" ] && rm "${ALTNAMEFILE}"
