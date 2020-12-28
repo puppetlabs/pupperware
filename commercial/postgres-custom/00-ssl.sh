@@ -212,10 +212,28 @@ elif ! openssl crl -text -noout -in "${CRLFILE}" > /dev/null; then
     error "invalid CRL"
 fi
 
-### Check the CA does not already have a signed certificate for this host
+### Check if the CA already has a signed certificate for this host to either:
+### * Recover from a submitted CSR attempt that didn't complete
+### * Abort if there are no generated files on disk (i.e. hostname exists / collision)
+### * Abort if generated files don't match (i.e. hostname exists / collision)
 CERTREQ=$(get "${CA}/certificate/${CERTNAME}")
-if httpsreq "$CERTREQ" >/dev/null; then
-    error "CA already has signed certificate for '${CERTNAME}'"
+if cert=$(httpsreq "$CERTREQ"); then
+    # if cert exists for name and disk is empty, this DNS name is claimed!
+    [ ! -s "${PRIVKEYFILE}" ] && error "No keypair on disk and CA already has signed certificate for '${CERTNAME}'"
+
+    # private key file exists, so see if a CSR was submitted but never signed
+    key_hash=$(openssl rsa –noout –modulus –in "${PRIVKEYFILE}" 2> /dev/null | openssl md5)
+    cert_hash=$(echo "${cert}" | openssl x509 –noout –modulus 2> /dev/null | openssl md5)
+    [ "${key_hash}" != "${cert_hash}" ] && error "Private key on disk does not match signed certificate for '${CERTNAME}'"
+
+    # Signed cert matches private key, so write it to disk
+    msg "Recovered from incomplete signing - retrieved signed certificate matching private key on disk"
+    printf "%s\n" "${cert}" > "${CERTFILE}"
+    # using a well known filename makes this easier to consume in k8s
+    ln -s -f "${CERTFILE}" "${CANONICAL_CERTFILE}"
+
+    verify_cert
+    exit 0
 fi
 
 ### Generate keys and CSR for this host
