@@ -168,7 +168,7 @@ msg "* CA: '${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}${CA}'"
 msg "* SSLDIR: '${SSLDIR}'"
 msg "* WAITFORCERT: '${WAITFORCERT}' seconds"
 
-if [ -f "${SSLDIR}/certs/${CERTNAME}.pem" ]; then
+if [ -f "${CERTFILE}" ]; then
     msg "Certificates have already been generated - exiting!"
     exit 0
 fi
