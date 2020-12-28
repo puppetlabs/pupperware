@@ -236,16 +236,22 @@ if cert=$(httpsreq "$CERTREQ"); then
     exit 0
 fi
 
-### Generate keys and CSR for this host
-[ -s "${PRIVKEYFILE}" ] && error "private key '${PRIVKEYFILE}' already exists"
-[ -s "${PUBKEYFILE}" ] && error "public key '${PUBKEYFILE}' already exists"
-[ -s "${CSRFILE}" ] && error "certificate request '${CSRFILE}' already exists"
-openssl genrsa -out "${PRIVKEYFILE}" 4096
+### Generate keys and CSR for this host if needed
+if [ ! -s "${PRIVKEYFILE}" ]; then
+    openssl genrsa -out "${PRIVKEYFILE}" 4096
+else
+    # No signed cert exists yet, so use existing private key, regenerate pub key, resubmit CSR
+    msg "Reusing existing private key '${PRIVKEYFILE}'"
+fi
 # using a well known filename makes this easier to consume in k8s
 ln -s -f "${PRIVKEYFILE}" "${CANONICAL_PRIVKEYFILE}"
+
+[ -s "${PUBKEYFILE}" ] && msg "recreating existing public key '${PUBKEYFILE}'"
 openssl rsa -in "${PRIVKEYFILE}" -pubout -out "${PUBKEYFILE}"
 # using a well known filename makes this easier to consume in k8s
 ln -s -f "${PUBKEYFILE}" "${CANONICAL_PUBKEYFILE}"
+
+[ -s "${CSRFILE}" ] && msg "recreating existing certificate request '${CSRFILE}'"
 # shellcheck disable=SC2086 # $CERTEXTENSIONS shouldn't be quoted
 openssl req -new -key "${PRIVKEYFILE}" -out "${CSRFILE}" -subj "${CERTSUBJECT}" ${CERTEXTENSIONS}
 [ -f "${ALTNAMEFILE}" ] && rm "${ALTNAMEFILE}"
