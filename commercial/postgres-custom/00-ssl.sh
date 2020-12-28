@@ -74,6 +74,9 @@ httpsreq_insecure() {
     # RFC2616 defines first line header as Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
     status=$(printf "%s" "$response" | head -1 | cut -d ' ' -f 2)
 
+    # unparseable status line, so abort
+    [ -z "$status" ] && return 1
+
     # write HTTP payload over stdout by collecting all lines after header\r
     # same as: awk -v bl=1 'bl{bl=0; h=($0 ~ /HTTP\/1/)} /^\r?$/{bl=1} {if(!h) print}'
     body=false
