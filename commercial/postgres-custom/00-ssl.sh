@@ -228,16 +228,28 @@ $(cat "${CSRFILE}")
 EOF
 )
 
-if ! output=$(httpsreq "$CSRREQ"); then
+sleeptime=3
+timewaited=0
+msg "Submitting CSR..."
+while ! output=$(httpsreq "$CSRREQ"); do
     cert_already_exists="${CERTNAME} already has a requested certificate; ignoring certificate request"
     altnames_disallowed="CSR '${CERTNAME}' contains subject alternative names*which are disallowed*"
     # shellcheck disable=SC2254 # string contains * used for globbing
     case "${output}" in
         "$cert_already_exists") error "unsigned CSR for '${CERTNAME}' already exists on CA" ;;
         $altnames_disallowed) error "DNS Alt Names not allowed by the CA" ;;
+        # ignore empty or unexpected responses and retry
+        '') ;;
         *) msg "[WARNING] CSR response: ${output}" ;;
     esac
-fi
+
+    [ ${timewaited} -ge $((WAITFORCERT)) ] && \
+        error "timed-out waiting for certificate signing request to be accepted"
+
+    sleep ${sleeptime}
+    msg "Resubmitting CSR..."
+    timewaited=$((timewaited+sleeptime))
+done
 
 ### Retrieve signed certificate; wait and try again with a timeout
 sleeptime=10
