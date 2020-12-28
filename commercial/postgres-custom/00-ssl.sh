@@ -99,6 +99,21 @@ master_ca_running() {
         httpsreq_insecure "$(get "${CA}/certificate/ca")" > /dev/null
 }
 
+### Verify we got a signed certificate
+verify_cert() {
+    if [ -f "${CERTFILE}" ] && [ "$(head -1 "${CERTFILE}")" = "${CERTHEADER}" ]; then
+        altnames="-certopt no_subject,no_header,no_version,no_serial,no_signame,no_validity,no_issuer,no_pubkey,no_sigdump,no_aux"
+        # shellcheck disable=SC2086 # $altnames shouldn't be quoted
+        if openssl x509 -subject -issuer -text -noout -in "${CERTFILE}" $altnames; then
+            msg "Successfully signed certificate '${CERTFILE}'"
+        else
+            error "invalid signed certificate '${CERTFILE}'"
+        fi
+    else
+        error "failed to get signed certificate for '${CERTNAME}'"
+    fi
+}
+
 ### Verify dependencies available
 ! command -v openssl > /dev/null && error "openssl not found on PATH"
 
@@ -265,15 +280,4 @@ printf "%s\n" "${cert}" > "${CERTFILE}"
 # using a well known filename makes this easier to consume in k8s
 ln -s -f "${CERTFILE}" "${CANONICAL_CERTFILE}"
 
-### Verify we got a signed certificate
-if [ -f "${CERTFILE}" ] && [ "$(head -1 "${CERTFILE}")" = "${CERTHEADER}" ]; then
-    altnames="-certopt no_subject,no_header,no_version,no_serial,no_signame,no_validity,no_issuer,no_pubkey,no_sigdump,no_aux"
-    # shellcheck disable=SC2086 # $altnames shouldn't be quoted
-    if openssl x509 -subject -issuer -text -noout -in "${CERTFILE}" $altnames; then
-        msg "Successfully signed certificate '${CERTFILE}'"
-    else
-        error "invalid signed certificate '${CERTFILE}'"
-    fi
-else
-    error "failed to get signed certificate for '${CERTNAME}'"
-fi
+verify_cert
