@@ -91,8 +91,9 @@ httpsreq_insecure() {
     [ "${status}" = "200" ] && return 0 || return "$((status))"
 }
 
-master_running() {
-    test "$(httpsreq_insecure "$(get '/status/v1/simple')")" = "running"
+master_ca_running() {
+    test "$(httpsreq_insecure "$(get '/status/v1/simple')")" = "running" && \
+        httpsreq_insecure "$(get "${CA}/certificate/ca")" > /dev/null
 }
 
 ### Verify dependencies available
@@ -174,7 +175,7 @@ if [ -s "${CERTFILE}" ]; then
 fi
 
 msg "Waiting for master ${PUPPETSERVER_HOSTNAME} to be running to generate certificates..."
-while ! master_running; do
+while ! master_ca_running; do
     sleep 1
 done
 
