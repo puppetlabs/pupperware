@@ -74,6 +74,9 @@ httpsreq_insecure() {
     # RFC2616 defines first line header as Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
     status=$(printf "%s" "$response" | head -1 | cut -d ' ' -f 2)
 
+    # unparseable status line, so abort
+    [ -z "$status" ] && return 1
+
     # write HTTP payload over stdout by collecting all lines after header\r
     # same as: awk -v bl=1 'bl{bl=0; h=($0 ~ /HTTP\/1/)} /^\r?$/{bl=1} {if(!h) print}'
     body=false
@@ -91,8 +94,24 @@ httpsreq_insecure() {
     [ "${status}" = "200" ] && return 0 || return "$((status))"
 }
 
-master_running() {
-    test "$(httpsreq_insecure "$(get '/status/v1/simple')")" = "running"
+master_ca_running() {
+    test "$(httpsreq_insecure "$(get '/status/v1/simple')")" = "running" && \
+        httpsreq_insecure "$(get "${CA}/certificate/ca")" > /dev/null
+}
+
+### Verify we got a signed certificate
+verify_cert() {
+    if [ -f "${CERTFILE}" ] && [ "$(head -1 "${CERTFILE}")" = "${CERTHEADER}" ]; then
+        altnames="-certopt no_subject,no_header,no_version,no_serial,no_signame,no_validity,no_issuer,no_pubkey,no_sigdump,no_aux"
+        # shellcheck disable=SC2086 # $altnames shouldn't be quoted
+        if openssl x509 -subject -issuer -text -noout -in "${CERTFILE}" $altnames; then
+            msg "Successfully signed certificate '${CERTFILE}'"
+        else
+            error "invalid signed certificate '${CERTFILE}'"
+        fi
+    else
+        error "failed to get signed certificate for '${CERTNAME}'"
+    fi
 }
 
 ### Verify dependencies available
@@ -106,7 +125,7 @@ PUPPETSERVER_HOSTNAME="${PUPPETSERVER_HOSTNAME:-puppet}"
 PUPPETSERVER_PORT="${PUPPETSERVER_PORT:-8140}"
 SSLDIR="${SSLDIR:-/etc/puppetlabs/puppet/ssl}"
 WAITFORCERT=${WAITFORCERT:-300}
-DNS_ALT_NAMES=${DNS_ALT_NAMES}
+DNS_ALT_NAMES=${DNS_ALT_NAMES:-}
 
 ### Create directories and files
 PUBKEYDIR="${SSLDIR}/public_keys"
@@ -168,13 +187,13 @@ msg "* CA: '${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}${CA}'"
 msg "* SSLDIR: '${SSLDIR}'"
 msg "* WAITFORCERT: '${WAITFORCERT}' seconds"
 
-if [ -f "${SSLDIR}/certs/${CERTNAME}.pem" ]; then
+if [ -s "${CERTFILE}" ]; then
     msg "Certificates have already been generated - exiting!"
     exit 0
 fi
 
 msg "Waiting for master ${PUPPETSERVER_HOSTNAME} to be running to generate certificates..."
-while ! master_running; do
+while ! master_ca_running; do
     sleep 1
 done
 
@@ -193,22 +212,46 @@ elif ! openssl crl -text -noout -in "${CRLFILE}" > /dev/null; then
     error "invalid CRL"
 fi
 
-### Check the CA does not already have a signed certificate for this host
+### Check if the CA already has a signed certificate for this host to either:
+### * Recover from a submitted CSR attempt that didn't complete
+### * Abort if there are no generated files on disk (i.e. hostname exists / collision)
+### * Abort if generated files don't match (i.e. hostname exists / collision)
 CERTREQ=$(get "${CA}/certificate/${CERTNAME}")
-if httpsreq "$CERTREQ" >/dev/null; then
-    error "CA already has signed certificate for '${CERTNAME}'"
+if cert=$(httpsreq "$CERTREQ"); then
+    # if cert exists for name and disk is empty, this DNS name is claimed!
+    [ ! -s "${PRIVKEYFILE}" ] && error "No keypair on disk and CA already has signed certificate for '${CERTNAME}'"
+
+    # private key file exists, so see if a CSR was submitted but never signed
+    key_hash=$(openssl rsa –noout –modulus –in "${PRIVKEYFILE}" 2> /dev/null | openssl md5)
+    cert_hash=$(echo "${cert}" | openssl x509 –noout –modulus 2> /dev/null | openssl md5)
+    [ "${key_hash}" != "${cert_hash}" ] && error "Private key on disk does not match signed certificate for '${CERTNAME}'"
+
+    # Signed cert matches private key, so write it to disk
+    msg "Recovered from incomplete signing - retrieved signed certificate matching private key on disk"
+    printf "%s\n" "${cert}" > "${CERTFILE}"
+    # using a well known filename makes this easier to consume in k8s
+    ln -s -f "${CERTFILE}" "${CANONICAL_CERTFILE}"
+
+    verify_cert
+    exit 0
 fi
 
-### Generate keys and CSR for this host
-[ -s "${PRIVKEYFILE}" ] && error "private key '${PRIVKEYFILE}' already exists"
-[ -s "${PUBKEYFILE}" ] && error "public key '${PUBKEYFILE}' already exists"
-[ -s "${CSRFILE}" ] && error "certificate request '${CSRFILE}' already exists"
-openssl genrsa -out "${PRIVKEYFILE}" 4096
+### Generate keys and CSR for this host if needed
+if [ ! -s "${PRIVKEYFILE}" ]; then
+    openssl genrsa -out "${PRIVKEYFILE}" 4096
+else
+    # No signed cert exists yet, so use existing private key, regenerate pub key, resubmit CSR
+    msg "Reusing existing private key '${PRIVKEYFILE}'"
+fi
 # using a well known filename makes this easier to consume in k8s
 ln -s -f "${PRIVKEYFILE}" "${CANONICAL_PRIVKEYFILE}"
+
+[ -s "${PUBKEYFILE}" ] && msg "recreating existing public key '${PUBKEYFILE}'"
 openssl rsa -in "${PRIVKEYFILE}" -pubout -out "${PUBKEYFILE}"
 # using a well known filename makes this easier to consume in k8s
 ln -s -f "${PUBKEYFILE}" "${CANONICAL_PUBKEYFILE}"
+
+[ -s "${CSRFILE}" ] && msg "recreating existing certificate request '${CSRFILE}'"
 # shellcheck disable=SC2086 # $CERTEXTENSIONS shouldn't be quoted
 openssl req -new -key "${PRIVKEYFILE}" -out "${CSRFILE}" -subj "${CERTSUBJECT}" ${CERTEXTENSIONS}
 [ -f "${ALTNAMEFILE}" ] && rm "${ALTNAMEFILE}"
@@ -224,16 +267,28 @@ $(cat "${CSRFILE}")
 EOF
 )
 
-if ! output=$(httpsreq "$CSRREQ"); then
+sleeptime=3
+timewaited=0
+msg "Submitting CSR..."
+while ! output=$(httpsreq "$CSRREQ"); do
     cert_already_exists="${CERTNAME} already has a requested certificate; ignoring certificate request"
     altnames_disallowed="CSR '${CERTNAME}' contains subject alternative names*which are disallowed*"
     # shellcheck disable=SC2254 # string contains * used for globbing
     case "${output}" in
         "$cert_already_exists") error "unsigned CSR for '${CERTNAME}' already exists on CA" ;;
         $altnames_disallowed) error "DNS Alt Names not allowed by the CA" ;;
+        # ignore empty or unexpected responses and retry
+        '') ;;
         *) msg "[WARNING] CSR response: ${output}" ;;
     esac
-fi
+
+    [ ${timewaited} -ge $((WAITFORCERT)) ] && \
+        error "timed-out waiting for certificate signing request to be accepted"
+
+    sleep ${sleeptime}
+    msg "Resubmitting CSR..."
+    timewaited=$((timewaited+sleeptime))
+done
 
 ### Retrieve signed certificate; wait and try again with a timeout
 sleeptime=10
@@ -249,15 +304,4 @@ printf "%s\n" "${cert}" > "${CERTFILE}"
 # using a well known filename makes this easier to consume in k8s
 ln -s -f "${CERTFILE}" "${CANONICAL_CERTFILE}"
 
-### Verify we got a signed certificate
-if [ -f "${CERTFILE}" ] && [ "$(head -1 "${CERTFILE}")" = "${CERTHEADER}" ]; then
-    altnames="-certopt no_subject,no_header,no_version,no_serial,no_signame,no_validity,no_issuer,no_pubkey,no_sigdump,no_aux"
-    # shellcheck disable=SC2086 # $altnames shouldn't be quoted
-    if openssl x509 -subject -issuer -text -noout -in "${CERTFILE}" $altnames; then
-        msg "Successfully signed certificate '${CERTFILE}'"
-    else
-        error "invalid signed certificate '${CERTFILE}'"
-    fi
-else
-    error "failed to get signed certificate for '${CERTNAME}'"
-fi
+verify_cert
