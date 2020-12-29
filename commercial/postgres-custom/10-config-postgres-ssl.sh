@@ -2,11 +2,13 @@
 
 cat << EOF > "${PGDATA}/pg_ident.conf"
 # MAPNAME       SYSTEM-USERNAME         PG-USERNAME
-usermap ${PE_CONSOLE_SERVICES_CERTNAME} puppetdb
-usermap ${PE_ORCHESTRATION_SERVICES_CERTNAME} puppetdb
-usermap ${PUPPETDB_CERTNAME} puppetdb
-
 EOF
+
+if [ -n "${ALLOWED_CERT_NAMES}" ]; then
+    for name in $(printf "%s" "${ALLOWED_CERT_NAMES}" | tr "," " "); do
+        printf "usermap ${name} ${POSTGRES_USER}\n" >> "${PGDATA}/pg_ident.conf"
+    done
+fi
 
 # pg_hba.conf is read on server startup / after SIGHUP
 # containers don't use pg_ctl, but a SQL function can be used instead

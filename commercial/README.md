@@ -148,16 +148,14 @@ The following values, many of which are already overriden in the `docker-compose
 | **DNS_ALT_NAMES**                       | Additional DNS names to add to the services SSL certificate<br><br>unset                                                                                                           |
 | **WAITFORCERT**                         | Number of seconds to wait for certificate to be signed<br><br>`120`                                                                                                                |
 | **PUPPETSERVER_HOSTNAME**               | The DNS hostname of the puppet master<br><br>`puppet`                                                                                                                              |
-| **PUPPETSERVER_CERTNAME**               | The primary DNS name on the puppet master certificate<br><br>`pe-puppetserver`                                                                                                     |
 | **PUPPETSERVER_PORT**                   | The port of the puppet master<br><br>`8140`                                                                                                                                        |
 | **PUPPETDB_HOSTNAME**                   | The DNS hostname of the puppetdb service<br><br>`puppetdb`                                                                                                                         |
-| **PUPPETDB_CERTNAME**                   | The primary DNS name on the puppetdb certificate<br><br>`pe-puppetdb`                                                                                                              |
 | **PUPPETDB_SSL_PORT**                   | The SSL port for puppetdb<br><br>`8081`                                                                                                                                            |
 | **POSTGRES_HOSTNAME**                   | The DNS hostname of the postgres service<br><br>`postgres`                                                                                                                         |
 | **POSTGRES_PORT**                       | The port for postgres<br><br>`5432`                                                                                                                                                |
 | **PE_ORCHESTRATION_SERVICES_HOSTNAME**  | The DNS hostname of the pe-orchestration-services service<br><br>`pe-orchestration-services`                                                                                       |
-| **PE_ORCHESTRATION_SERVICES_CERTNAME**  | The primary DNS name on the pe-orchestration-services certificate<br><br>`pe-orchestration-services`                                                                               |
 | **PE_ORCHESTRATION_SERVICES_PORT**      | The port for the pe-orchestration-services service<br><br>`8143`                                                                                                                   |
+| **RBAC_CERTIFICATE_ALLOWLIST**          | The primary DNS cert names for all services allowed to contact RBAC<br><br>`pe-puppetserver,pe-puppetdb,pe-orchestration-services`                                                 |
 | **PE_CONSOLE_SERVICES_LOG_LEVEL**       | The logging level to use for this service<br><br>`info`                                                                                                                            |
 | **PE_CONSOLE_SERVICES_JAVA_ARGS**       | Arguments passed directly to the JVM when starting the service<br><br>`-Xmx192m`                                                                                                   |
 
@@ -221,9 +219,7 @@ The following values, many of which are already overriden in the `docker-compose
 | **POSTGRES_PASSWORD**                   | The puppetdb database password<br><br>`puppetdb`                                                       |
 | **PUPPETSERVER_HOSTNAME**               | The DNS hostname of the puppet master<br><br>`puppet`                                                  |
 | **PUPPETSERVER_PORT**                   | The port of the puppet master<br><br>`8140`                                                            |
-| **PUPPETDB_CERTNAME**                   | The primary DNS name on the puppetdb certificate<br><br>`pe-puppetdb`                                  |
-| **PE_CONSOLE_SERVICES_CERTNAME**        | The primary DNS name of the pe-console-services certificate<br><br>`pe-console-services`               |
-| **PE_ORCHESTRATION_SERVICES_CERTNAME**  | The primary DNS name on the pe-orchestration-services certificate<br><br>`pe-orchestration-services`   |
+| **ALLOWED_CERT_NAMES**                  | The primary DNS cert names for all clients allowed to contact Postgres<br><br>`pe-puppetdb,pe-console-services,pe-orchestration-services`    |
 
 ## External PostgreSQL
 
