@@ -136,7 +136,7 @@ The following values, many of which are already overriden in the `docker-compose
 | **PE_BOLT_SERVER_HOSTNAME**             | The DNS hostname of the pe-bolt-server service<br><br>`pe-bolt-server`                                                                                                             |
 | **PE_ACE_SERVER_HOSTNAME**              | The DNS hostname of the ace-server service<br><br>`ace`                                                                                                                            |
 | **PE_CONSOLE_SERVICES_HOSTNAME**        | The DNS hostname of the pe-console-services service<br><br>`pe-console-services`                                                                                                   |
-| **PUPPERWARE_ADMIN_PASSWORD**           | Log into the PE console using the username `admin` and this password value, once all containers are healthy<br><br>`pupperware`                                                    |
+| **ADMIN_RBAC_PASSWORD**                 | Log into the PE console using the username `admin` and this password value, once all containers are healthy<br><br>`pupperware`                                                    |
 | **PE_ORCHESTRATION_SERVICES_LOG_LEVEL** | The logging level to use for this service<br><br>`info`                                                                                                                            |
 | **PE_ORCHESTRATION_SERVICES_JAVA_ARGS** | Arguments passed directly to the JVM when starting the service<br><br>`-Xmx1g`                                                                                                     |
 
