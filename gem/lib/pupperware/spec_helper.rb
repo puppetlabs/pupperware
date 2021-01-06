@@ -23,6 +23,9 @@ module SpecHelpers
     @@load_compose_services = value
   end
 
+  # may include multiple comma separated images
+  # returns a string if only one is present for backward compatibility
+  # otherwise returns an array of images
   def require_test_image()
     image = ENV['PUPPET_TEST_DOCKER_IMAGE']
     if image.nil?
@@ -33,7 +36,7 @@ module SpecHelpers
 * * * * *
       MSG
     end
-    image
+    image.include?(',') ? image.split(',') : image
   end
 
   ######################################################################
@@ -366,13 +369,13 @@ MSG
   # in the compose file.
   # Typically the ignored service will be the one under test, since in
   # that case we want to use the image we just built, not the latest released.
-  def pull_images(ignore_service = nil)
+  def pull_images(ignore_services = nil)
     services = docker_compose('config --services')[:stdout].chomp
-    if ignore_service.nil?
+    if ignore_services.nil?
       puts "Pulling images"
     else
-      puts "Pulling images (ignoring image for service #{ignore_service})"
-      services.sub!(/^#{ignore_service}$/, '')
+      puts "Pulling images (ignoring image for service(s) #{ignore_services})"
+      [ignore_services].flatten.each { |s| services.sub!(/^#{s}$/, '') }
     end
     services.gsub!("\n", ' ')
     docker_compose("pull --quiet #{services}", stream: STDOUT)
