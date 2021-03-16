@@ -265,14 +265,14 @@ done
 
 ### Get the CA certificate for use with subsequent requests
 ### Fail-fast if openssl errors connecting or the CA certificate can't be parsed
-if ! httpsreq_insecure "$(get "${CA}/certificate/ca")" > "${CACERTFILE}"; then
+if ! retry_httpsreq_insecure "$(get "${CA}/certificate/ca")" 10 > "${CACERTFILE}"; then
     error "cannot reach CA host '${PUPPETSERVER_HOSTNAME}'"
 elif ! openssl x509 -subject -issuer -noout -in "${CACERTFILE}"; then
     error "invalid CA certificate"
 fi
 
 ### Get the CRL from the CA for use with client-side validation
-if ! httpsreq "$(get "${CA}/certificate_revocation_list/ca")" > "${CRLFILE}"; then
+if ! retry_httpsreq "$(get "${CA}/certificate_revocation_list/ca")" 10 > "${CRLFILE}"; then
     error "cannot reach CRL host '${PUPPETSERVER_HOSTNAME}'"
 elif ! openssl crl -text -noout -in "${CRLFILE}" > /dev/null; then
     error "invalid CRL"
