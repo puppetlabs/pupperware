@@ -50,12 +50,44 @@ get() {
     printf "GET %s HTTP/1.0\n%s" "$1" "$HOSTHEADER"
 }
 
+# $1 is request value
+# $2 is the maximum timeout
+# $3 is the amount to wait between retries, defaults to 1s
+retry_httpsreq() {
+    retry_httpsreq_insecure "$1" "$2" "${3:-1}" "-CAfile ""${CACERTFILE}"""
+}
+
 # use openssl s_client to create HTTP requests and parse the response
 # a 200 OK will set a 0 return value, all other responses are non-zero
 # the HTTP response body is returned over stdout
 # $1 is request value
 httpsreq() {
     httpsreq_insecure "$1" "-CAfile ""${CACERTFILE}"""
+}
+
+# use openssl s_client to create HTTP requests and parse the response
+# a 200 OK will set a 0 return value, all other responses are non-zero
+# the HTTP response body is returned over stdout
+# $1 is request value
+# $2 is the maximum timeout
+# $3 is the amount to wait between retries, defaults to 1s
+# $4 is additional s_client CLI flags
+# returns 1 on failures, 4 for 404, 0 for a 200 OK
+retry_httpsreq_insecure() {
+    maxwait=$2
+    sleeptime=${3:-1}
+    timewaited=0
+    while ! output=$(httpsreq_insecure "$1" "$4"); do
+        exit_code=$?
+        if [ ${timewaited} -ge $((maxwait)) ]; then
+            printf "%s" "${output}"
+            return $exit_code
+        fi
+        sleep $((sleeptime))
+        timewaited=$((timewaited+sleeptime))
+    done
+
+    printf "%s" "${output}"
 }
 
 # use openssl s_client to create HTTP requests and parse the response
@@ -326,15 +358,10 @@ while ! output=$(httpsreq "$CSRREQ"); do
 done
 
 ### Retrieve signed certificate; wait and try again with a timeout
-sleeptime=10
-timewaited=0
-while ! cert=$(httpsreq "$CERTREQ"); do
-    [ ${timewaited} -ge $((WAITFORCERT)) ] && \
-        error "timed-out waiting for certificate to be signed"
-    msg "Waiting for certificate to be signed..."
-    sleep ${sleeptime}
-    timewaited=$((timewaited+sleeptime))
-done
+msg "Waiting for certificate to be signed..."
+if ! cert=$(retry_httpsreq "$CERTREQ" $((WAITFORCERT)) 10); then
+    error "timed-out waiting for certificate to be signed"
+fi
 printf "%s\n" "${cert}" > "${CERTFILE}"
 
 set_file_perms
