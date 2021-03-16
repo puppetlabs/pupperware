@@ -117,6 +117,14 @@ ca_running() {
         httpsreq_insecure "$(get "${CA}/certificate/ca")" > /dev/null
 }
 
+set_file_perms() {
+    msg "Securing permissions on ${SSLDIR}"
+
+    # 700 for directories, 600 for files
+    find "${SSLDIR}/." -type d -exec chmod u=rwx,g=,o= -- {} +
+    find "${SSLDIR}/." -type f -exec chmod u=rw,g=,o= -- {} +
+}
+
 ### Verify we got a signed certificate
 verify_cert() {
     if [ -f "${CERTFILE}" ] && [ "$(head -1 "${CERTFILE}")" = "${CERTHEADER}" ]; then
@@ -208,6 +216,7 @@ msg "* WAITFORCERT: '${WAITFORCERT}' seconds"
 
 if [ -s "${CERTFILE}" ]; then
     msg "Certificates have already been generated - exiting!"
+    set_file_perms
     exit 0
 fi
 
@@ -329,5 +338,7 @@ done
 printf "%s\n" "${cert}" > "${CERTFILE}"
 # using a well known filename makes this easier to consume in k8s
 ln -s -f "${CERTFILE}" "${CANONICAL_CERTFILE}"
+
+set_file_perms
 
 verify_cert
