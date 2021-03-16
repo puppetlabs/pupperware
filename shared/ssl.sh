@@ -155,6 +155,7 @@ PUBKEYFILE="${PUBKEYDIR}/${CERTNAME}.pem"
 CANONICAL_PUBKEYFILE="${PUBKEYDIR}/server.pub"
 PRIVKEYFILE="${PRIVKEYDIR}/${CERTNAME}.pem"
 CANONICAL_PRIVKEYFILE="${PRIVKEYDIR}/server.key"
+CANONICAL_PRIVKEYFILE_PK8="${PRIVKEYDIR}/server.private_key.pk8"
 CSRFILE="${CSRDIR}/${CERTNAME}.pem"
 CERTFILE="${CERTDIR}/${CERTNAME}.pem"
 CANONICAL_CERTFILE="${CERTDIR}/server.crt"
@@ -266,6 +267,10 @@ else
 fi
 # using a well known filename makes this easier to consume in k8s
 ln -s -f "${PRIVKEYFILE}" "${CANONICAL_PRIVKEYFILE}"
+[ -f "${CANONICAL_PRIVKEYFILE_PK8}" ] && rm -rf "${CANONICAL_PRIVKEYFILE_PK8}"
+openssl pkcs8 -topk8 -nocrypt -inform PEM -outform DER \
+    -in "${PRIVKEYFILE}" \
+    -out "${CANONICAL_PRIVKEYFILE_PK8}"
 
 [ -s "${PUBKEYFILE}" ] && msg "recreating existing public key '${PUBKEYFILE}'"
 openssl rsa -in "${PRIVKEYFILE}" -pubout -out "${PUBKEYFILE}"
