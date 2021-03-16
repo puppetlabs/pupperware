@@ -35,6 +35,11 @@ msg() {
     echo "($0) $1"
 }
 
+# write to stderr so as to not pollute function output streams
+log_error() {
+    msg "Error: $1" >&2
+}
+
 error() {
     msg "Error: $1"
     exit 1
@@ -58,24 +63,32 @@ httpsreq() {
 # the HTTP response body is returned over stdout
 # $1 is request value
 # $2 is additional s_client CLI flags
+# returns 1 on failures, 4 for 404, 0 for a 200 OK
 httpsreq_insecure() {
     CLIENTFLAGS="-connect ""${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}"" -ign_eof -quiet $2"
 
     # shellcheck disable=SC2086 # $CLIENTFLAGS shouldn't be quoted
     if ! response=$(printf "%s\n\n" "$1" | openssl s_client ${CLIENTFLAGS} 2>/dev/null); then
         # possibly due to DNS errors or connnection refused
+        # don't pollute stderr as these are frequent at boot
         return 1
     fi
 
     # an empty response doesn't include a status code, so abort
-    [ -z "$response" ] && return 1
+    if [ -z "$response" ]; then
+        log_error "Empty response from request\n${1}"
+        return 1
+    fi
 
     # extract the HTTP status code from first line of response
     # RFC2616 defines first line header as Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
     status=$(printf "%s" "$response" | head -1 | cut -d ' ' -f 2)
 
     # unparseable status line, so abort
-    [ -z "$status" ] && return 1
+    if [ -z "$status" ]; then
+        log_error "Invalid status line ${status} from request\n${1}"
+        return 1
+    fi
 
     # write HTTP payload over stdout by collecting all lines after header\r
     # same as: awk -v bl=1 'bl{bl=0; h=($0 ~ /HTTP\/1/)} /^\r?$/{bl=1} {if(!h) print}'
@@ -90,8 +103,13 @@ httpsreq_insecure() {
         fi
     done
 
-    # treat a 200 as 0 exit code
-    [ "${status}" = "200" ] && return 0 || return "$((status))"
+    # treat 200 as success, don't pollute on not found status
+    case "${status}" in
+        '200') return 0 ;;
+        '404') return 4 ;;
+        *) log_error "HTTP ${status} from request\n${1}\n${response}"
+        return 1 ;;
+    esac
 }
 
 ca_running() {
@@ -216,6 +234,7 @@ fi
 ### * Recover from a submitted CSR attempt that didn't complete
 ### * Abort if there are no generated files on disk (i.e. hostname exists / collision)
 ### * Abort if generated files don't match (i.e. hostname exists / collision)
+### * Abort if connection problem with server, so script can re-run
 CERTREQ=$(get "${CA}/certificate/${CERTNAME}")
 if cert=$(httpsreq "$CERTREQ"); then
     # if cert exists for name and disk is empty, this DNS name is claimed!
@@ -234,6 +253,8 @@ if cert=$(httpsreq "$CERTREQ"); then
 
     verify_cert
     exit 0
+elif [ $? -ne 4 ]; then
+    error "${cert}"
 fi
 
 ### Generate keys and CSR for this host if needed
