@@ -214,6 +214,12 @@ msg "* CA: '${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}${CA}'"
 msg "* SSLDIR: '${SSLDIR}'"
 msg "* WAITFORCERT: '${WAITFORCERT}' seconds"
 
+# generate all symlinks, even if targets don't exist yet
+# using well known filenames makes these easier to consume in k8s
+ln -s -f "${CERTFILE}" "${CANONICAL_CERTFILE}"
+ln -s -f "${PRIVKEYFILE}" "${CANONICAL_PRIVKEYFILE}"
+ln -s -f "${PUBKEYFILE}" "${CANONICAL_PUBKEYFILE}"
+
 if [ -s "${CERTFILE}" ]; then
     msg "Certificates have already been generated - exiting!"
     set_file_perms
@@ -258,8 +264,6 @@ if cert=$(httpsreq "$CERTREQ"); then
     # Signed cert matches private key, so write it to disk
     msg "Recovered from incomplete signing - retrieved signed certificate matching private key on disk"
     printf "%s\n" "${cert}" > "${CERTFILE}"
-    # using a well known filename makes this easier to consume in k8s
-    ln -s -f "${CERTFILE}" "${CANONICAL_CERTFILE}"
 
     verify_cert
     exit 0
@@ -274,8 +278,6 @@ else
     # No signed cert exists yet, so use existing private key, regenerate pub key, resubmit CSR
     msg "Reusing existing private key '${PRIVKEYFILE}'"
 fi
-# using a well known filename makes this easier to consume in k8s
-ln -s -f "${PRIVKEYFILE}" "${CANONICAL_PRIVKEYFILE}"
 [ -f "${CANONICAL_PRIVKEYFILE_PK8}" ] && rm -rf "${CANONICAL_PRIVKEYFILE_PK8}"
 openssl pkcs8 -topk8 -nocrypt -inform PEM -outform DER \
     -in "${PRIVKEYFILE}" \
@@ -283,8 +285,6 @@ openssl pkcs8 -topk8 -nocrypt -inform PEM -outform DER \
 
 [ -s "${PUBKEYFILE}" ] && msg "recreating existing public key '${PUBKEYFILE}'"
 openssl rsa -in "${PRIVKEYFILE}" -pubout -out "${PUBKEYFILE}"
-# using a well known filename makes this easier to consume in k8s
-ln -s -f "${PUBKEYFILE}" "${CANONICAL_PUBKEYFILE}"
 
 [ -s "${CSRFILE}" ] && msg "recreating existing certificate request '${CSRFILE}'"
 # shellcheck disable=SC2086 # $CERTEXTENSIONS shouldn't be quoted
@@ -336,8 +336,6 @@ while ! cert=$(httpsreq "$CERTREQ"); do
     timewaited=$((timewaited+sleeptime))
 done
 printf "%s\n" "${cert}" > "${CERTFILE}"
-# using a well known filename makes this easier to consume in k8s
-ln -s -f "${CERTFILE}" "${CANONICAL_CERTFILE}"
 
 set_file_perms
 
