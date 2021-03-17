@@ -252,10 +252,15 @@ ln -s -f "${CERTFILE}" "${CANONICAL_CERTFILE}"
 ln -s -f "${PRIVKEYFILE}" "${CANONICAL_PRIVKEYFILE}"
 ln -s -f "${PUBKEYFILE}" "${CANONICAL_PUBKEYFILE}"
 
+# ensure no error output for empty dir
+certnames=$(cd "${PRIVKEYDIR}" && ls -A -m -- *.pem 2> /dev/null)
 if [ -s "${CERTFILE}" ]; then
-    msg "Certificates have already been generated - exiting!"
+    msg "Certificates (${certnames}) have already been generated - exiting!"
     set_file_perms
     exit 0
+# warn when rekeying an existing host as it's typically user error
+elif [ -n "${certnames}" ]; then
+    msg "Warning: Specified new certificate name ${CERTNAME}, but existing certs (${certnames}) found!"
 fi
 
 msg "Waiting for ${PUPPETSERVER_HOSTNAME} to be running to generate certificates..."
