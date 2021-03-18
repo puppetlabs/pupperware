@@ -35,6 +35,11 @@ msg() {
     echo "($0) $1"
 }
 
+# write to stderr so as to not pollute function output streams
+log_error() {
+    msg "Error: $1" >&2
+}
+
 error() {
     msg "Error: $1"
     exit 1
@@ -43,6 +48,13 @@ error() {
 # builds the GET http request given a URI
 get() {
     printf "GET %s HTTP/1.0\n%s" "$1" "$HOSTHEADER"
+}
+
+# $1 is request value
+# $2 is the maximum timeout
+# $3 is the amount to wait between retries, defaults to 1s
+retry_httpsreq() {
+    retry_httpsreq_insecure "$1" "$2" "${3:-1}" "-CAfile ""${CACERTFILE}"""
 }
 
 # use openssl s_client to create HTTP requests and parse the response
@@ -57,25 +69,58 @@ httpsreq() {
 # a 200 OK will set a 0 return value, all other responses are non-zero
 # the HTTP response body is returned over stdout
 # $1 is request value
+# $2 is the maximum timeout
+# $3 is the amount to wait between retries, defaults to 1s
+# $4 is additional s_client CLI flags
+# returns 1 on failures, 4 for 404, 0 for a 200 OK
+retry_httpsreq_insecure() {
+    maxwait=$2
+    sleeptime=${3:-1}
+    timewaited=0
+    while ! output=$(httpsreq_insecure "$1" "$4"); do
+        exit_code=$?
+        if [ ${timewaited} -ge $((maxwait)) ]; then
+            printf "%s" "${output}"
+            return $exit_code
+        fi
+        sleep $((sleeptime))
+        timewaited=$((timewaited+sleeptime))
+    done
+
+    printf "%s" "${output}"
+}
+
+# use openssl s_client to create HTTP requests and parse the response
+# a 200 OK will set a 0 return value, all other responses are non-zero
+# the HTTP response body is returned over stdout
+# $1 is request value
 # $2 is additional s_client CLI flags
+# returns 1 on failures, 4 for 404, 0 for a 200 OK
 httpsreq_insecure() {
     CLIENTFLAGS="-connect ""${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}"" -ign_eof -quiet $2"
 
     # shellcheck disable=SC2086 # $CLIENTFLAGS shouldn't be quoted
     if ! response=$(printf "%s\n\n" "$1" | openssl s_client ${CLIENTFLAGS} 2>/dev/null); then
         # possibly due to DNS errors or connnection refused
+        # don't pollute stderr as these are frequent at boot
         return 1
     fi
 
     # an empty response doesn't include a status code, so abort
-    [ -z "$response" ] && return 1
+    if [ -z "$response" ]; then
+        log_error "Empty response from request\n${1}"
+        return 1
+    fi
 
     # extract the HTTP status code from first line of response
     # RFC2616 defines first line header as Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
     status=$(printf "%s" "$response" | head -1 | cut -d ' ' -f 2)
 
     # unparseable status line, so abort
-    [ -z "$status" ] && return 1
+    if [ -z "$status" ]; then
+        log_error "Invalid status line ${status} from request\n${1}"
+        return 1
+    fi
 
     # write HTTP payload over stdout by collecting all lines after header\r
     # same as: awk -v bl=1 'bl{bl=0; h=($0 ~ /HTTP\/1/)} /^\r?$/{bl=1} {if(!h) print}'
@@ -90,13 +135,26 @@ httpsreq_insecure() {
         fi
     done
 
-    # treat a 200 as 0 exit code
-    [ "${status}" = "200" ] && return 0 || return "$((status))"
+    # treat 200 as success, don't pollute on not found status
+    case "${status}" in
+        '200') return 0 ;;
+        '404') return 4 ;;
+        *) log_error "HTTP ${status} from request\n${1}\n${response}"
+        return 1 ;;
+    esac
 }
 
-master_ca_running() {
+ca_running() {
     test "$(httpsreq_insecure "$(get '/status/v1/simple')")" = "running" && \
         httpsreq_insecure "$(get "${CA}/certificate/ca")" > /dev/null
+}
+
+set_file_perms() {
+    msg "Securing permissions on ${SSLDIR}"
+
+    # 700 for directories, 600 for files
+    find "${SSLDIR}/." -type d -exec chmod u=rwx,g=,o= -- {} +
+    find "${SSLDIR}/." -type f -exec chmod u=rw,g=,o= -- {} +
 }
 
 ### Verify we got a signed certificate
@@ -137,6 +195,7 @@ PUBKEYFILE="${PUBKEYDIR}/${CERTNAME}.pem"
 CANONICAL_PUBKEYFILE="${PUBKEYDIR}/server.pub"
 PRIVKEYFILE="${PRIVKEYDIR}/${CERTNAME}.pem"
 CANONICAL_PRIVKEYFILE="${PRIVKEYDIR}/server.key"
+CANONICAL_PRIVKEYFILE_PK8="${PRIVKEYDIR}/server.private_key.pk8"
 CSRFILE="${CSRDIR}/${CERTNAME}.pem"
 CERTFILE="${CERTDIR}/${CERTNAME}.pem"
 CANONICAL_CERTFILE="${CERTDIR}/server.crt"
@@ -187,26 +246,38 @@ msg "* CA: '${PUPPETSERVER_HOSTNAME}:${PUPPETSERVER_PORT}${CA}'"
 msg "* SSLDIR: '${SSLDIR}'"
 msg "* WAITFORCERT: '${WAITFORCERT}' seconds"
 
+# generate all symlinks, even if targets don't exist yet
+# using well known filenames makes these easier to consume in k8s
+ln -s -f "${CERTFILE}" "${CANONICAL_CERTFILE}"
+ln -s -f "${PRIVKEYFILE}" "${CANONICAL_PRIVKEYFILE}"
+ln -s -f "${PUBKEYFILE}" "${CANONICAL_PUBKEYFILE}"
+
+# ensure no error output for empty dir
+certnames=$(cd "${PRIVKEYDIR}" && ls -A -m -- *.pem 2> /dev/null)
 if [ -s "${CERTFILE}" ]; then
-    msg "Certificates have already been generated - exiting!"
+    msg "Certificates (${certnames}) have already been generated - exiting!"
+    set_file_perms
     exit 0
+# warn when rekeying an existing host as it's typically user error
+elif [ -n "${certnames}" ]; then
+    msg "Warning: Specified new certificate name ${CERTNAME}, but existing certs (${certnames}) found!"
 fi
 
-msg "Waiting for master ${PUPPETSERVER_HOSTNAME} to be running to generate certificates..."
-while ! master_ca_running; do
+msg "Waiting for ${PUPPETSERVER_HOSTNAME} to be running to generate certificates..."
+while ! ca_running; do
     sleep 1
 done
 
 ### Get the CA certificate for use with subsequent requests
 ### Fail-fast if openssl errors connecting or the CA certificate can't be parsed
-if ! httpsreq_insecure "$(get "${CA}/certificate/ca")" > "${CACERTFILE}"; then
+if ! retry_httpsreq_insecure "$(get "${CA}/certificate/ca")" 10 > "${CACERTFILE}"; then
     error "cannot reach CA host '${PUPPETSERVER_HOSTNAME}'"
 elif ! openssl x509 -subject -issuer -noout -in "${CACERTFILE}"; then
     error "invalid CA certificate"
 fi
 
 ### Get the CRL from the CA for use with client-side validation
-if ! httpsreq "$(get "${CA}/certificate_revocation_list/ca")" > "${CRLFILE}"; then
+if ! retry_httpsreq "$(get "${CA}/certificate_revocation_list/ca")" 10 > "${CRLFILE}"; then
     error "cannot reach CRL host '${PUPPETSERVER_HOSTNAME}'"
 elif ! openssl crl -text -noout -in "${CRLFILE}" > /dev/null; then
     error "invalid CRL"
@@ -216,6 +287,7 @@ fi
 ### * Recover from a submitted CSR attempt that didn't complete
 ### * Abort if there are no generated files on disk (i.e. hostname exists / collision)
 ### * Abort if generated files don't match (i.e. hostname exists / collision)
+### * Abort if connection problem with server, so script can re-run
 CERTREQ=$(get "${CA}/certificate/${CERTNAME}")
 if cert=$(httpsreq "$CERTREQ"); then
     # if cert exists for name and disk is empty, this DNS name is claimed!
@@ -229,11 +301,11 @@ if cert=$(httpsreq "$CERTREQ"); then
     # Signed cert matches private key, so write it to disk
     msg "Recovered from incomplete signing - retrieved signed certificate matching private key on disk"
     printf "%s\n" "${cert}" > "${CERTFILE}"
-    # using a well known filename makes this easier to consume in k8s
-    ln -s -f "${CERTFILE}" "${CANONICAL_CERTFILE}"
 
     verify_cert
     exit 0
+elif [ $? -ne 4 ]; then
+    error "${cert}"
 fi
 
 ### Generate keys and CSR for this host if needed
@@ -243,13 +315,13 @@ else
     # No signed cert exists yet, so use existing private key, regenerate pub key, resubmit CSR
     msg "Reusing existing private key '${PRIVKEYFILE}'"
 fi
-# using a well known filename makes this easier to consume in k8s
-ln -s -f "${PRIVKEYFILE}" "${CANONICAL_PRIVKEYFILE}"
+[ -f "${CANONICAL_PRIVKEYFILE_PK8}" ] && rm -rf "${CANONICAL_PRIVKEYFILE_PK8}"
+openssl pkcs8 -topk8 -nocrypt -inform PEM -outform DER \
+    -in "${PRIVKEYFILE}" \
+    -out "${CANONICAL_PRIVKEYFILE_PK8}"
 
 [ -s "${PUBKEYFILE}" ] && msg "recreating existing public key '${PUBKEYFILE}'"
 openssl rsa -in "${PRIVKEYFILE}" -pubout -out "${PUBKEYFILE}"
-# using a well known filename makes this easier to consume in k8s
-ln -s -f "${PUBKEYFILE}" "${CANONICAL_PUBKEYFILE}"
 
 [ -s "${CSRFILE}" ] && msg "recreating existing certificate request '${CSRFILE}'"
 # shellcheck disable=SC2086 # $CERTEXTENSIONS shouldn't be quoted
@@ -291,17 +363,12 @@ while ! output=$(httpsreq "$CSRREQ"); do
 done
 
 ### Retrieve signed certificate; wait and try again with a timeout
-sleeptime=10
-timewaited=0
-while ! cert=$(httpsreq "$CERTREQ"); do
-    [ ${timewaited} -ge $((WAITFORCERT)) ] && \
-        error "timed-out waiting for certificate to be signed"
-    msg "Waiting for certificate to be signed..."
-    sleep ${sleeptime}
-    timewaited=$((timewaited+sleeptime))
-done
+msg "Waiting for certificate to be signed..."
+if ! cert=$(retry_httpsreq "$CERTREQ" $((WAITFORCERT)) 10); then
+    error "timed-out waiting for certificate to be signed"
+fi
 printf "%s\n" "${cert}" > "${CERTFILE}"
-# using a well known filename makes this easier to consume in k8s
-ln -s -f "${CERTFILE}" "${CANONICAL_CERTFILE}"
+
+set_file_perms
 
 verify_cert
