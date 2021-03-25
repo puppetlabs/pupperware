@@ -175,12 +175,13 @@ module SpecHelpers
       # user-specified ENV var can select the volume when container has multiple
       volume = service['environment']['CERT_VOLUME'] ||
         service['volumes'].map { |v| v.split(':') }.first[0]
+      dest_dir = service['environment']['CERT_DESTDIR'] || 'certs'
       next unless named_volumes.include?(volume)
       labels = config['volumes'][volume]['labels']
 
       # containers don't need to be running to copy data to their volumes
       STDOUT.puts("Pre-loading certificates for service #{service_name}")
-      docker_volume_cp(src_path: source, dest_volume: volume, dest_dir: 'certs',
+      docker_volume_cp(src_path: source, dest_volume: volume, dest_dir: dest_dir,
         uid: labels ? labels['com.puppet.certs.uid'] : nil,
         gid: labels ? labels['com.puppet.certs.gid'] : nil)
     end
@@ -203,14 +204,17 @@ module SpecHelpers
       --volume #{src_path}:/tmp/src \
       --volume #{dest_volume}:/opt \
       alpine:3.10 \
-      /bin/sh -c \"cp -r /tmp/src /opt/#{dest_dir}; chown -R #{uid}:#{gid} /opt/#{dest_dir}\""
+      /bin/sh -c \"cp -r /tmp/src/. /opt/#{dest_dir}; chown -R #{uid}:#{gid} /opt/#{dest_dir}\""
     STDOUT.puts(<<-MSG)
 Copying existing files through transient container:
   from         : #{src_path}
   to volume    : #{dest_volume}/#{dest_dir}
   with uid:gid : #{uid}:#{gid}
 MSG
-    run_command(cmd)
+    result = run_command(cmd)
+    if result[:status].exitstatus != 0
+      raise "docker_volume_cp failed to '#{dest_volume}/#{dest_dir}' #{result[:status].exitstatus}:\n#{result[:stdout].chomp}"
+    end
   end
 
   # will simultaneously wait on all containers with healthchecks defined
