@@ -616,7 +616,9 @@ LOG
     curl('localhost', 4433, end_point).body
   end
 
-  def generate_rbac_token(rbac_username: 'admin', rbac_password: 'pupperware')
+  def generate_rbac_token(rbac_username: 'admin', rbac_password: 'pupperware', force: false)
+    return @rbac_token if @rbac_token && !force
+
     uri = URI.parse("https://localhost:4433/rbac-api/v1/auth/token")
     request = Net::HTTP::Post.new(uri)
     request.content_type = "application/json"
