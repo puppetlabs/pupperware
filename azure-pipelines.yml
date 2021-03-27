@@ -14,6 +14,8 @@ pool:
 
 variables:
   COMPOSE_PROJECT_NAME: pupperware
+  PRELOAD_CERTS: 1
+  PUPPETSERVER_VERSION: edge
 
 workspace:
   clean: resources
