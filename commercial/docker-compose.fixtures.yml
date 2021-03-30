@@ -3,6 +3,7 @@ services:
   puppet:
     environment:
       - CERT_VOLUME=puppetserver
+      - CERT_DESTDIR=
   postgres:
     environment:
       # Testing specific variable needed to bootstrap cert preloading
