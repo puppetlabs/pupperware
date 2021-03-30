@@ -655,7 +655,7 @@ LOG
         puppetserver: 'puppet',
         pe_console_services: 'pe-console-services',
         pe_orchestration_services: 'pe-orchestration-services',
-        image: 'artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:latest'
+        image: 'artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-client-tools:latest'
       )
     run_command("docker pull #{image}")
     run_command("docker run \
