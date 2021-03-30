@@ -2,6 +2,7 @@ CLIENT_TOOLS_IMAGE := artifactory.delivery.puppetlabs.net/platform-services-2974
 NAMESPACE ?= INVALID_NS
 MAKE_TARGETS ?= lint build test publish
 CREATE_REPO_IN_ARTIFACTORY ?= true
+export PRELOAD_CERTS ?= 1
 
 build_release: export NAMESPACE := $(NAMESPACE)
 build_release: export LATEST_VERSION := pe-$(PE_RELEASE)
