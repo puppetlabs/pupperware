@@ -1,4 +1,4 @@
-CLIENT_TOOLS_IMAGE := artifactory.delivery.puppetlabs.net/pe-and-platform/pe-client-tools:latest
+CLIENT_TOOLS_IMAGE := artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-client-tools:latest
 NAMESPACE ?= INVALID_NS
 MAKE_TARGETS ?= lint build test publish
 CREATE_REPO_IN_ARTIFACTORY ?= true

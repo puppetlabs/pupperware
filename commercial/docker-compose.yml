@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   puppet:
-    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-puppetserver:latest
+    image: artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-puppetserver:latest
     hostname: puppet
     environment:
       - CERTNAME=puppet
@@ -32,7 +32,7 @@ services:
       - 8170:8170
 
   pe-orchestration-services:
-    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-orchestration-services:latest
+    image: artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-orchestration-services:latest
     hostname: pe-orchestration-services
     environment:
       - CERTNAME=pe-orchestration-services
@@ -59,7 +59,7 @@ services:
       - puppet
 
   pe-console-services:
-    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-console-services:latest
+    image: artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-console-services:latest
     hostname: pe-console-services
     environment:
       - CERTNAME=pe-console-services
@@ -89,7 +89,7 @@ services:
       - puppet
 
   pe-bolt-server:
-    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-bolt-server:latest
+    image: artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-bolt-server:latest
     hostname: pe-bolt-server
     restart: always
     expose:
@@ -107,7 +107,7 @@ services:
       - bolt-server:/opt/puppetlabs/server/data/bolt-server
 
   puppetdb:
-    image: artifactory.delivery.puppetlabs.net/pe-and-platform/pe-puppetdb:latest
+    image: artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-puppetdb:latest
     hostname: puppetdb
     environment:
       - CERTNAME=puppetdb
