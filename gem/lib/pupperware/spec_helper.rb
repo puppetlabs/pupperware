@@ -204,7 +204,7 @@ module SpecHelpers
       --volume #{src_path}:/tmp/src \
       --volume #{dest_volume}:/opt \
       alpine:3.10 \
-      /bin/sh -c \"cp -r /tmp/src/. /opt/#{dest_dir}; chown -R #{uid}:#{gid} /opt/#{dest_dir}\""
+      /bin/sh -c \"cp -r /tmp/src/. /opt/#{dest_dir}; chown -R #{uid}:#{gid} /opt\""
     STDOUT.puts(<<-MSG)
 Copying existing files through transient container:
   from         : #{src_path}
