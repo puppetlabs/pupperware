@@ -167,7 +167,7 @@ module SpecHelpers
 
     config['services'].each do |service_name, service|
       # for services that have certs
-      source = cert_path.join(service['environment']['CERT_SRCDIR'] || service_name)
+      source = cert_path.join(service.dig('environment', 'CERT_SRCDIR') || service_name)
       next unless source.directory?
 
       # where the first service volume name is a registered volume
