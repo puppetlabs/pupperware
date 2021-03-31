@@ -26,6 +26,8 @@ services:
     image: postgres:9.6
     hostname: postgres
     environment:
+      # loading certs requires a non-default PGDATA, even though we don't use certs
+      - PGDATA=/var/lib/postgresql/data/pgdata
       - POSTGRES_PASSWORD=puppetdb
       - POSTGRES_USER=puppetdb
       - POSTGRES_DB=puppetdb
