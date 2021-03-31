@@ -127,7 +127,7 @@ module SpecHelpers
     file_arg = File.file?(overrides) ? "--file #{overrides}" : ''
     file_arg += ' --file docker-compose.fixtures.yml' if File.file?('docker-compose.fixtures.yml')
     run_command("docker-compose --file docker-compose.yml #{file_arg} \
-                                --ansi=never \
+                                --no-ansi \
                                 #{command_and_args}", stream: stream)
   end
 
