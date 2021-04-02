@@ -2,7 +2,10 @@ require 'rspec'
 require 'pupperware/spec_helper'
 include Pupperware::SpecHelpers
 
+# unifies volume naming
+ENV['COMPOSE_PROJECT_NAME'] ||= 'pupperware-commercial'
 CLIENT_TOOLS_IMAGE = 'artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-client-tools:latest'
+Pupperware::SpecHelpers.load_compose_services='pe-postgres'
 
 RSpec.configure do |c|
   c.before(:suite) do

@@ -31,7 +31,7 @@ which you will run your Puppet Infrastructure.
 
 ## Running
 
-1. Run `docker-compose up` (or `make up`)
+1. Run `make up`
 2. Go to https://localhost in your browser (or `make console`)
 3. Login with `admin/pupperware`
 
