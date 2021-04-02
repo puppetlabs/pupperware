@@ -186,7 +186,7 @@ services:
           grep --quiet " t"'
     volumes:
       - puppetdb-postgres:/var/lib/postgresql/data
-      - ./postgres-custom:/docker-entrypoint-initdb.d
+      - ./pe-postgres-custom:/docker-entrypoint-initdb.d
     restart: always
     expose:
       - 5432

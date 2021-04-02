@@ -1,1 +1,2 @@
 postgres-custom/*                        text  eol=lf
+gem/lib/pupperware/compose-services/pe-postgres-custom/*                        text  eol=lf
