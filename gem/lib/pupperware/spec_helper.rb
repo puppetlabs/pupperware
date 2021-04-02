@@ -16,6 +16,13 @@ module SpecHelpers
 
   IS_WINDOWS = !!File::ALT_SEPARATOR
 
+  # effectively global state shared by all module instances as they're mixed in to specs
+  @@load_compose_services = ''
+  module_function
+  def load_compose_services=(value)
+    @@load_compose_services = value
+  end
+
   def require_test_image()
     image = ENV['PUPPET_TEST_DOCKER_IMAGE']
     if image.nil?
@@ -120,13 +127,25 @@ module SpecHelpers
   ######################################################################
 
   def docker_compose(command_and_args, stream: StringIO.new)
+    # if a name is specified, use it - otherwise lazy create one on first compose call
+    # works around a bug in docker-compose config
+    # necessary to properly prefix volumes for preloading when files span directories
+    ENV['COMPOSE_PROJECT_NAME'] ||= 'pupperware'
+
     overrides = IS_WINDOWS ?
                   'docker-compose.windows.yml' :
                   'docker-compose.override.yml'
-    # Only use overrides file if it exists
-    file_arg = File.file?(overrides) ? "--file #{overrides}" : ''
-    file_arg += ' --file docker-compose.fixtures.yml' if File.file?('docker-compose.fixtures.yml')
-    run_command("docker-compose --file docker-compose.yml #{file_arg} \
+    services_path = Pathname.new(File.join(__dir__, 'compose-services'))
+    ENV['ADDITIONAL_COMPOSE_SERVICES_PATH'] = services_path.to_s
+    services_arg = @@load_compose_services.split(',').map do |service_name|
+      " --file #{services_path.join(service_name)}.yml"
+    end.join(' ')
+
+    # Only use overrides files if they exist
+    file_arg = [overrides, 'docker-compose.fixtures.yml'].map do |f|
+      "--file #{f}" if File.file?(f)
+    end.join(' ')
+    run_command("docker-compose #{services_arg} --file docker-compose.yml #{file_arg} \
                                 --ansi=never \
                                 #{command_and_args}", stream: stream)
   end
