@@ -1,0 +1,22 @@
+version: '3.7'
+services:
+  pe-bolt-server:
+    image: ${PE_BOLT_SERVER_IMAGE:-artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-bolt-server:latest}
+    hostname: pe-bolt-server
+    environment:
+      - CERTNAME=pe-bolt-server
+      # NOTE: Java follows RFC 2818 stating when SAN is provided, it's authoritative / Subject should be ignored
+      - DNS_ALT_NAMES=pe-bolt-server
+      - PUPPETSERVER_HOSTNAME=puppet
+      - PUPPETSERVER_PORT=8140
+      - PE_BOLT_SERVER_LOGLEVEL=${PE_BOLT_SERVER_LOGLEVEL:-info}
+      - WHITELIST_HOSTNAME.0=pe-bolt-server
+      - WHITELIST_HOSTNAME.1=pe-orchestration-services
+    volumes:
+      - bolt-server:/opt/puppetlabs/server/data/bolt-server
+    restart: always
+    expose:
+      - 62658
+
+volumes:
+  bolt-server:
