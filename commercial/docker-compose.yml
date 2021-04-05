@@ -70,31 +70,6 @@ services:
     volumes:
       - bolt-server:/opt/puppetlabs/server/data/bolt-server
 
-  puppetdb:
-    image: artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-puppetdb:latest
-    hostname: puppetdb
-    environment:
-      - CERTNAME=puppetdb
-      # NOTE: Java follows RFC 2818 stating when SAN is provided, it's authoritative / Subject should be ignored
-      - DNS_ALT_NAMES=puppetdb
-      - PUPPETDB_SSL_PORT=8081
-      - PUPPETDB_LOG_LEVEL=info
-      - USE_PUPPETSERVER=true
-      - PUPPETSERVER_HOSTNAME=puppet
-      - PUPPETSERVER_PORT=8140
-      - PUPPETDB_POSTGRES_HOSTNAME=postgres
-      - PUPPETDB_POSTGRES_PORT=5432
-      - PUPPETDB_PASSWORD=puppetdb
-      - PUPPETDB_USER=puppetdb
-      - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services
-    volumes:
-      - puppetdb:/opt/puppetlabs/server/data/puppetdb
-    restart: always
-    ports:
-      - 8081:8081
-    expose:
-      - 8080
-
 networks:
   default:
     name: pupperware-commercial
@@ -102,4 +77,3 @@ volumes:
   orchestration-services:
   console-services:
   bolt-server:
-  puppetdb:
