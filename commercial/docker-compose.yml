@@ -25,33 +25,6 @@ services:
       - 8142:8142
       - 8143:8143
 
-  pe-console-services:
-    image: artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-console-services:latest
-    hostname: pe-console-services
-    environment:
-      - CERTNAME=pe-console-services
-      # NOTE: Java follows RFC 2818 stating when SAN is provided, it's authoritative / Subject should be ignored
-      - DNS_ALT_NAMES=pe-console-services
-      - PE_CONSOLE_SERVICES_LOG_LEVEL=info
-      - PUPPETSERVER_HOSTNAME=puppet
-      - PUPPETSERVER_PORT=8140
-      - PUPPETDB_HOSTNAME=puppetdb
-      - PUPPETDB_SSL_PORT=8081
-      - POSTGRES_HOSTNAME=postgres
-      - POSTGRES_PORT=5432
-      - PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services
-      - PE_ORCHESTRATION_SERVICES_PORT=8143
-      - RBAC_CERTIFICATE_ALLOWLIST=puppet,puppetdb,pe-orchestration-services
-    volumes:
-      - console-services:/opt/puppetlabs/server/data/console-services
-    restart: always
-    ports:
-      - 443:4431
-      - 4433:4433
-    expose:
-      - 4430
-      - 4432
-
   pe-bolt-server:
     image: artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-bolt-server:latest
     hostname: pe-bolt-server
@@ -75,5 +48,4 @@ networks:
     name: pupperware-commercial
 volumes:
   orchestration-services:
-  console-services:
   bolt-server:
