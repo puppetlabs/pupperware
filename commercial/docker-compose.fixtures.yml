@@ -1,9 +1,5 @@
 version: '3.7'
 services:
-  puppet:
-    environment:
-      - CERT_VOLUME=puppetserver
-      - CERT_DESTDIR=
   puppet-agent:
     image: puppet/puppet-agent-ubuntu:latest
     hostname: puppet-agent

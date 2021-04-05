@@ -1,36 +1,5 @@
 version: '3.7'
 services:
-  puppet:
-    image: artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-puppetserver:latest
-    hostname: puppet
-    environment:
-      - CERTNAME=puppet
-      # NOTE: Java follows RFC 2818 stating when SAN is provided, it's authoritative / Subject should be ignored
-      - DNS_ALT_NAMES=puppet
-      - PUPPETSERVER_PORT=8140
-      - PUPPETSERVER_LOG_LEVEL=info
-      - PUPPETDB_HOSTNAME=puppetdb
-      - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services
-      - PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services
-      # puppet::enterprise class parameters written to hiera.yaml
-      - POSTGRES_HOSTNAME=postgres
-      - PUPPETDB_SSL_PORT=8081
-      - PE_ORCHESTRATION_SERVICES_PORT=8143
-      # Set the control repo URL like https://github.com/puppetlabs/control-repo.git
-      # For private repos, use git@github.com:user/repo.git and provide SSH keys
-      # - R10K_REMOTE=
-    volumes:
-      - puppetserver:/opt/puppetlabs/server/data/puppetserver
-      - puppetserver-packages:/opt/puppetlabs/server/data/packages
-      - code-manager:/opt/puppetlabs/server/data/code-manager
-      # NOTE: for an R10K_REMOTE the id-control_repo.rsa path may be bind mounted like:
-      # - ./path/to/codemanager/ssh:/etc/puppetlabs/puppetserver/ssh
-      # Additional SSH configuration files may be placed in this directory
-    restart: always
-    ports:
-      - 8140:8140
-      - 8170:8170
-
   pe-orchestration-services:
     image: artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-orchestration-services:latest
     hostname: pe-orchestration-services
@@ -55,8 +24,6 @@ services:
     ports:
       - 8142:8142
       - 8143:8143
-    depends_on:
-      - puppet
 
   pe-console-services:
     image: artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-console-services:latest
@@ -84,8 +51,6 @@ services:
     expose:
       - 4430
       - 4432
-    depends_on:
-      - puppet
 
   pe-bolt-server:
     image: artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-bolt-server:latest
@@ -129,16 +94,11 @@ services:
       - 8081:8081
     expose:
       - 8080
-    depends_on:
-      - puppet
 
 networks:
   default:
     name: pupperware-commercial
 volumes:
-  puppetserver:
-  puppetserver-packages:
-  code-manager:
   orchestration-services:
   console-services:
   bolt-server:
