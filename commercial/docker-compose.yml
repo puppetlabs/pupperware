@@ -1,32 +1,4 @@
 version: '3.7'
-services:
-  pe-orchestration-services:
-    image: artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-orchestration-services:latest
-    hostname: pe-orchestration-services
-    environment:
-      - CERTNAME=pe-orchestration-services
-      # NOTE: Java follows RFC 2818 stating when SAN is provided, it's authoritative / Subject should be ignored
-      - DNS_ALT_NAMES=pe-orchestration-services
-      - PCP_BROKER_PORT=8142
-      - PE_ORCHESTRATION_SERVICES_PORT=8143
-      - PUPPETSERVER_HOSTNAME=puppet
-      - PUPPETSERVER_PORT=8140
-      - PUPPETDB_HOSTNAME=puppetdb
-      - PUPPETDB_SSL_PORT=8081
-      - POSTGRES_HOSTNAME=postgres
-      - POSTGRES_PORT=5432
-      - PE_BOLT_SERVER_HOSTNAME=pe-bolt-server
-      - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services
-      - ADMIN_RBAC_PASSWORD=pupperware
-    volumes:
-      - orchestration-services:/opt/puppetlabs/server/data/orchestration-services
-    restart: always
-    ports:
-      - 8142:8142
-      - 8143:8143
-
 networks:
   default:
     name: pupperware-commercial
-volumes:
-  orchestration-services:

@@ -4,8 +4,9 @@ include Pupperware::SpecHelpers
 
 # unifies volume naming
 ENV['COMPOSE_PROJECT_NAME'] ||= 'pupperware-commercial'
+RBAC_PASSWORD = 'admin'
 CLIENT_TOOLS_IMAGE = 'artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-client-tools:latest'
-Pupperware::SpecHelpers.load_compose_services='pe-postgres,pe-puppet,pe-puppetdb,pe-console-services,pe-bolt-server'
+Pupperware::SpecHelpers.load_compose_services='pe-postgres,pe-puppet,pe-puppetdb,pe-console-services,pe-bolt-server,pe-orchestration-services'
 
 RSpec.configure do |c|
   c.before(:suite) do
@@ -23,6 +24,9 @@ end
 
 describe 'PE stack' do
   before(:all) do
+    # unrevoke the default admin/admin login and set the global RBAC token
+    unrevoke_console_admin_user()
+    generate_rbac_token(rbac_password: RBAC_PASSWORD)
     wait_for_pxp_agent_to_connect(agent_name: 'puppet-agent')
   end
 
@@ -31,7 +35,7 @@ describe 'PE stack' do
            --rm \
            --network pupperware-commercial \
            --env RBAC_USERNAME=admin \
-           --env RBAC_PASSWORD=pupperware \
+           --env RBAC_PASSWORD=#{RBAC_PASSWORD} \
            --env PUPPETSERVER_HOSTNAME=puppet \
            --env PUPPETDB_HOSTNAME=puppetdb \
            --env PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services \
@@ -59,6 +63,8 @@ describe 'PE stack' do
 
     output = orchestrate_puppet_run(
         target_agent: 'puppet-agent',
+        rbac_username: 'admin',
+        rbac_password: RBAC_PASSWORD,
         puppetserver: 'puppet',
         pe_console_services: 'pe-console-services',
         pe_orchestration_services: 'pe-orchestration-services'

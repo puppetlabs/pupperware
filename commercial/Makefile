@@ -3,7 +3,7 @@ NAMESPACE ?= INVALID_NS
 MAKE_TARGETS ?= lint build test publish
 CREATE_REPO_IN_ARTIFACTORY ?= true
 SVC_PATH = $(shell bundle show pupperware)/lib/pupperware/compose-services
-COMPOSE_ARGS = --file $(SVC_PATH)/pe-postgres.yml --file $(SVC_PATH)/pe-puppet.yml --file $(SVC_PATH)/pe-puppetdb.yml --file $(SVC_PATH)/pe-console-services.yml --file $(SVC_PATH)/pe-bolt-server.yml --file docker-compose.yml
+COMPOSE_ARGS = --file $(SVC_PATH)/pe-postgres.yml --file $(SVC_PATH)/pe-puppet.yml --file $(SVC_PATH)/pe-puppetdb.yml --file $(SVC_PATH)/pe-console-services.yml --file $(SVC_PATH)/pe-bolt-server.yml --file $(SVC_PATH)/pe-orchestration-services.yml --file docker-compose.yml
 export ADDITIONAL_COMPOSE_SERVICES_PATH = ${SVC_PATH}
 
 build_release: export NAMESPACE := $(NAMESPACE)
