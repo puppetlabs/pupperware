@@ -9,7 +9,7 @@ RSpec.configure do |c|
     teardown_cluster()
     pull_images()
     run_command("docker pull --quiet #{CLIENT_TOOLS_IMAGE}")
-    docker_compose_up()
+    docker_compose_up(preload_certs: true)
   end
 
   c.after(:suite) do
