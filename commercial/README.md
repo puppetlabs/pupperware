@@ -31,14 +31,14 @@ which you will run your Puppet Infrastructure.
 
 ## Running
 
-1. Run `docker-compose up` (or `make up`)
+1. Run `make up`
 2. Go to https://localhost in your browser (or `make console`)
-3. Login with `admin/pupperware`
+3. Login with `admin/admin`
 
 To see things working, try doing a puppet-code deploy:
 ```shell
 docker run --rm --network pupperware-commercial \
-  -e RBAC_USERNAME=admin -e RBAC_PASSWORD=pupperware \
+  -e RBAC_USERNAME=admin -e RBAC_PASSWORD=admin \
   -e PUPPETSERVER_HOSTNAME=puppet \
   -e PUPPETDB_HOSTNAME=puppetdb \
   -e PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services \
@@ -136,7 +136,7 @@ The following values, many of which are already overriden in the `docker-compose
 | **PE_BOLT_SERVER_HOSTNAME**             | The DNS hostname of the pe-bolt-server service<br><br>`pe-bolt-server`                                                                                                             |
 | **PE_ACE_SERVER_HOSTNAME**              | The DNS hostname of the ace-server service<br><br>`ace`                                                                                                                            |
 | **PE_CONSOLE_SERVICES_HOSTNAME**        | The DNS hostname of the pe-console-services service<br><br>`pe-console-services`                                                                                                   |
-| **ADMIN_RBAC_PASSWORD**                 | Log into the PE console using the username `admin` and this password value, once all containers are healthy<br><br>`pupperware`                                                    |
+| **ADMIN_RBAC_PASSWORD**                 | Log into the PE console using the username `admin` and this password value, once all containers are healthy<br><br>`admin`                                                         |
 | **PE_ORCHESTRATION_SERVICES_LOG_LEVEL** | The logging level to use for this service<br><br>`info`                                                                                                                            |
 | **PE_ORCHESTRATION_SERVICES_JAVA_ARGS** | Arguments passed directly to the JVM when starting the service<br><br>`-Xmx1g`                                                                                                     |
 

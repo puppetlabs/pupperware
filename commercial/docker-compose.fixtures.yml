@@ -1,13 +1,5 @@
 version: '3.7'
 services:
-  puppet:
-    environment:
-      - CERT_VOLUME=puppetserver
-      - CERT_DESTDIR=
-  postgres:
-    environment:
-      # Testing specific variable needed to bootstrap cert preloading
-      - CERT_VOLUME=puppetdb-postgres
   puppet-agent:
     image: puppet/puppet-agent-ubuntu:latest
     hostname: puppet-agent
@@ -27,9 +19,3 @@ services:
     image: rastasheep/ubuntu-sshd:18.04
     expose:
       - 22
-
-volumes:
-  puppetdb-postgres:
-    labels:
-      com.puppet.certs.uid: 999
-      com.puppet.certs.gid: 999

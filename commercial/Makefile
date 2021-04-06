@@ -2,7 +2,9 @@ CLIENT_TOOLS_IMAGE := artifactory.delivery.puppetlabs.net/platform-services-2974
 NAMESPACE ?= INVALID_NS
 MAKE_TARGETS ?= lint build test publish
 CREATE_REPO_IN_ARTIFACTORY ?= true
-export PRELOAD_CERTS ?= 1
+SVC_PATH = $(shell bundle show pupperware)/lib/pupperware/compose-services
+COMPOSE_ARGS = --file $(SVC_PATH)/pe-postgres.yml --file $(SVC_PATH)/pe-puppet.yml --file $(SVC_PATH)/pe-puppetdb.yml --file $(SVC_PATH)/pe-console-services.yml --file $(SVC_PATH)/pe-bolt-server.yml --file $(SVC_PATH)/pe-orchestration-services.yml --file docker-compose.yml
+export ADDITIONAL_COMPOSE_SERVICES_PATH = ${SVC_PATH}
 
 build_release: export NAMESPACE := $(NAMESPACE)
 build_release: export LATEST_VERSION := pe-$(PE_RELEASE)
@@ -32,29 +34,31 @@ endif
 	git clone git@github.com:puppetlabs/pe-client-tools-vanagon tmp/pe-client-tools-vanagon
 	cd tmp/pe-client-tools-vanagon/docker && PE_DEB_COMPONENT=$${PE_RELEASE//\./_} $(MAKE) $(MAKE_TARGETS)
 
-pull:
-	docker-compose pull --ignore-pull-failures
-	docker pull $(CLIENT_TOOLS_IMAGE)
-
-test:
+bundle:
 	bundle install --path .bundle/gems --with test
 	bundle update
+
+pull: bundle
+	docker-compose $(COMPOSE_ARGS) pull --ignore-pull-failures
+	docker pull $(CLIENT_TOOLS_IMAGE)
+
+test: bundle
 	bundle exec rspec spec/
 
-up:
-	docker-compose up
+up: bundle
+	docker-compose $(COMPOSE_ARGS) up
 
-down:
-	docker-compose down --volumes --remove-orphans
+down: bundle
+	docker-compose $(COMPOSE_ARGS) down --volumes --remove-orphans
 
-start:
-	docker-compose start
+start: bundle
+	docker-compose $(COMPOSE_ARGS) start
 
-stop:
-	docker-compose stop
+stop: bundle
+	docker-compose $(COMPOSE_ARGS) stop
 
-logs:
-	docker-compose logs --follow
+logs: bundle
+	docker-compose $(COMPOSE_ARGS) logs --follow
 
 console:
 	open https://localhost
@@ -70,4 +74,4 @@ client:
 		--env PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services \
 		$(CLIENT_TOOLS_IMAGE)
 
-.PHONY: pull test up down start stop logs console client
+.PHONY: bundle pull test up down start stop logs console client
