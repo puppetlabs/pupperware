@@ -1,0 +1,27 @@
+version: '3.7'
+services:
+  puppetdb:
+    image: ${PUPPETDB_IMAGE:-puppet/puppetdb:latest}
+    hostname: puppetdb
+    environment:
+      - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
+      - CERTNAME=puppetdb
+      # NOTE: Java follows RFC 2818 stating when SAN is provided, it's authoritative / Subject should be ignored
+      - DNS_ALT_NAMES=${PUPPETDB_DNS_ALT_NAMES:-puppetdb}
+      - USE_PUPPETSERVER=true
+      - PUPPETSERVER_HOSTNAME=puppet
+      - PUPPETSERVER_PORT=8140
+      - PUPPETDB_POSTGRES_HOSTNAME=postgres
+      - PUPPETDB_POSTGRES_PORT=5432
+      - PUPPETDB_USER=puppetdb
+      - PUPPETDB_PASSWORD=puppetdb
+    volumes:
+      - puppetdb:/opt/puppetlabs/server/data/puppetdb
+    restart: always
+    ports:
+      - 8081:8081
+      # some test suites rely on querying pdb from localhost
+      - 8080:8080
+
+volumes:
+  puppetdb:

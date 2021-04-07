@@ -5,7 +5,7 @@ include Pupperware::SpecHelpers
 
 # unifies volume naming
 ENV['COMPOSE_PROJECT_NAME'] ||= 'pupperware'
-Pupperware::SpecHelpers.load_compose_services = 'postgres'
+Pupperware::SpecHelpers.load_compose_services = 'postgres,puppetdb'
 
 RSpec.configure do |c|
   c.before(:suite) do

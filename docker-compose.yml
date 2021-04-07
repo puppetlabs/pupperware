@@ -22,27 +22,7 @@ services:
       - puppetserver-config:/etc/puppetlabs/puppet/
       - puppetserver-data:/opt/puppetlabs/server/data/puppetserver/
 
-  puppetdb:
-    hostname: puppetdb
-    image: puppet/puppetdb:${PUPPETDB_VERSION:-latest}
-    environment:
-      - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
-      # This name is an FQDN so the short name puppet doesn't collide outside compose network
-      - PUPPETSERVER_HOSTNAME=puppet
-      - PUPPETDB_POSTGRES_HOSTNAME=postgres
-      - PUPPETDB_PASSWORD=puppetdb
-      - PUPPETDB_USER=puppetdb
-      - DNS_ALT_NAMES=${DNS_ALT_NAMES:-}
-    ports:
-      - 8080
-      - 8081
-    depends_on:
-      - puppet
-    volumes:
-      - puppetdb:/opt/puppetlabs/server/data/puppetdb
-
 volumes:
   puppetserver-code:
   puppetserver-config:
   puppetserver-data:
-  puppetdb:
