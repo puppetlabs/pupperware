@@ -14,11 +14,11 @@ We've been developing our own Helm chart which can get you up & running fast. Yo
 ## Required versions
 
 * Docker Compose - must support `version: '3'` of the compose file format, which requires Docker Engine `1.13.0+`. [Full compatibility matrix](https://docs.docker.com/compose/compose-file/compose-versioning/)
-  * Linux is tested with docker-compose `1.22`
+  * Linux is tested with docker-compose `1.28.6`
   * Windows requires a minimum of Windows 10, Build 2004 and WSL2 as described in [README-windows.md](./README-windows.md), but is no longer tested
   * OSX is tested with `docker-compose version 1.28.5, build c4eb3a1f`
 * Docker Engine support is only tested on versions newer than `17.09.0-ce`
-  * Linux is tested with (client and server) `17.09.0-ce` using API version `1.32` (`Git commit:   afdb6d4`)
+  * Linux is tested with (client and server) `20.10.5-ce`
   * OSX is tested during development with `Docker Engine - Community` edition
       - Client `20.10.5` using API version `1.41` (`Git commit:        55c4c88`)
       - Server `20.10.5` using API version `1.41 (minimum version 1.12)` (`Git commit:       363e9a8`)
