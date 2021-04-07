@@ -154,7 +154,7 @@ module SpecHelpers
     YAML.safe_load(docker_compose('config')[:stdout].chomp)
   end
 
-  def docker_compose_up(preload_certs: ENV['PRELOAD_CERTS'] == '1')
+  def docker_compose_up(preload_certs: true)
     docker_compose('config', stream: STDOUT)
     docker_compose('up --no-start', stream: STDOUT)
     docker_compose_preload_cert_volumes() if preload_certs
