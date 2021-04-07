@@ -9,7 +9,6 @@ services:
       - DNS_ALT_NAMES=puppetdb
       - PUPPETDB_SSL_PORT=8081
       - PUPPETDB_LOG_LEVEL=${PUPPETDB_LOG_LEVEL:-info}
-      - USE_PUPPETSERVER=true
       - PUPPETSERVER_HOSTNAME=puppet
       - PUPPETSERVER_PORT=8140
       - PUPPETDB_POSTGRES_HOSTNAME=postgres
