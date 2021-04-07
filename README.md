@@ -14,23 +14,27 @@ We've been developing our own Helm chart which can get you up & running fast. Yo
 ## Required versions
 
 * Docker Compose - must support `version: '3'` of the compose file format, which requires Docker Engine `1.13.0+`. [Full compatibility matrix](https://docs.docker.com/compose/compose-file/compose-versioning/)
-  * Linux is tested with docker-compose `1.22`
-  * Windows is tested with `docker-compose version 1.26.0-rc3, build 46118bc5`
-  * OSX is tested with `docker-compose version 1.23.2, build 1110ad01`
+  * Linux is tested with docker-compose `1.28.6`
+  * Windows requires a minimum of Windows 10, Build 2004 and WSL2 as described in [README-windows.md](./README-windows.md), but is no longer tested
+  * OSX is tested with `docker-compose version 1.28.5, build c4eb3a1f`
 * Docker Engine support is only tested on versions newer than `17.09.0-ce`
-  * Linux is tested with (client and server) `17.09.0-ce` using API version `1.32` (`Git commit:   afdb6d4`)
-  * Windows is tested with Docker Desktop Edge 2.2.3.0 on Windows 10 2004 with WSL2 and Ubuntu 18.04
-      - Client `19.03.8` using API version `1.40` (`Git commit:        afacb8b`)
-      - Server `19.03.8` using API version `1.40 (minimum version 1.12)` (`Git commit:        afacb8b`) with `Experimental: true`
+  * Linux is tested with (client and server) `20.10.5-ce`
   * OSX is tested during development with `Docker Engine - Community` edition
-      - Client `18.09.1` using API version `1.39` (`Git commit:        4c52b90`)
-      - Server `18.09.1` using API version `1.39 (minimum version 1.12)` (`Git commit:       4c52b90`)
+      - Client `20.10.5` using API version `1.41` (`Git commit:        55c4c88`)
+      - Server `20.10.5` using API version `1.41 (minimum version 1.12)` (`Git commit:       363e9a8`)
 
 ## Provisioning
 
 Once you have Docker Compose installed, you can start the stack on Linux or OSX with:
 ```
+    export ADDITIONAL_COMPOSE_SERVICES_PATH=${PWD}/gem/lib/pupperware/compose-services
+    export COMPOSE_FILE=${ADDITIONAL_COMPOSE_SERVICES_PATH}/postgres.yml:${ADDITIONAL_COMPOSE_SERVICES_PATH}/puppetdb.yml:${ADDITIONAL_COMPOSE_SERVICES_PATH}/puppet.yml
     DNS_ALT_NAMES=host.example.com docker-compose up -d
+```
+
+With the environment variables exported, the stack can be torn down with:
+```
+    docker-compose down --volumes
 ```
 
 The value of `DNS_ALT_NAMES` must list all the names, as a comma-separated
@@ -56,11 +60,11 @@ PuppetDB
 ## Container Versions
 
 By default, the puppetserver and puppetdb containers will use the `latest` tag.
-`PUPPETSERVER_VERSION` and `PUPPETDB_VERSION` environment variables have been
-added to the compose file so you can pin versions if you need to by setting those
+`PUPPETSERVER_IMAGE` and `PUPPETDB_IMAGE` environment variables have been
+added to the compose file to easily select different image repos / pin versions if you need to by setting those
 on the command line, or in a `.env` file.
 
-## Pupperware on Windows (using WSL2)
+## Pupperware on Windows with WSL2 (Unsupported)
 
 Complete instructions for provisiong a server with WSL2 support are in [README-windows.md](./README-windows.md)
 
@@ -68,6 +72,8 @@ Creating the stack from PowerShell is nearly identical to other platforms, aside
 
 ``` powershell
 PS> $ENV:DNS_ALT_NAMES = 'host.example.com'
+PS> $ENV:ADDITIONAL_COMPOSE_SERVICES_PATH="${PWD}/gem/lib/pupperware/compose-services"
+PS> $ENV:COMPOSE_FILE="${ENV:ADDITIONAL_COMPOSE_SERVICES_PATH}\postgres.yml;${ENV:ADDITIONAL_COMPOSE_SERVICES_PATH}\puppetdb.yml;${ENV:ADDITIONAL_COMPOSE_SERVICES_PATH}\puppet.yml"
 
 PS> docker-compose up
 Creating network "pupperware_default" with the default driver
@@ -117,7 +123,7 @@ The postgresql instance uses password authentication for communication with the
 puppetdb instance. If you need to change the postgresql password, you'll need to
 do the following:
 * update the password in postgresql: `docker-compose exec postgres /bin/bash -c "psql -U \$POSTGRES_USER -c \"ALTER USER \$POSTGRES_USER PASSWORD '$dbpassword'\";"`
-* update values for `PUPPETDB_PASSWORD` and `POSTGRES_PASSWORD` in docker-compose.yml
+* update values for `PUPPETDB_PASSWORD` and `POSTGRES_PASSWORD` in `docker-compose.yml`
 * rebuild and restart containers affected by these changes: `docker-compose up --detach --build`
 
 ## Running tests

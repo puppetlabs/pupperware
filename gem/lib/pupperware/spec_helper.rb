@@ -142,10 +142,10 @@ module SpecHelpers
     end.join(' ')
 
     # Only use overrides files if they exist
-    file_arg = [overrides, 'docker-compose.fixtures.yml'].map do |f|
+    file_arg = ['docker-compose.yml', overrides, 'docker-compose.fixtures.yml'].map do |f|
       "--file #{f}" if File.file?(f)
     end.join(' ')
-    run_command("docker-compose #{services_arg} --file docker-compose.yml #{file_arg} \
+    run_command("docker-compose #{services_arg} #{file_arg} \
                                 --ansi=never \
                                 #{command_and_args}", stream: stream)
   end
@@ -154,7 +154,7 @@ module SpecHelpers
     YAML.safe_load(docker_compose('config')[:stdout].chomp)
   end
 
-  def docker_compose_up(preload_certs: ENV['PRELOAD_CERTS'] == '1')
+  def docker_compose_up(preload_certs: true)
     docker_compose('config', stream: STDOUT)
     docker_compose('up --no-start', stream: STDOUT)
     docker_compose_preload_cert_volumes() if preload_certs

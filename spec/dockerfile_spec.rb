@@ -3,11 +3,15 @@
 require "#{File.join(File.dirname(__FILE__), 'examples', 'running_cluster.rb')}"
 include Pupperware::SpecHelpers
 
+# unifies volume naming
+ENV['COMPOSE_PROJECT_NAME'] ||= 'pupperware'
+Pupperware::SpecHelpers.load_compose_services = 'postgres,puppetdb,puppet'
+
 RSpec.configure do |c|
   c.before(:suite) do
     pull_images()
     teardown_cluster()
-    docker_compose_up()
+    docker_compose_up(preload_certs: true)
   end
 
   c.after(:suite) do
