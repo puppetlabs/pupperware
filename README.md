@@ -27,7 +27,14 @@ We've been developing our own Helm chart which can get you up & running fast. Yo
 
 Once you have Docker Compose installed, you can start the stack on Linux or OSX with:
 ```
+    export ADDITIONAL_COMPOSE_SERVICES_PATH=${PWD}/gem/lib/pupperware/compose-services
+    export COMPOSE_FILE=${ADDITIONAL_COMPOSE_SERVICES_PATH}/postgres.yml:docker-compose.yml
     DNS_ALT_NAMES=host.example.com docker-compose up -d
+```
+
+With the environment variables exported, the stack can be torn down with:
+```
+    docker-compose down --volumes
 ```
 
 The value of `DNS_ALT_NAMES` must list all the names, as a comma-separated
@@ -65,6 +72,8 @@ Creating the stack from PowerShell is nearly identical to other platforms, aside
 
 ``` powershell
 PS> $ENV:DNS_ALT_NAMES = 'host.example.com'
+PS> $ENV:ADDITIONAL_COMPOSE_SERVICES_PATH="${PWD}/gem/lib/pupperware/compose-services"
+PS> $ENV:COMPOSE_FILE="${ENV:ADDITIONAL_COMPOSE_SERVICES_PATH}\postgres.yml;docker-compose.yml"
 
 PS> docker-compose up
 Creating network "pupperware_default" with the default driver
@@ -114,7 +123,7 @@ The postgresql instance uses password authentication for communication with the
 puppetdb instance. If you need to change the postgresql password, you'll need to
 do the following:
 * update the password in postgresql: `docker-compose exec postgres /bin/bash -c "psql -U \$POSTGRES_USER -c \"ALTER USER \$POSTGRES_USER PASSWORD '$dbpassword'\";"`
-* update values for `PUPPETDB_PASSWORD` and `POSTGRES_PASSWORD` in docker-compose.yml
+* update values for `PUPPETDB_PASSWORD` and `POSTGRES_PASSWORD` in `docker-compose.yml`
 * rebuild and restart containers affected by these changes: `docker-compose up --detach --build`
 
 ## Running tests

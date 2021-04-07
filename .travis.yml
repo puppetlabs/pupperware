@@ -12,7 +12,6 @@ rvm:
 env:
   global:
     - DOCKER_COMPOSE_VERSION=1.28.6
-    - COMPOSE_PROJECT_NAME=pupperware
     - PUPPETSERVER_VERSION=edge
 
 before_install:

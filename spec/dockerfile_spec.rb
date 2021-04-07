@@ -3,6 +3,10 @@
 require "#{File.join(File.dirname(__FILE__), 'examples', 'running_cluster.rb')}"
 include Pupperware::SpecHelpers
 
+# unifies volume naming
+ENV['COMPOSE_PROJECT_NAME'] ||= 'pupperware'
+Pupperware::SpecHelpers.load_compose_services = 'postgres'
+
 RSpec.configure do |c|
   c.before(:suite) do
     pull_images()
