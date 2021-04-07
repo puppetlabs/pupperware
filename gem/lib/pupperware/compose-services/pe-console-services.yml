@@ -29,3 +29,7 @@ services:
 
 volumes:
   console-services:
+    # Testing specific variable needed to bootstrap cert preloading
+    labels:
+      com.puppet.certs.uid: 10007
+      com.puppet.certs.gid: 10007
