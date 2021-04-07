@@ -28,7 +28,7 @@ We've been developing our own Helm chart which can get you up & running fast. Yo
 Once you have Docker Compose installed, you can start the stack on Linux or OSX with:
 ```
     export ADDITIONAL_COMPOSE_SERVICES_PATH=${PWD}/gem/lib/pupperware/compose-services
-    export COMPOSE_FILE=${ADDITIONAL_COMPOSE_SERVICES_PATH}/postgres.yml:${ADDITIONAL_COMPOSE_SERVICES_PATH}/puppetdb.yml:docker-compose.yml
+    export COMPOSE_FILE=${ADDITIONAL_COMPOSE_SERVICES_PATH}/postgres.yml:${ADDITIONAL_COMPOSE_SERVICES_PATH}/puppetdb.yml:${ADDITIONAL_COMPOSE_SERVICES_PATH}/puppet.yml
     DNS_ALT_NAMES=host.example.com docker-compose up -d
 ```
 
@@ -60,7 +60,7 @@ PuppetDB
 ## Container Versions
 
 By default, the puppetserver and puppetdb containers will use the `latest` tag.
-`PUPPETSERVER_VERSION` and `PUPPETDB_IMAGE` environment variables have been
+`PUPPETSERVER_IMAGE` and `PUPPETDB_IMAGE` environment variables have been
 added to the compose file to easily select different image repos / pin versions if you need to by setting those
 on the command line, or in a `.env` file.
 
@@ -73,7 +73,7 @@ Creating the stack from PowerShell is nearly identical to other platforms, aside
 ``` powershell
 PS> $ENV:DNS_ALT_NAMES = 'host.example.com'
 PS> $ENV:ADDITIONAL_COMPOSE_SERVICES_PATH="${PWD}/gem/lib/pupperware/compose-services"
-PS> $ENV:COMPOSE_FILE="${ENV:ADDITIONAL_COMPOSE_SERVICES_PATH}\postgres.yml;${ENV:ADDITIONAL_COMPOSE_SERVICES_PATH}\puppetdb.yml;docker-compose.yml"
+PS> $ENV:COMPOSE_FILE="${ENV:ADDITIONAL_COMPOSE_SERVICES_PATH}\postgres.yml;${ENV:ADDITIONAL_COMPOSE_SERVICES_PATH}\puppetdb.yml;${ENV:ADDITIONAL_COMPOSE_SERVICES_PATH}\puppet.yml"
 
 PS> docker-compose up
 Creating network "pupperware_default" with the default driver

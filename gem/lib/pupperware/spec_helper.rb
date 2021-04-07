@@ -142,10 +142,10 @@ module SpecHelpers
     end.join(' ')
 
     # Only use overrides files if they exist
-    file_arg = [overrides, 'docker-compose.fixtures.yml'].map do |f|
+    file_arg = ['docker-compose.yml', overrides, 'docker-compose.fixtures.yml'].map do |f|
       "--file #{f}" if File.file?(f)
     end.join(' ')
-    run_command("docker-compose #{services_arg} --file docker-compose.yml #{file_arg} \
+    run_command("docker-compose #{services_arg} #{file_arg} \
                                 --ansi=never \
                                 #{command_and_args}", stream: stream)
   end

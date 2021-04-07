@@ -1,26 +1,34 @@
 version: '3.7'
-
 services:
   puppet:
+    image: ${PUPPETSERVER_IMAGE:-puppet/puppetserver:latest}
     hostname: puppet
-    image: puppet/puppetserver:${PUPPETSERVER_VERSION:-latest}
-    ports:
-      - 8140:8140
     environment:
+      - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
       # necessary to set certname and server in puppet.conf, required by
       # puppetserver ca cli application
       - PUPPETSERVER_HOSTNAME=puppet
+      - CA_ALLOW_SUBJECT_ALT_NAMES=true
       # DNS_ALT_NAMES must be set before starting the stack the first time,
       # and must list all the names under which the puppetserver can be
       # reached. Add other names as a comma-separated list
-      - CA_ALLOW_SUBJECT_ALT_NAMES=true
-      - DNS_ALT_NAMES=${DNS_ALT_NAMES:-}
-      - PUPPERWARE_ANALYTICS_ENABLED=${PUPPERWARE_ANALYTICS_ENABLED:-true}
+      # NOTE: Java follows RFC 2818 stating when SAN is provided, it's authoritative / Subject should be ignored
+      - DNS_ALT_NAMES=${PUPPET_DNS_ALT_NAMES:-puppet}
+      - PUPPET_MASTERPORT=8140
       - PUPPETDB_SERVER_URLS=https://puppetdb:8081
+      # Testing specific variables needed to bootstrap cert preloading
+      - CERT_VOLUME=puppetserver-config
+      # NOTE: puppet oss layout is different than PE puppet
+      - CERT_SRCDIR=puppet-oss
+      - CERT_DESTDIR=ssl
     volumes:
       - puppetserver-code:/etc/puppetlabs/code/
       - puppetserver-config:/etc/puppetlabs/puppet/
       - puppetserver-data:/opt/puppetlabs/server/data/puppetserver/
+    restart: always
+    ports:
+      - 8140:8140
+      - 8170:8170
 
 volumes:
   puppetserver-code:

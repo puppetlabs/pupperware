@@ -12,7 +12,7 @@ rvm:
 env:
   global:
     - DOCKER_COMPOSE_VERSION=1.28.6
-    - PUPPETSERVER_VERSION=edge
+    - PUPPETSERVER_IMAGE=puppet/puppetserver:edge
 
 before_install:
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
