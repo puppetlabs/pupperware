@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   postgres:
-    image: ${POSTGRES_IMAGE:-postgres:9.6}
+    image: ${POSTGRES_IMAGE:-postgres:12.6}
     hostname: postgres
     environment:
       # loading certs requires a non-default PGDATA, even though we don't use certs
