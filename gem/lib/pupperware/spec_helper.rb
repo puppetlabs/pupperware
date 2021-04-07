@@ -182,7 +182,7 @@ module SpecHelpers
     config = docker_compose_config()
     # list of available certs for services
     cert_path = Pathname.new(File.join(__dir__, 'certs'))
-    named_volumes = config['volumes'].keys
+    named_volumes = config.key?('volumes') ? config['volumes'].keys : []
 
     config['services'].each do |service_name, service|
       # for services that have certs
