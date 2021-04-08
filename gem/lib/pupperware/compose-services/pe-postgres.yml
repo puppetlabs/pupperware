@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   postgres:
-    image: ${POSTGRES_IMAGE:-postgres:9.6.15}
+    image: ${POSTGRES_IMAGE:-postgres:12.6}
     hostname: postgres
     environment:
       # to be able to preload certs, PGDATA must be empty when booting, so set

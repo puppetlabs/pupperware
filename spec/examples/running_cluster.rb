@@ -3,8 +3,8 @@ shared_examples 'a running pupperware cluster' do
 
   it 'should include postgres extensions' do
     installed_extensions = get_postgres_extensions
-    expect(installed_extensions).to match(/^\s+pg_trgm\s+/)
-    expect(installed_extensions).to match(/^\s+pgcrypto\s+/)
+    expect(installed_extensions).to match(/\s+pg_trgm\s+/)
+    expect(installed_extensions).to match(/\s+pgcrypto\s+/)
   end
 
   it 'should be able to run an agent' do
