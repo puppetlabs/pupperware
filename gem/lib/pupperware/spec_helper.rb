@@ -157,7 +157,7 @@ module SpecHelpers
   def docker_compose_up(preload_certs: true)
     docker_compose('config', stream: STDOUT)
     docker_compose('up --no-start', stream: STDOUT)
-    docker_compose_preload_cert_volumes() if preload_certs
+    docker_compose_load_cert_volumes(preload_certs: preload_certs)
     docker_compose('up --detach', stream: STDOUT)
     docker_compose('images', stream: STDOUT)
     wait_on_stack_healthy()
@@ -178,7 +178,7 @@ module SpecHelpers
     run_command('docker ps --all')
   end
 
-  def docker_compose_preload_cert_volumes()
+  def docker_compose_load_cert_volumes(preload_certs: true)
     config = docker_compose_config()
     # list of available certs for services
     cert_path = Pathname.new(File.join(__dir__, 'certs'))
@@ -198,11 +198,13 @@ module SpecHelpers
       next unless named_volumes.include?(volume)
       labels = config['volumes'][volume]['labels']
 
-      # containers don't need to be running to copy data to their volumes
-      STDOUT.puts("Pre-loading certificates for service #{service_name}")
-      docker_volume_cp(src_path: source, dest_volume: volume, dest_dir: dest_dir,
-        uid: labels ? labels['com.puppet.certs.uid'] : nil,
-        gid: labels ? labels['com.puppet.certs.gid'] : nil)
+      if preload_certs
+        # containers don't need to be running to copy data to their volumes
+        STDOUT.puts("Pre-loading certificates for service #{service_name}")
+        docker_volume_cp(src_path: source, dest_volume: volume, dest_dir: dest_dir,
+          uid: labels ? labels['com.puppet.certs.uid'] : nil,
+          gid: labels ? labels['com.puppet.certs.gid'] : nil)
+      end
     end
   end
 
