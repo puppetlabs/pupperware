@@ -26,3 +26,7 @@ services:
 
 volumes:
   puppetdb:
+    # Testing specific variable needed to bootstrap cert preloading
+    labels:
+      com.puppet.certs.uid: 10008
+      com.puppet.certs.gid: 10008

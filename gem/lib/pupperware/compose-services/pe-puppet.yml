@@ -38,5 +38,9 @@ services:
 
 volumes:
   puppetserver:
+    # Testing specific variable needed to bootstrap cert preloading
+    labels:
+      com.puppet.certs.uid: 10006
+      com.puppet.certs.gid: 10006
   puppetserver-packages:
   code-manager:

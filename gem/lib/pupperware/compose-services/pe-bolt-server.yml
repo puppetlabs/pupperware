@@ -20,3 +20,7 @@ services:
 
 volumes:
   bolt-server:
+    # Testing specific variable needed to bootstrap cert preloading
+    labels:
+      com.puppet.certs.uid: 10009
+      com.puppet.certs.gid: 10009
