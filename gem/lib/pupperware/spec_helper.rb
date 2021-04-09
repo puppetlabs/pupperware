@@ -14,6 +14,7 @@ module SpecHelpers
 
   class ContainerNotFoundError < StandardError; end
 
+  CLIENT_TOOLS_IMAGE = 'artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-client-tools:latest'
   IS_WINDOWS = !!File::ALT_SEPARATOR
 
   # effectively global state shared by all module instances as they're mixed in to specs
@@ -730,13 +731,13 @@ LOG
 
   def orchestrate_puppet_run(
         target_agent: 'puppet-agent',
-        network: 'pupperware-commercial',
+        network: 'pupperware',
         rbac_username: 'admin',
         rbac_password: 'pupperware',
         puppetserver: 'puppet',
         pe_console_services: 'pe-console-services',
         pe_orchestration_services: 'pe-orchestration-services',
-        image: 'artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-client-tools:latest'
+        image: CLIENT_TOOLS_IMAGE
       )
     run_command("docker pull #{image}")
     run_command("docker run \
@@ -860,6 +861,30 @@ LOG
         JSON.parse(out).first['report_timestamp']
       end
     end
+  end
+
+  def check_report_timestamp(
+        target_agent: 'puppet-agent',
+        network: 'pupperware',
+        rbac_username: 'admin',
+        rbac_password: 'admin',
+        puppetdb: 'puppetdb',
+        image: CLIENT_TOOLS_IMAGE
+      )
+    result = run_command("docker run \
+           --rm \
+           --network #{network} \
+           --env RBAC_USERNAME=#{rbac_username} \
+           --env RBAC_PASSWORD=#{rbac_password} \
+           --env PUPPETDB_HOSTNAME=#{puppetdb} \
+           #{image} \
+           puppet-query \"nodes { certname = '#{target_agent}' }\"")
+
+    if result[:status].exitstatus != 0
+      raise "check_report_timestamp failed to run puppet-query for '#{target_agent}' #{result[:status].exitstatus}:\n#{result[:stdout].chomp}"
+    end
+
+    JSON.parse(result[:stdout].chomp).first['report_timestamp']
   end
 
   def wait_for_pxp_agent_to_connect(agent_name: 'puppet-agent', timeout: 180)
