@@ -1,0 +1,199 @@
+version: '3.7'
+services:
+  puppet:
+    image: ${DOCKER_REGISTRY_PATH}pe-puppetserver:pe-2019.1.3
+    hostname: puppet
+    environment:
+      - CERTNAME=puppet
+      - PUPPETSERVER_PORT=8140
+      - PUPPETSERVER_LOG_LEVEL=info
+      - PUPPETDB_HOSTNAME=puppetdb
+      - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services
+      - PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services
+      # puppet::enterprise class parameters written to hiera.yaml
+      - POSTGRES_HOSTNAME=postgres
+      - PUPPETDB_SSL_PORT=8081
+      - PE_ORCHESTRATION_SERVICES_PORT=8143
+      # Set the control repo URL like https://github.com/puppetlabs/control-repo.git
+      # For private repos, use git@github.com:user/repo.git and provide SSH keys
+      # - R10K_REMOTE=
+    volumes:
+      - puppetserver:/opt/puppetlabs/server/data/puppetserver
+      - puppetserver-packages:/opt/puppetlabs/server/data/packages
+      - code-manager:/opt/puppetlabs/server/data/code-manager
+      # NOTE: for an R10K_REMOTE the id-control_repo.rsa path may be bind mounted like:
+      # - ./path/to/codemanager/ssh:/etc/puppetlabs/puppetserver/ssh
+      # Additional SSH configuration files may be placed in this directory
+    restart: always
+    ports:
+      - 8140:8140
+      - 8170:8170
+
+  pe-orchestration-services:
+    image: ${DOCKER_REGISTRY_PATH}pe-orchestration-services:pe-2019.1.3
+    hostname: pe-orchestration-services
+    environment:
+      - CERTNAME=pe-orchestration-services
+      - PCP_BROKER_PORT=8142
+      - PE_ORCHESTRATION_SERVICES_PORT=8143
+      - PUPPETSERVER_HOSTNAME=puppet
+      - PUPPETSERVER_PORT=8140
+      - PUPPETDB_HOSTNAME=puppetdb
+      - PUPPETDB_SSL_PORT=8081
+      - POSTGRES_HOSTNAME=postgres
+      - POSTGRES_PORT=5432
+      - PE_BOLT_SERVER_HOSTNAME=pe-bolt-server
+      - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services
+      - PUPPERWARE_ADMIN_PASSWORD=pupperware
+    volumes:
+      - orchestration-services:/opt/puppetlabs/server/data/orchestration-services
+    restart: always
+    ports:
+      - 8142:8142
+      - 8143:8143
+    depends_on:
+      - puppet
+
+  pe-console-services:
+    image: ${DOCKER_REGISTRY_PATH}pe-console-services:pe-2019.1.3
+    hostname: pe-console-services
+    environment:
+      - CERTNAME=pe-console-services
+      - PE_CONSOLE_SERVICES_LOG_LEVEL=info
+      - PUPPETSERVER_HOSTNAME=puppet
+      - PUPPETSERVER_CERTNAME=puppet
+      - PUPPETSERVER_PORT=8140
+      - PUPPETDB_HOSTNAME=puppetdb
+      - PUPPETDB_CERTNAME=puppetdb
+      - PUPPETDB_SSL_PORT=8081
+      - POSTGRES_HOSTNAME=postgres
+      - POSTGRES_PORT=5432
+      - PE_ORCHESTRATION_SERVICES_HOSTNAME=pe-orchestration-services
+      - PE_ORCHESTRATION_SERVICES_CERTNAME=pe-orchestration-services
+      - PE_ORCHESTRATION_SERVICES_PORT=8143
+    volumes:
+      - console-services:/opt/puppetlabs/server/data/console-services
+    restart: always
+    ports:
+      - 443:4431
+      - 4433:4433
+    expose:
+      - 4430
+      - 4432
+    depends_on:
+      - postgres
+      - puppet
+
+  pe-bolt-server:
+    image: ${DOCKER_REGISTRY_PATH}pe-bolt-server:pe-2019.1.3
+    hostname: pe-bolt-server
+    restart: always
+    expose:
+      - 62658
+    environment:
+      - CERTNAME=pe-bolt-server
+      - PUPPETSERVER_HOSTNAME=puppet
+      - PUPPETSERVER_PORT=8140
+      - PE_BOLT_SERVER_LOGLEVEL=${PE_BOLT_SERVER_LOGLEVEL:-info}
+      - WHITELIST_HOSTNAME.0=pe-bolt-server
+      - WHITELIST_HOSTNAME.1=pe-orchestration-services
+    volumes:
+      - bolt-server:/opt/puppetlabs/server/data/bolt-server
+
+  puppetdb:
+    image: ${DOCKER_REGISTRY_PATH}pe-puppetdb:pe-2019.1.3
+    hostname: puppetdb
+    environment:
+      - CERTNAME=puppetdb
+      - PUPPETDB_SSL_PORT=8081
+      - PUPPETDB_LOG_LEVEL=info
+      - USE_PUPPETSERVER=true
+      - PUPPETSERVER_HOSTNAME=puppet
+      - PUPPETSERVER_PORT=8140
+      - PUPPETDB_POSTGRES_HOSTNAME=postgres
+      - PUPPETDB_POSTGRES_PORT=5432
+      - PUPPETDB_PASSWORD=puppetdb
+      - PUPPETDB_USER=puppetdb
+      - PE_CONSOLE_SERVICES_HOSTNAME=pe-console-services
+    volumes:
+      - puppetdb:/opt/puppetlabs/server/data/puppetdb
+    restart: always
+    ports:
+      - 8081:8081
+    expose:
+      - 8080
+    depends_on:
+      - postgres
+      - puppet
+
+  postgres:
+    image: postgres:9.6.15
+    hostname: postgres
+    environment:
+      # to be able to preload certs, PGDATA must be empty when booting, so set
+      # its directory as a subdirectory of the default /var/lib/postgresql/data VOLUME
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - PGPORT=5432
+      - SSLDIR=/var/lib/postgresql/data/certs
+      - CERTNAME=postgres
+      - POSTGRES_USER=puppetdb
+      - POSTGRES_PASSWORD=puppetdb
+      - POSTGRES_DB=puppetdb
+      - PUPPETSERVER_HOSTNAME=puppet
+      - PUPPETSERVER_PORT=8140
+      - PUPPETDB_CERTNAME=puppetdb
+      - PE_CONSOLE_SERVICES_CERTNAME=pe-console-services
+      - PE_ORCHESTRATION_SERVICES_CERTNAME=pe-orchestration-services
+    command: [ "postgres",
+      "-c", "max_connections=400",
+      "-c", "ssl=on",
+      "-c", "ssl_ca_file=root.crt",
+      "-c", "ssl_cert_file=server.crt",
+      "-c", "ssl_crl_file=root.crl",
+      "-c", "ssl_key_file=server.key",
+      "-c", "log_destination=stderr",
+      "-c", "logging_collector=on",
+      "-c", "log_connections=on",
+      "-c", "log_disconnections=on",
+      "-c", "log_hostname=on"
+    ]
+    # To open up an SSL connection by generating certs requires a working Puppetserver
+    # which can take 4m or so worst case under LCOW
+    # The other timing parameters are set so that it takes at most 2m30s after the initial
+    # 4 minutes to realize that Postgres has failed.
+    # Probe failure during --start-period will not be counted towards the maximum number of retries
+    healthcheck:
+        start_period: 4m
+        interval: 10s
+        timeout: 5s
+        retries: 15
+        # postgres SSL configured / operational and connectable
+        # NOTE: host *must* be specified to enable sslmode!
+        # this generates an exit code of 2 when connections are refused
+        # and the query results here are a 't' if SSL is on *or*  a 'f' otherwise
+        test: >
+          sh -c '[ -f "$${SSLDIR}/certs/$${CERTNAME}.pem" ] &&
+          psql --username=puppetdb --dbname=pe-activity --command "SELECT 1" 2>&1 &&
+          psql --username=puppetdb --dbname=postgres --set=sslmode=required --host=localhost --command "SELECT ssl_is_used();" --tuples-only 2>&1 |
+          grep --quiet " t"'
+    volumes:
+      - puppetdb-postgres:/var/lib/postgresql/data
+      - ../postgres-custom:/docker-entrypoint-initdb.d
+    restart: always
+    expose:
+      - 5432
+    depends_on:
+      - puppet
+
+networks:
+  default:
+    name: pupperware-commercial
+volumes:
+  puppetserver:
+  puppetserver-packages:
+  code-manager:
+  orchestration-services:
+  console-services:
+  bolt-server:
+  puppetdb:
+  puppetdb-postgres:

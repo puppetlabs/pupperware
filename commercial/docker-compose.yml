@@ -1,0 +1,4 @@
+version: '3.7'
+networks:
+  default:
+    name: pupperware-commercial
