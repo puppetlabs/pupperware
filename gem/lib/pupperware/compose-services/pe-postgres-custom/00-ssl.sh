@@ -192,13 +192,13 @@ CSRDIR="${SSLDIR}/certificate_requests"
 CERTDIR="${SSLDIR}/certs"
 mkdir -p "${SSLDIR}" "${PUBKEYDIR}" "${PRIVKEYDIR}" "${CSRDIR}" "${CERTDIR}"
 PUBKEYFILE="${PUBKEYDIR}/${CERTNAME}.pem"
-CANONICAL_PUBKEYFILE="${PUBKEYDIR}/server.pub"
+CANONICAL_PUBKEY_FILENAME="server.pub"
 PRIVKEYFILE="${PRIVKEYDIR}/${CERTNAME}.pem"
-CANONICAL_PRIVKEYFILE="${PRIVKEYDIR}/server.key"
+CANONICAL_PRIVKEY_FILENAME="server.key"
 CANONICAL_PRIVKEYFILE_PK8="${PRIVKEYDIR}/server.private_key.pk8"
 CSRFILE="${CSRDIR}/${CERTNAME}.pem"
 CERTFILE="${CERTDIR}/${CERTNAME}.pem"
-CANONICAL_CERTFILE="${CERTDIR}/server.crt"
+CANONICAL_CERT_FILENAME="server.crt"
 CACERTFILE="${CERTDIR}/ca.pem"
 CRLFILE="${SSLDIR}/crl.pem"
 ALTNAMEFILE="/tmp/altnames.conf"
@@ -248,9 +248,10 @@ msg "* WAITFORCERT: '${WAITFORCERT}' seconds"
 
 # generate all symlinks, even if targets don't exist yet
 # using well known filenames makes these easier to consume in k8s
-ln -s -f "${CERTFILE}" "${CANONICAL_CERTFILE}"
-ln -s -f "${PRIVKEYFILE}" "${CANONICAL_PRIVKEYFILE}"
-ln -s -f "${PUBKEYFILE}" "${CANONICAL_PUBKEYFILE}"
+# also use relative symlinks rather than absolute to ease sharing across differently mounted container volumes
+(cd "${CERTDIR}" && ln -s -f "${CERTNAME}.pem" "${CANONICAL_CERT_FILENAME}")
+(cd "${PRIVKEYDIR}" && ln -s -f "${CERTNAME}.pem" "${CANONICAL_PRIVKEY_FILENAME}")
+(cd "${PUBKEYDIR}" && ln -s -f "${CERTNAME}.pem" "${CANONICAL_PUBKEY_FILENAME}")
 
 # ensure no error output for empty dir
 certnames=$(cd "${PRIVKEYDIR}" && ls -A -m -- *.pem 2> /dev/null)

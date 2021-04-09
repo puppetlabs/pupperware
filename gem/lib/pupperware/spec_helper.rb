@@ -157,10 +157,12 @@ module SpecHelpers
     YAML.safe_load(docker_compose('config')[:stdout].chomp)
   end
 
-  def docker_compose_up(preload_certs: true)
+  def docker_compose_up(preload_certs: true, ca_service_name: 'puppet')
     docker_compose('config', stream: STDOUT)
     docker_compose('up --no-start', stream: STDOUT)
-    docker_compose_preload_cert_volumes() if preload_certs
+    # generating certs requires running CA
+    docker_compose("start #{ca_service_name}", stream: STDOUT) if !preload_certs
+    docker_compose_load_cert_volumes(preload_certs: preload_certs, ca_service_name: ca_service_name)
     docker_compose('up --detach', stream: STDOUT)
     docker_compose('images', stream: STDOUT)
     wait_on_stack_healthy()
@@ -181,7 +183,7 @@ module SpecHelpers
     run_command('docker ps --all')
   end
 
-  def docker_compose_preload_cert_volumes()
+  def docker_compose_load_cert_volumes(preload_certs: true, ca_service_name: 'puppet')
     config = docker_compose_config()
     # list of available certs for services
     cert_path = Pathname.new(File.join(__dir__, 'certs'))
@@ -201,11 +203,28 @@ module SpecHelpers
       next unless named_volumes.include?(volume)
       labels = config['volumes'][volume]['labels']
 
-      # containers don't need to be running to copy data to their volumes
-      STDOUT.puts("Pre-loading certificates for service #{service_name}")
-      docker_volume_cp(src_path: source, dest_volume: volume, dest_dir: dest_dir,
-        uid: labels ? labels['com.puppet.certs.uid'] : nil,
-        gid: labels ? labels['com.puppet.certs.gid'] : nil)
+      if preload_certs
+        # containers don't need to be running to copy data to their volumes
+        STDOUT.puts("Pre-loading certificates for service #{service_name}")
+        docker_volume_cp(src_path: source, dest_volume: volume, dest_dir: dest_dir,
+          uid: labels ? labels['com.puppet.certs.uid'] : nil,
+          gid: labels ? labels['com.puppet.certs.gid'] : nil)
+      else
+        certname = service['environment']['CERTNAME']
+        if certname.nil?
+          STDOUT.puts("[WARN] Skipping certificate generation for service #{service_name} - no CERTNAME specified")
+          next
+        end
+        dns_alt_names = service['environment']['DNS_ALT_NAMES'] || certname
+        STDOUT.puts("Generating certificates for service #{service_name}")
+          generate_certificate(
+            ca_service_name: ca_service_name,
+            certname: certname,
+            dns_alt_names: dns_alt_names,
+            dest_volume: volume, dest_dir: dest_dir,
+            uid: labels ? labels['com.puppet.certs.uid'] : nil,
+            gid: labels ? labels['com.puppet.certs.gid'] : nil)
+      end
     end
   end
 
@@ -236,6 +255,38 @@ MSG
     result = run_command(cmd)
     if result[:status].exitstatus != 0
       raise "docker_volume_cp failed to '#{dest_volume}/#{dest_dir}' #{result[:status].exitstatus}:\n#{result[:stdout].chomp}"
+    end
+  end
+
+  # takes a given certname, and generates certs to the dest_dir of dest_volume
+  # uses a transient container with 00-ssl.sh mapped into it to generate certs
+  def generate_certificate(ca_service_name:, certname:, dns_alt_names:, dest_volume:, dest_dir:, is_compose: true, uid:, gid: )
+    uid ||= 'root'
+    gid ||= 'root'
+    if is_compose
+      prefix = ENV['COMPOSE_PROJECT_NAME'] || File.basename(Dir.pwd)
+      dest_volume = "#{prefix}_#{dest_volume}"
+    end
+    # create a temp container that generates certs to the appropriate volume
+    ca_container = get_service_container(ca_service_name)
+    ssl_src_path = Pathname.new(File.join(__dir__, 'compose-services', 'pe-postgres-custom'))
+    cmd = "docker run \
+      --rm \
+      --network #{get_container_network(ca_container)} \
+      --volume #{ssl_src_path}:/tmp/ssl \
+      --volume #{dest_volume}:/opt \
+      --entrypoint /bin/sh \
+      alpine/openssl \
+      -c \"SSLDIR=/opt/#{dest_dir} PUPPETSERVER_HOSTNAME=#{get_container_hostname(ca_container)} CERTNAME=#{certname} DNS_ALT_NAMES=#{dns_alt_names} /tmp/ssl/00-ssl.sh; chown -R #{uid}:#{gid} /opt\""
+    STDOUT.puts(<<-MSG)
+Generating new certificates with transient container using ssl.sh:
+  certname      : #{certname}
+  to volume     : #{dest_volume}/#{dest_dir}
+  with uid:gid  : #{uid}:#{gid}
+MSG
+    result = run_command(cmd)
+    if result[:status].exitstatus != 0
+      raise "generate_certificate failed to '#{dest_volume}/#{dest_dir}' #{result[:status].exitstatus}:\n#{result[:stdout].chomp}"
     end
   end
 
