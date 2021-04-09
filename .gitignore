@@ -1,6 +1,7 @@
 Gemfile.lock
 .bundle/
 .ruby-version
+TEST-*.xml
 
 # .env will allow end-users to customize variables
 # for their compose stack in a way that won't be
@@ -10,3 +11,12 @@ Gemfile.lock
 # something else, but that may never happen.
 # https://github.com/docker/compose/pull/3955#issuecomment-341231156
 .env
+
+# Override file is for end-users to supply their own configuration changes.
+docker-compose.override.yml
+
+# Provide a convenient location for end-users to mount in additional files.
+volumes/
+
+# ignore tmp directory used for building from PE tag
+tmp/
