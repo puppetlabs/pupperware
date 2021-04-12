@@ -43,18 +43,3 @@ chmod 600 \
     "${SSLDIR}/certs/ca.pem" \
     "${SSLDIR}/certs/${CERTNAME}.pem" \
     "${SSLDIR}/private_keys/${CERTNAME}.pem"
-
-# for Postgres to use statically named files at default locations
-# https://www.postgresql.org/docs/10/ssl-tcp.html#SSL-SERVER-FILES
-# ssl_key_file
-# server private key  proves server certificate was sent by the owner; does not indicate certificate owner is trustworthy
-ln -s -f "${SSLDIR}/private_keys/${CERTNAME}.pem" "${PGDATA}/server.key"
-# ssl_cert_file
-# server certificate  sent to client to indicate server's identity
-ln -s -f "${SSLDIR}/certs/${CERTNAME}.pem" "${PGDATA}/server.crt"
-# ssl_ca_file
-# trusted certificate authorities checks that client certificate is signed by a trusted certificate authority
-ln -s -f "${SSLDIR}/certs/ca.pem" "${PGDATA}/root.crt"
-# ssl_crl_file
-# certificates revoked by certificate authorities client certificate must not be on this list
-ln -s -f "${SSLDIR}/crl.pem" "${PGDATA}/root.crl"

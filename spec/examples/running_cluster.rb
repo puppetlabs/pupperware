@@ -8,12 +8,19 @@ shared_examples 'a running pupperware cluster' do
   end
 
   it 'should be able to run an agent' do
-    status = run_agent(@test_agent, 'pupperware_default')
+    status = run_agent(@test_agent, 'pupperware')
     expect(status).to eq(0)
   end
 
   it 'should have a report in puppetdb' do
-    timestamp = check_report(@test_agent)
+    timestamp = check_report_timestamp(
+        target_agent: @test_agent,
+        network: 'pupperware',
+        rbac_username: 'admin',
+        rbac_password: RBAC_PASSWORD,
+        puppetdb: 'puppetdb',
+        image: CLIENT_TOOLS_IMAGE
+      )
     expect(timestamp).not_to eq('')
     @timestamps << timestamp
   end

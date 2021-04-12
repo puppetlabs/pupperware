@@ -23,10 +23,18 @@ services:
     command: [ "postgres",
       "-c", "max_connections=400",
       "-c", "ssl=on",
-      "-c", "ssl_ca_file=root.crt",
-      "-c", "ssl_cert_file=server.crt",
-      "-c", "ssl_crl_file=root.crl",
-      "-c", "ssl_key_file=server.key",
+      # ssl_ca_file
+      # trusted certificate authorities checks that client certificate is signed by a trusted certificate authority
+      "-c", "ssl_ca_file=/var/lib/postgresql/data/certs/certs/ca.pem",
+      # ssl_cert_file
+      # server certificate  sent to client to indicate server's identity
+      "-c", "ssl_cert_file=/var/lib/postgresql/data/certs/certs/server.crt",
+      # ssl_crl_file
+      # certificates revoked by certificate authorities client certificate must not be on this list
+      "-c", "ssl_crl_file=/var/lib/postgresql/data/certs/crl.pem",
+      # ssl_key_file
+      # server private key  proves server certificate was sent by the owner; does not indicate certificate owner is trustworthy
+      "-c", "ssl_key_file=/var/lib/postgresql/data/certs/private_keys/server.key",
       "-c", "log_destination=stderr",
       "-c", "logging_collector=on",
       "-c", "log_connections=on",

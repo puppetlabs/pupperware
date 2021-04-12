@@ -14,6 +14,7 @@ module SpecHelpers
 
   class ContainerNotFoundError < StandardError; end
 
+  CLIENT_TOOLS_IMAGE = 'artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-client-tools:latest'
   IS_WINDOWS = !!File::ALT_SEPARATOR
 
   # effectively global state shared by all module instances as they're mixed in to specs
@@ -208,7 +209,9 @@ module SpecHelpers
         STDOUT.puts("Pre-loading certificates for service #{service_name}")
         docker_volume_cp(src_path: source, dest_volume: volume, dest_dir: dest_dir,
           uid: labels ? labels['com.puppet.certs.uid'] : nil,
-          gid: labels ? labels['com.puppet.certs.gid'] : nil)
+          gid: labels ? labels['com.puppet.certs.gid'] : nil,
+          dir_mode: labels ? labels['com.puppet.certs.dir_mode'] || '700' : '700',
+          file_mode: labels ? labels['com.puppet.certs.file_mode'] || '600' : '600')
       else
         certname = service['environment']['CERTNAME']
         if certname.nil?
@@ -231,7 +234,7 @@ module SpecHelpers
   # takes a given src_path, and copies files to the dest_dir of dest_volume
   # uses a transient Alpine container to copy with instead of `docker cp`
   # initially built to support both Linux and LCOW, even though LCOW no longer in use
-  def docker_volume_cp(src_path:, dest_volume:, dest_dir:, is_compose: true, uid:, gid:)
+  def docker_volume_cp(src_path:, dest_volume:, dest_dir:, is_compose: true, uid:, gid:, dir_mode:, file_mode: )
     uid ||= 'root'
     gid ||= 'root'
     if is_compose
@@ -240,17 +243,23 @@ module SpecHelpers
     end
     # create a temp container that bind mounts src_path files
     # and copies them to the appropriate volume
+    perms_cmd = ''
+    perms_cmd += "; find \"/opt/#{dest_dir}/.\" -type d -exec chmod #{dir_mode} -- {} +" if dir_mode
+    perms_cmd += "; find \"/opt/#{dest_dir}/.\" -type f -exec chmod #{file_mode} -- {} +" if file_mode
+
     cmd = "docker run \
       --rm \
       --volume #{src_path}:/tmp/src \
       --volume #{dest_volume}:/opt \
       alpine:3.10 \
-      /bin/sh -c \"cp -r /tmp/src/. /opt/#{dest_dir}; chown -R #{uid}:#{gid} /opt\""
+      /bin/sh -c \"cp -r /tmp/src/. /opt/#{dest_dir}; chown -R #{uid}:#{gid} /opt #{perms_cmd}\""
     STDOUT.puts(<<-MSG)
 Copying existing files through transient container:
   from         : #{src_path}
   to volume    : #{dest_volume}/#{dest_dir}
   with uid:gid : #{uid}:#{gid}
+  dir mode     : #{dir_mode}
+  file mode    : #{file_mode}
 MSG
     result = run_command(cmd)
     if result[:status].exitstatus != 0
@@ -722,13 +731,13 @@ LOG
 
   def orchestrate_puppet_run(
         target_agent: 'puppet-agent',
-        network: 'pupperware-commercial',
+        network: 'pupperware',
         rbac_username: 'admin',
         rbac_password: 'pupperware',
         puppetserver: 'puppet',
         pe_console_services: 'pe-console-services',
         pe_orchestration_services: 'pe-orchestration-services',
-        image: 'artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-client-tools:latest'
+        image: CLIENT_TOOLS_IMAGE
       )
     run_command("docker pull #{image}")
     run_command("docker run \
@@ -852,6 +861,30 @@ LOG
         JSON.parse(out).first['report_timestamp']
       end
     end
+  end
+
+  def check_report_timestamp(
+        target_agent: 'puppet-agent',
+        network: 'pupperware',
+        rbac_username: 'admin',
+        rbac_password: 'admin',
+        puppetdb: 'puppetdb',
+        image: CLIENT_TOOLS_IMAGE
+      )
+    result = run_command("docker run \
+           --rm \
+           --network #{network} \
+           --env RBAC_USERNAME=#{rbac_username} \
+           --env RBAC_PASSWORD=#{rbac_password} \
+           --env PUPPETDB_HOSTNAME=#{puppetdb} \
+           #{image} \
+           puppet-query \"nodes { certname = '#{target_agent}' }\"")
+
+    if result[:status].exitstatus != 0
+      raise "check_report_timestamp failed to run puppet-query for '#{target_agent}' #{result[:status].exitstatus}:\n#{result[:stdout].chomp}"
+    end
+
+    JSON.parse(result[:stdout].chomp).first['report_timestamp']
   end
 
   def wait_for_pxp_agent_to_connect(agent_name: 'puppet-agent', timeout: 180)
