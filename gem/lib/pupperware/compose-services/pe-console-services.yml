@@ -4,9 +4,6 @@ services:
     image: ${PE_CONSOLE_SERVICES_IMAGE:-artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-console-services:latest}
     hostname: pe-console-services
     environment:
-      - CERTNAME=pe-console-services
-      # NOTE: Java follows RFC 2818 stating when SAN is provided, it's authoritative / Subject should be ignored
-      - DNS_ALT_NAMES=pe-console-services
       - PE_CONSOLE_SERVICES_LOG_LEVEL=${PE_CONSOLE_SERVICES_LOG_LEVEL:-info}
       - PUPPETSERVER_HOSTNAME=puppet
       - PUPPETSERVER_PORT=8140

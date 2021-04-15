@@ -122,9 +122,6 @@ The following values, many of which are already overriden in the `docker-compose
 
 | Name                                    | Usage / Default                                                                                                                                                                    |
 |-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **CERTNAME**                            | The DNS name used on this services SSL certificate<br><br>`pe-orchestration-services`                                                                                              |
-| **DNS_ALT_NAMES**                       | Additional DNS names to add to the services SSL certificate. *Must* include `CERTNAME` when specified to satisfy RFC 2818<br><br>unset                                                                                                           |
-| **WAITFORCERT**                         | Number of seconds to wait for certificate to be signed<br><br>`120`                                                                                                                |
 | **PCP_BROKER_PORT**                     | The listening port for the pcp-broker service<br><br>`8142`                                                                                                                        |
 | **PE_ORCHESTRATION_SERVICES_PORT**      | The listening port for the pe-orchestration-services service<br><br>`8143`                                                                                                         |
 | **PUPPETSERVER_HOSTNAME**               | The DNS hostname of the puppet master<br><br>`puppet`                                                                                                                              |
@@ -144,9 +141,6 @@ The following values, many of which are already overriden in the `docker-compose
 
 | Name                                    | Usage / Default                                                                                                                                                                    |
 |-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **CERTNAME**                            | The DNS name used on this services SSL certificate<br><br>`pe-console-services`                                                                                                    |
-| **DNS_ALT_NAMES**                       | Additional DNS names to add to the services SSL certificate. *Must* include `CERTNAME` when specified to satisfy RFC 2818<br><br>unset                                                                                                           |
-| **WAITFORCERT**                         | Number of seconds to wait for certificate to be signed<br><br>`120`                                                                                                                |
 | **PUPPETSERVER_HOSTNAME**               | The DNS hostname of the puppet master<br><br>`puppet`                                                                                                                              |
 | **PUPPETSERVER_PORT**                   | The port of the puppet master<br><br>`8140`                                                                                                                                        |
 | **PUPPETDB_HOSTNAME**                   | The DNS hostname of the puppetdb service<br><br>`puppetdb`                                                                                                                         |
@@ -163,9 +157,6 @@ The following values, many of which are already overriden in the `docker-compose
 
 | Name                                    | Usage / Default                                                                                                                                                                    |
 |-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **CERTNAME**                            | The DNS name used on this services SSL certificate<br><br>`pe-bolt-server`                                                                                                         |
-| **DNS_ALT_NAMES**                       | Additional DNS names to add to the services SSL certificate. *Must* include `CERTNAME` when specified to satisfy RFC 2818<br><br>unset                                                                                                           |
-| **WAITFORCERT**                         | Number of seconds to wait for certificate to be signed<br><br>`120`                                                                                                                |
 | **PUPPETSERVER_HOSTNAME**               | The DNS hostname of the puppet master<br><br>`puppet`                                                                                                                              |
 | **PUPPETSERVER_PORT**                   | The port of the puppet master<br><br>`8140`                                                                                                                                        |
 | **PE_BOLT_SERVER_LOGLEVEL**             | The logging level to use for this service<br><br>`info`                                                                                                                            |
@@ -176,14 +167,8 @@ The following values, many of which are already overriden in the `docker-compose
 
 | Name                                    | Usage / Default                                                                                                                                                                    |
 |-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **CERTNAME**                            | The DNS name used on this services SSL certificate<br><br>`pe-puppetdb`                                                                                                            |
-| **DNS_ALT_NAMES**                       | Additional DNS names to add to the services SSL certificate. *Must* include `CERTNAME` when specified to satisfy RFC 2818<br><br>unset                                                                                                           |
-| **WAITFORCERT**                         | Number of seconds to wait for certificate to be signed<br><br>`120`                                                                                                                |
 | **PUPPETDB_SSL_PORT**                   | The listening SSL port for puppetdb<br><br>`8081`                                                                                                                                  |
 | **PUPPETDB_LOGLEVEL**                   | The logging level to use for this service<br><br>`info`                                                                                                                            |
-| **USE_PUPPETSERVER**                    | Should always be set to `true`<br><br>`true`                                                                                                                                       |
-| **PUPPETSERVER_HOSTNAME**               | The DNS hostname of the puppet master<br><br>`puppet`                                                                                                                              |
-| **PUPPETSERVER_PORT**                   | The port of the puppet master<br><br>`8140`                                                                                                                                        |
 | **PUPPETDB_POSTGRES_HOSTNAME**          | The DNS hostname of the postgres service<br><br>`postgres`                                                                                                                         |
 | **PUPPETDB_POSTGRES_PORT**              | The port for postgres<br><br>`5432`                                                                                                                                                |
 | **PUPPETDB_POSTGRES_DATABASE**          | The name of the puppetdb database in postgres<br><br>`puppetdb`                                                                                                                    |
@@ -331,10 +316,10 @@ For the services `puppet`, `pe-orchestration-services`, `pe-console-services`, `
   `/opt/puppetlabs/server/data/<service>/certs/certs/ca.pem`
 
 - 'ssl-cert'
-  `/opt/puppetlabs/server/data/<service>/certs/certs/<certname>.pem`
+  `/opt/puppetlabs/server/data/<service>/certs/certs/server.crt`
 
 - 'ssl-key'
-  `/opt/puppetlabs/server/data/<service>/certs/private_keys/<certname>.pem`
+  `/opt/puppetlabs/server/data/<service>/certs/private_keys/server.key`
 
 The Postgres container pathing is slightly different and cannot follow the same pathing structure due to the design of the Postgres container. Paths for Postgres are typically:
 
@@ -342,10 +327,10 @@ The Postgres container pathing is slightly different and cannot follow the same 
   `/var/lib/postgresql/data/certs/certs/ca.pem`
 
 - 'ssl-cert'
-  `/var/lib/postgresql/data/certs/certs/<certname>.pem`
+  `/var/lib/postgresql/data/certs/certs/server.crt`
 
 - 'ssl-key'
-  `/var/lib/postgresql/data/certs/private_keys/<certname>.pem`
+  `/var/lib/postgresql/data/certs/private_keys/server.key`
 
 NOTE: The files at these paths are copied to the location that Postgres is configured to use when the container starts (details in prior section).
 

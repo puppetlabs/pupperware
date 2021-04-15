@@ -4,9 +4,6 @@ services:
     image: ${PE_ORCHESTRATION_SERVICES_IMAGE:-artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-orchestration-services:latest}
     hostname: pe-orchestration-services
     environment:
-      - CERTNAME=pe-orchestration-services
-      # NOTE: Java follows RFC 2818 stating when SAN is provided, it's authoritative / Subject should be ignored
-      - DNS_ALT_NAMES=pe-orchestration-services
       - PCP_BROKER_PORT=8142
       - PE_ORCHESTRATION_SERVICES_PORT=8143
       - PE_ORCHESTRATION_SERVICES_LOG_LEVEL=${PE_ORCHESTRATION_SERVICES_LOG_LEVEL:-info}

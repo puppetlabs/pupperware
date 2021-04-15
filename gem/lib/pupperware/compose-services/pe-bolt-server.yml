@@ -4,9 +4,6 @@ services:
     image: ${PE_BOLT_SERVER_IMAGE:-artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-bolt-server:latest}
     hostname: pe-bolt-server
     environment:
-      - CERTNAME=pe-bolt-server
-      # NOTE: Java follows RFC 2818 stating when SAN is provided, it's authoritative / Subject should be ignored
-      - DNS_ALT_NAMES=pe-bolt-server
       - PUPPETSERVER_HOSTNAME=puppet
       - PUPPETSERVER_PORT=8140
       - PE_BOLT_SERVER_LOGLEVEL=${PE_BOLT_SERVER_LOGLEVEL:-info}
