@@ -9,9 +9,6 @@ services:
       - PGDATA=/var/lib/postgresql/data/pgdata
       - PGPORT=5432
       - SSLDIR=/var/lib/postgresql/data/certs
-      - CERTNAME=postgres
-      # NOTE: Java follows RFC 2818 stating when SAN is provided, it's authoritative / Subject should be ignored
-      - DNS_ALT_NAMES=postgres
       - POSTGRES_USER=puppetdb
       - POSTGRES_PASSWORD=puppetdb
       - POSTGRES_DB=puppetdb
@@ -56,7 +53,7 @@ services:
         # this generates an exit code of 2 when connections are refused
         # and the query results here are a 't' if SSL is on *or*  a 'f' otherwise
         test: >
-          sh -c '[ -f "$${SSLDIR}/certs/$${CERTNAME}.pem" ] &&
+          sh -c '[ -f "$${SSLDIR}/certs/server.crt" ] &&
           psql --username=puppetdb --dbname=pe-activity --command "SELECT 1" 2>&1 &&
           psql --username=puppetdb --dbname=postgres --set=sslmode=required --host=localhost --command "SELECT ssl_is_used();" --tuples-only 2>&1 |
           grep --quiet " t"'

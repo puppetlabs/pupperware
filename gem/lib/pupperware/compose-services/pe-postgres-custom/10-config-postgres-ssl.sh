@@ -41,5 +41,5 @@ chown -R 999:999 "$SSLDIR"
 # Postgres wants these files to have restricted access
 chmod 600 \
     "${SSLDIR}/certs/ca.pem" \
-    "${SSLDIR}/certs/${CERTNAME}.pem" \
-    "${SSLDIR}/private_keys/${CERTNAME}.pem"
+    "${SSLDIR}/certs/server.crt" \
+    "${SSLDIR}/private_keys/server.key"

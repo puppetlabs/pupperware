@@ -4,13 +4,8 @@ services:
     image: ${PE_PUPPETDB_IMAGE:-artifactory.delivery.puppetlabs.net/platform-services-297419/pe-and-platform/pe-puppetdb:latest}
     hostname: puppetdb
     environment:
-      - CERTNAME=puppetdb
-      # NOTE: Java follows RFC 2818 stating when SAN is provided, it's authoritative / Subject should be ignored
-      - DNS_ALT_NAMES=puppetdb
       - PUPPETDB_SSL_PORT=8081
       - PUPPETDB_LOG_LEVEL=${PUPPETDB_LOG_LEVEL:-info}
-      - PUPPETSERVER_HOSTNAME=puppet
-      - PUPPETSERVER_PORT=8140
       - PUPPETDB_POSTGRES_HOSTNAME=postgres
       - PUPPETDB_POSTGRES_PORT=5432
       - PUPPETDB_PASSWORD=puppetdb
