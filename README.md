@@ -11,6 +11,8 @@ Running Puppet Infrastructure in [Kubernetes](https://kubernetes.io/) is also a 
 
 We've been developing our own Helm chart which can get you up & running fast. You can find it [here](https://github.com/puppetlabs/puppetserver-helm-chart). It's hosted as a Helm chart [here](https://puppetlabs.github.io/puppetserver-helm-chart) and published in the fantastic [Helm Hub](https://hub.helm.sh/charts/puppet/puppetserver-helm-chart) and [Artifact Hub](https://artifacthub.io/package/chart/puppetserver/puppetserver-helm-chart). The latter will allow you to make use of it by just adding the repo in your configured Helm repos.
 
+Generally, containers included here follow [Dockerfile best practices](./README_Dockerfile.md).
+
 ## Required versions
 
 * Docker Compose - must support `version: '3'` of the compose file format, which requires Docker Engine `1.13.0+`. [Full compatibility matrix](https://docs.docker.com/compose/compose-file/compose-versioning/)
