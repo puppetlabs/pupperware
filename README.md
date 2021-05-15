@@ -31,7 +31,7 @@ Once you have Docker Compose installed, you can start the stack on Linux or OSX 
 ```
     export ADDITIONAL_COMPOSE_SERVICES_PATH=${PWD}/gem/lib/pupperware/compose-services
     export COMPOSE_FILE=${ADDITIONAL_COMPOSE_SERVICES_PATH}/postgres.yml:${ADDITIONAL_COMPOSE_SERVICES_PATH}/puppetdb.yml:${ADDITIONAL_COMPOSE_SERVICES_PATH}/puppet.yml
-    DNS_ALT_NAMES=host.example.com docker-compose up -d
+    PUPPET_DNS_ALT_NAMES=host.example.com docker-compose up -d
 ```
 
 With the environment variables exported, the stack can be torn down with:
