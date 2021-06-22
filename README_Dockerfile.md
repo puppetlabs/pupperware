@@ -1,6 +1,6 @@
 # Dockerfile writing best practices
 
-* Use an appropriate / minimal base image that's actively maintained and responsive to security updates. `ubuntu:18.04` is fairly common, though [`minideb`](https://github.com/bitnami/minideb) is under review as a base image as it's minimal and well-maintained from a security standpoint.
+* Use an appropriate / minimal base image that's actively maintained and responsive to security updates. The current recommendation is [`minideb`](https://github.com/bitnami/minideb) as it's minimal and well-maintained from a security standpoint.  Bitnami offers minideb based images for many common use cases such as [`bitnami/java`](https://hub.docker.com/r/bitnami/java/) for OpenJDK and [`bitnami/postgresql`](https://hub.docker.com/r/bitnami/postgresql/).
 * Minimize number of instructions being used as each instruction like `ENV`, `ARG` generates a layer which can be separately cached for subsequent rebuilds
     - Collapse instructions where allowed (i.e. `ENV` statements can be combined, `ARG` cannot). Typically multiple `RUN` instructions are unnecessary and should be combined.
     - The one exception is when a specific `ENV` value depends on another `ENV` value. In such instances, another `ENV` block must be introduced to consume the previously declared value. 
