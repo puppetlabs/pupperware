@@ -286,7 +286,7 @@ MSG
       --volume #{dest_volume}:/opt \
       --entrypoint /bin/sh \
       alpine/openssl \
-      -c \"SSLDIR=/opt/#{dest_dir} PUPPETSERVER_HOSTNAME=#{get_container_hostname(ca_container)} CERTNAME=#{certname} DNS_ALT_NAMES=#{dns_alt_names} /tmp/ssl/00-ssl.sh; chown -R #{uid}:#{gid} /opt\""
+      -c \"SSLDIR=/opt/#{dest_dir} PUPPETSERVER_HOSTNAME=#{get_container_hostname(ca_container)} CERTNAME=#{certname} DNS_ALT_NAMES=#{dns_alt_names} /bin/sh /tmp/ssl/00-ssl.sh; chown -R #{uid}:#{gid} /opt\""
     STDOUT.puts(<<-MSG)
 Generating new certificates with transient container using ssl.sh:
   certname      : #{certname}
