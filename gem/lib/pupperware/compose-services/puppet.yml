@@ -24,6 +24,7 @@ services:
     volumes:
       - puppetserver-code:/etc/puppetlabs/code/
       - puppetserver-config:/etc/puppetlabs/puppet/
+      - puppetserver-ca:/etc/puppetlabs/puppetserver/ca
       - puppetserver-data:/opt/puppetlabs/server/data/puppetserver/
     restart: always
     ports:
@@ -33,4 +34,5 @@ services:
 volumes:
   puppetserver-code:
   puppetserver-config:
+  puppetserver-ca:
   puppetserver-data:
