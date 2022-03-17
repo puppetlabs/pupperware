@@ -51,8 +51,8 @@ the stack with the changed `DNS_ALT_NAMES` value.
 When you first start the Puppet Infrastructure, the stack will create a number of Docker volumes to store the persistent data that should survive the restart of your infrastructure. The actual location on disk of these volumes may be examined with the `docker inspect` command. The following volumes include:
 
 * `puppetserver-code`: the Puppet code directory.
-* `puppetserver-config`: Puppet configuration files, including `puppet/ssl/` containing certificates for your infrastructure. This volume is populated with default configuration files if they are not present when the stack starts
-up.
+* `puppetserver-config`: Puppet configuration files, including `ssl/` containing the local agent's certificate and key. This volume is populated with default configuration files if they are not present when the stack starts
+* `puppetserver-ca`: Puppetserver CA files, including all signed certs.
 * `puppetdb-ssl`: certificates in use by the PuppetDB instance in the
   stack.
 * `puppetdb-postgres`: the data files for the PostgreSQL instance used by
