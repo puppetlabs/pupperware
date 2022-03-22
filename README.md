@@ -9,7 +9,7 @@ which you will run your Puppet Infrastructure.
 
 Running Puppet Infrastructure in [Kubernetes](https://kubernetes.io/) is also a very viable option. To get started with that, you will need a running K8s cluster with [Helm](https://helm.sh/) deployed.
 
-We've been developing our own Helm chart which can get you up & running fast. You can find it [here](https://github.com/puppetlabs/puppetserver-helm-chart). It's hosted as a Helm chart [here](https://puppetlabs.github.io/puppetserver-helm-chart) and published in the fantastic [Helm Hub](https://hub.helm.sh/charts/puppet/puppetserver-helm-chart) and [Artifact Hub](https://artifacthub.io/package/chart/puppetserver/puppetserver-helm-chart). The latter will allow you to make use of it by just adding the repo in your configured Helm repos.
+We've been developing our own Helm chart which can get you up & running fast. You can find it [here](https://github.com/puppetlabs/puppetserver-helm-chart). It's hosted as a Helm chart [here](https://puppetlabs.github.io/puppetserver-helm-chart) and published in the fantastic [Artifact Hub](https://artifacthub.io/packages/helm/puppetserver/puppetserver). The latter will allow you to make use of it by just adding the repo in your configured Helm repos.
 
 Generally, containers included here follow [Dockerfile best practices](./README_Dockerfile.md).
 
@@ -68,7 +68,7 @@ on the command line, or in a `.env` file.
 
 ## Pupperware on Windows with WSL2 (Unsupported)
 
-Complete instructions for provisiong a server with WSL2 support are in [README-windows.md](./README-windows.md)
+Complete instructions for provisioning a server with WSL2 support are in [README-windows.md](./README-windows.md)
 
 Creating the stack from PowerShell is nearly identical to other platforms, aside from how environment variables are declared:
 
