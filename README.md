@@ -31,7 +31,7 @@ Once you have Docker Compose installed, you can start the stack on Linux or OSX 
 ```
     export ADDITIONAL_COMPOSE_SERVICES_PATH=${PWD}/gem/lib/pupperware/compose-services
     export COMPOSE_FILE=${ADDITIONAL_COMPOSE_SERVICES_PATH}/postgres.yml:${ADDITIONAL_COMPOSE_SERVICES_PATH}/puppetdb.yml:${ADDITIONAL_COMPOSE_SERVICES_PATH}/puppet.yml
-    DNS_ALT_NAMES=host.example.com docker-compose up -d
+    PUPPET_DNS_ALT_NAMES=host.example.com docker-compose up -d
 ```
 
 With the environment variables exported, the stack can be torn down with:
@@ -39,14 +39,14 @@ With the environment variables exported, the stack can be torn down with:
     docker-compose down --volumes
 ```
 
-The value of `DNS_ALT_NAMES` must list all the names, as a comma-separated
+The value of `PUPPET_DNS_ALT_NAMES` must list all the names, as a comma-separated
 list, under which the Puppet server in the stack can be reached from
 agents. It will have `puppet` prepended to it as that
 name is used by PuppetDB to communicate with the Puppet server. The value of
-`DNS_ALT_NAMES` only has an effect the first time you start the stack, as it
+`PUPPET_DNS_ALT_NAMES` only has an effect the first time you start the stack, as it
 is placed into the server's SSL certificate. If you need to change it after
 that, you will need to properly revoke the server's certificate and restart
-the stack with the changed `DNS_ALT_NAMES` value.
+the stack with the changed `PUPPET_DNS_ALT_NAMES` value.
 
 When you first start the Puppet Infrastructure, the stack will create a number of Docker volumes to store the persistent data that should survive the restart of your infrastructure. The actual location on disk of these volumes may be examined with the `docker inspect` command. The following volumes include:
 
@@ -73,7 +73,7 @@ Complete instructions for provisiong a server with WSL2 support are in [README-w
 Creating the stack from PowerShell is nearly identical to other platforms, aside from how environment variables are declared:
 
 ``` powershell
-PS> $ENV:DNS_ALT_NAMES = 'host.example.com'
+PS> $ENV:PUPPET_DNS_ALT_NAMES = 'host.example.com'
 PS> $ENV:ADDITIONAL_COMPOSE_SERVICES_PATH="${PWD}/gem/lib/pupperware/compose-services"
 PS> $ENV:COMPOSE_FILE="${ENV:ADDITIONAL_COMPOSE_SERVICES_PATH}\postgres.yml;${ENV:ADDITIONAL_COMPOSE_SERVICES_PATH}\puppetdb.yml;${ENV:ADDITIONAL_COMPOSE_SERVICES_PATH}\puppet.yml"
 
