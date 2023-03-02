@@ -1,5 +1,33 @@
-#! /bin/sh
+#! /bin/bash
 
-cd "$(dirname "$0")/.." || exit 1
+FILE="$0"
 
-docker-compose exec puppet puppetserver "$@"
+if [ "$(echo "$0" | cut -d/ -f1)" == "$0" ]
+then
+	if [ ! -e "$0" ]
+	then
+		FILE="$(which "$0")"
+	fi
+fi
+
+cd "$(dirname "$(perl -MCwd -le 'print Cwd::abs_path(shift)' "$FILE")")/.." || exit 1
+
+if docker info > /dev/null 2>/dev/null
+then
+	export ADDITIONAL_COMPOSE_SERVICES_PATH=${PWD}/gem/lib/pupperware/compose-services
+	export COMPOSE_FILE=${ADDITIONAL_COMPOSE_SERVICES_PATH}/postgres.yml:${ADDITIONAL_COMPOSE_SERVICES_PATH}/puppetdb.yml:${ADDITIONAL_COMPOSE_SERVICES_PATH}/puppet.yml
+
+	if command -v docker >/dev/null 2>/dev/null && docker compose version > /dev/null 2>/dev/null
+	then
+		docker compose exec puppet puppetserver "$@"
+	elif command -v docker-compose >/dev/null 2>/dev/null && docker-compose version > /dev/null 2>/dev/null
+	then
+		docker-compose exec puppet puppetserver "$@"
+	else
+		echo "No access to 'docker compose' or 'docker-compose'. Please fix to continue."
+		exit 2
+	fi
+else
+	echo "No permissions. Are you in the docker group, or root?"
+	exit 1
+fi
